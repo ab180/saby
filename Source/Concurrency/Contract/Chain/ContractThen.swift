@@ -44,12 +44,12 @@ extension Contract {
         subscribe(subscriber: Subscriber(
             on: queue,
             onResolved: { value in
-                Promise(on: queue) {
-                    try block(value)
-                }.then { result in
-                    contract.resolve(result)
-                }.catch { error in
-                    contract.reject(error)
+                Promise(on: queue) { resolve, reject in
+                    try block(value).subscribe(subscriber: Promise.Subscriber(
+                        on: queue,
+                        onResolved: { contract.resolve($0); resolve(()) },
+                        onRejected: { contract.reject($0); reject($0) }
+                    ))
                 }
             },
             onRejected: { error in
