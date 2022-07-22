@@ -28,10 +28,6 @@ public final class Promise<Value> {
 }
 
 extension Promise {
-    public convenience init(on queue: DispatchQueue = Promise<Void>.Setting.defaultQueue) {
-        self.init(queue: queue)
-    }
-    
     public convenience init(on queue: DispatchQueue = Promise<Void>.Setting.defaultQueue,
                             _ work: @escaping (_ resolve: @escaping (Value) -> Void,
                                                _ reject: @escaping (Error) -> Void) throws -> Void)
@@ -83,7 +79,7 @@ extension Promise {
 }
 
 extension Promise {
-    public func resolve(_ value: Value) {
+    func resolve(_ value: Value) {
         pthread_mutex_lock(&lock)
         
         if case .pending = state {
@@ -95,7 +91,7 @@ extension Promise {
         pthread_mutex_unlock(&lock)
     }
     
-    public func reject(_ error: Error) {
+    func reject(_ error: Error) {
         pthread_mutex_lock(&lock)
         
         if case .pending = state {
@@ -124,6 +120,15 @@ extension Promise {
 }
 
 extension Promise {
+    public static func pending(
+        on queue: DispatchQueue = Promise<Void>.Setting.defaultQueue
+    ) -> (Promise<Value>, (Value) -> Void, (Error) -> Void)
+    {
+        let promise = Promise(queue: queue)
+        
+        return (promise, { promise.resolve($0) }, { promise.reject($0) })
+    }
+    
     public static func resolved(on queue: DispatchQueue = Promise<Void>.Setting.defaultQueue,
                                _ value: Value) -> Promise<Value>
     {

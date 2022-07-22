@@ -26,30 +26,37 @@ public final class Contract<Value> {
 }
 
 extension Contract {
-    public convenience init(on queue: DispatchQueue = Contract<Void>.Setting.defaultQueue) {
-        self.init(queue: queue)
-    }
-}
-
-extension Contract {
-    public func resolve(_ value: Value) {
+    func resolve(_ value: Value) {
         pthread_mutex_lock(&lock)
         subscribers.forEach { $0.onResolved(value) }
         pthread_mutex_unlock(&lock)
     }
 
-    public func reject(_ error: Error) {
+    func reject(_ error: Error) {
         pthread_mutex_lock(&lock)
         subscribers.forEach { $0.onRejected(error) }
+        pthread_mutex_unlock(&lock)
+    }
+
+    func subscribe(subscriber: Subscriber) {
+        pthread_mutex_lock(&lock)
+        subscribers.append(subscriber)
         pthread_mutex_unlock(&lock)
     }
 }
 
 extension Contract {
-    func subscribe(subscriber: Subscriber) {
-        pthread_mutex_lock(&lock)
-        subscribers.append(subscriber)
-        pthread_mutex_unlock(&lock)
+    public static func create(
+        on queue: DispatchQueue = Promise<Void>.Setting.defaultQueue
+    ) -> (Contract<Value>, (Value) -> Void, (Error) -> Void)
+    {
+        let contract = Contract(queue: queue)
+        
+        return (contract, { contract.resolve($0) }, { contract.reject($0) })
+    }
+    
+    public convenience init(on queue: DispatchQueue = Contract<Void>.Setting.defaultQueue) {
+        self.init(queue: queue)
     }
 }
 

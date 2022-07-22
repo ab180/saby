@@ -13,7 +13,7 @@ extension Promise {
         _ promises: [Promise<Value0>]
     ) -> Promise<[Value0]> where Value == Void
     {
-        let promiseReturn = Promise<[Value0]>(on: queue)
+        let promiseReturn = Promise<[Value0]>(queue: queue)
         let group = DispatchGroup()
         
         promises.forEach { promise in
@@ -49,7 +49,7 @@ extension Promise {
         @AllBuilder builder: () -> (Promise<Value0>, Promise<Value1>)
     ) -> Promise<(Value0, Value1)> where Value == Void
     {
-        let promiseReturn = Promise<(Value0, Value1)>(on: queue)
+        let promiseReturn = Promise<(Value0, Value1)>(queue: queue)
         let group = DispatchGroup()
         
         let promises = builder()
@@ -86,7 +86,7 @@ extension Promise {
         @AllBuilder builder: () -> (Promise<Value0>, Promise<Value1>, Promise<Value2>)
     ) -> Promise<(Value0, Value1, Value2)> where Value == Void
     {
-        let promiseReturn = Promise<(Value0, Value1, Value2)>(on: queue)
+        let promiseReturn = Promise<(Value0, Value1, Value2)>(queue: queue)
         let group = DispatchGroup()
         
         let promises = builder()
@@ -130,7 +130,7 @@ extension Promise {
         @AllBuilder builder: () -> (Promise<Value0>, Promise<Value1>, Promise<Value2>, Promise<Value3>)
     ) -> Promise<(Value0, Value1, Value2, Value3)> where Value == Void
     {
-        let promiseReturn = Promise<(Value0, Value1, Value2, Value3)>(on: queue)
+        let promiseReturn = Promise<(Value0, Value1, Value2, Value3)>(queue: queue)
         let group = DispatchGroup()
         
         let promises = builder()
@@ -181,7 +181,7 @@ extension Promise {
         @AllBuilder builder: () -> (Promise<Value0>, Promise<Value1>, Promise<Value2>, Promise<Value3>, Promise<Value4>)
     ) -> Promise<(Value0, Value1, Value2, Value3, Value4)> where Value == Void
     {
-        let promiseReturn = Promise<(Value0, Value1, Value2, Value3, Value4)>(on: queue)
+        let promiseReturn = Promise<(Value0, Value1, Value2, Value3, Value4)>(queue: queue)
         let group = DispatchGroup()
         
         let promises = builder()

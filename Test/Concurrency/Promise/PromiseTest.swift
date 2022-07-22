@@ -100,6 +100,26 @@ final class PromiseTest: XCTestCase {
         PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
     }
     
+    func test__pending() {
+        let (promise, _, _) = Promise<Int>.pending()
+        
+        PromiseTest.expect(promise: promise, state: .pending, timeout: .seconds(1))
+    }
+    
+    func test__pending_resolve() {
+        let (promise, resolve, _) = Promise<Int>.pending()
+        resolve(10)
+        
+        PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
+    }
+    
+    func test__pending_reject() {
+        let (promise, _, reject) = Promise<Int>.pending()
+        reject(PromiseTest.Error.one)
+        
+        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
+    }
+    
     func test__resolved() {
         let promise = Promise.resolved(10)
         

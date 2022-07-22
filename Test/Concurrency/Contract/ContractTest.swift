@@ -42,4 +42,15 @@ final class ContractTest: XCTestCase {
             contract.reject(SampleError.one)
         }
     }
+    
+    func test__create() {
+        let (contract, _, reject) = Contract<Int>.create()
+        
+        ContractTest.expect(contract: contract,
+                            state: .rejected(SampleError.one),
+                            timeout: .seconds(1))
+        {
+            reject(SampleError.one)
+        }
+    }
 }

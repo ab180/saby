@@ -13,7 +13,7 @@ extension Promise {
         @RaceBuilder builder: () -> [Promise<Result>]
     ) -> Promise<Result> where Value == Void
     {
-        let promiseReturn = Promise<Result>(on: queue)
+        let promiseReturn = Promise<Result>(queue: queue)
         
         let promises = builder()
         for promise in promises {

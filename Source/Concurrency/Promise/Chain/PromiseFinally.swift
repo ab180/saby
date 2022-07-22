@@ -14,7 +14,7 @@ extension Promise {
     {
         let queue = queue ?? self.queue
         
-        let promiseReturn = Promise<Value>(on: self.queue)
+        let promiseReturn = Promise<Value>(queue: self.queue)
         
         subscribe(subscriber: Subscriber(
             on: queue,
