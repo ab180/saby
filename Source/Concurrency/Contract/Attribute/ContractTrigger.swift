@@ -2,7 +2,7 @@
 //  ContractTrigger.swift
 //  SabyConcurrency
 //
-//  Created by 0xwof on 2022/07/18.
+//  Created by WOF on 2022/07/18.
 //
 
 import Foundation
