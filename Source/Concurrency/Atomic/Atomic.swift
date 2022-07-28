@@ -30,7 +30,7 @@ public final class Atomic<Value> {
     }
     
     @inlinable
-    public func use(_ block: @escaping (Value) -> Void) {
+    public func use(_ block: (Value) -> Void) {
         pthread_mutex_lock(&token)
         defer { pthread_mutex_unlock(&token) }
         
@@ -38,10 +38,10 @@ public final class Atomic<Value> {
     }
     
     @inlinable
-    public func mutate(_ block: @escaping (inout Value) -> Void) {
+    public func mutate(_ block: (Value) -> Value) {
         pthread_mutex_lock(&token)
         defer { pthread_mutex_unlock(&token) }
         
-        block(&value)
+        value = block(value)
     }
 }

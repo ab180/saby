@@ -71,7 +71,7 @@ extension Contract {
         {
             self.onResolved = { value in
                 promiseAtomic.mutate { promise in
-                    promise = promise.then { onResolved(value) }
+                    promise.then { onResolved(value) }
                 }
             }
             self.onRejected = { error in
@@ -95,7 +95,7 @@ extension Contract {
         {
             self.onResolved = { value in
                 promiseAtomic.mutate { promise in
-                    promise = promise.then { onResolved(value) }
+                    promise.then { onResolved(value) }
                 }
             }
             self.onRejected = { error in
