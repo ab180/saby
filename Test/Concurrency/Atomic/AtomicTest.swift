@@ -40,7 +40,7 @@ final class AtomicTest: XCTestCase {
         for _ in 0..<10000 {
             token.enter()
             queue.async {
-                atomic.mutate { $0 += 1 }
+                atomic.mutate { $0 + 1 }
                 token.leave()
             }
         }
