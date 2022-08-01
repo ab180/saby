@@ -10,7 +10,9 @@ import Foundation
 public struct TypeDictionary {
     var dictionary: Dictionary<ObjectIdentifier, Any> = [:]
     
-    subscript<Value>(type: Value.Type) -> Value? {
+    public init() {}
+    
+    public subscript<Value>(type: Value.Type) -> Value? {
         get {
             dictionary[ObjectIdentifier(type)] as? Value
         }
