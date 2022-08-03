@@ -1,6 +1,6 @@
 //
 //  TypeDictionary.swift
-//  SabyCollection
+//  SabyCollectionTest
 //
 //  Created by WOF on 2022/07/29.
 //
