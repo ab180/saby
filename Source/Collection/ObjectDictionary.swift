@@ -8,13 +8,13 @@
 import Foundation
 
 public struct ObjectDictionary<Key: AnyObject, Value> {
-    var dictionary: Dictionary<ObjectIdentifier, Any> = [:]
+    var dictionary: Dictionary<ObjectIdentifier, Value> = [:]
     
     public init() {}
     
     public subscript(object: Key) -> Value? {
         get {
-            dictionary[ObjectIdentifier(object)] as? Value
+            dictionary[ObjectIdentifier(object)]
         }
         set(value) {
             dictionary[ObjectIdentifier(object)] = value

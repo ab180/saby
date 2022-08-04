@@ -7,14 +7,14 @@
 
 import Foundation
 
-public struct TypeDictionary {
-    var dictionary: Dictionary<ObjectIdentifier, Any> = [:]
+public struct TypeDictionary<Value> {
+    var dictionary: Dictionary<ObjectIdentifier, Value> = [:]
     
     public init() {}
     
-    public subscript<Value>(type: Value.Type) -> Value? {
+    public subscript(type: Any.Type) -> Value? {
         get {
-            dictionary[ObjectIdentifier(type)] as? Value
+            dictionary[ObjectIdentifier(type)]
         }
         set(value) {
             dictionary[ObjectIdentifier(type)] = value
