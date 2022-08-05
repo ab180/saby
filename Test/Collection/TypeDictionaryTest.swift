@@ -10,7 +10,7 @@ import XCTest
 
 final class TypeDictionaryTest: XCTestCase {
     func test__set_and_get() {
-        var typeDictionary = TypeDictionary<Int>()
+        var typeDictionary = TypeDictionary()
         
         typeDictionary[Int.self] = 10
         
