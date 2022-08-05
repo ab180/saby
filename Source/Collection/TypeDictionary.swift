@@ -20,4 +20,8 @@ public struct TypeDictionary {
             dictionary[ObjectIdentifier(type)] = value
         }
     }
+    
+    public func values() -> [Any] {
+        dictionary.values.map { $0 }
+    }
 }
