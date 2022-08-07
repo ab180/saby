@@ -122,7 +122,7 @@ extension Promise {
 extension Promise {
     public static func pending(
         on queue: DispatchQueue = Promise<Void>.Setting.defaultQueue
-    ) -> (Promise<Value>, (Value) -> Void, (Error) -> Void)
+    ) -> (Promise<Value>, Promise<Value>.Resolve, Promise<Value>.Reject)
     {
         let promise = Promise(queue: queue)
         
@@ -195,4 +195,9 @@ extension Promise {
             self.errorDescription
         }
     }
+}
+
+extension Promise {
+    public typealias Resolve = (Value) -> Void
+    public typealias Reject = (Error) -> Void
 }
