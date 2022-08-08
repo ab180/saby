@@ -76,6 +76,20 @@
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SabySafe"
+               BuildableName = "SabySafe"
+               BlueprintName = "SabySafe"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -83,6 +97,22 @@
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES">
+      <CodeCoverageTargets>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "SabyConcurrency"
+            BuildableName = "SabyConcurrency"
+            BlueprintName = "SabyConcurrency"
+            ReferencedContainer = "container:">
+         </BuildableReference>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "SabySafe"
+            BuildableName = "SabySafe"
+            BlueprintName = "SabySafe"
+            ReferencedContainer = "container:">
+         </BuildableReference>
+      </CodeCoverageTargets>
       <Testables>
          <TestableReference
             skipped = "NO">
@@ -98,9 +128,9 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "SabyCollectionTest"
-               BuildableName = "SabyCollectionTest"
-               BlueprintName = "SabyCollectionTest"
+               BlueprintIdentifier = "SabySafeTest"
+               BuildableName = "SabySafeTest"
+               BlueprintName = "SabySafeTest"
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>

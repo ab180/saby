@@ -6,32 +6,32 @@ let package = Package(
     products: [
         .library(
             name: "Saby",
-            targets: ["SabyCollection", "SabyConcurrency"]),
-        .library(
-            name: "SabyCollection",
-            targets: ["SabyCollection"]),
+            targets: ["SabyConcurrency", "SabySafe"]),
         .library(
             name: "SabyConcurrency",
             targets: ["SabyConcurrency"]),
+        .library(
+            name: "SabySafe",
+            targets: ["SabySafe"]),
     ],
     dependencies: [
     ],
     targets: [
         .target(
-            name: "SabyCollection",
-            dependencies: [],
-            path: "Source/Collection"),
-        .target(
             name: "SabyConcurrency",
             dependencies: [],
             path: "Source/Concurrency"),
-        .testTarget(
-            name: "SabyCollectionTest",
-            dependencies: ["SabyCollection"],
-            path: "Test/Collection"),
+        .target(
+            name: "SabySafe",
+            dependencies: [],
+            path: "Source/Safe"),
         .testTarget(
             name: "SabyConcurrencyTest",
             dependencies: ["SabyConcurrency"],
             path: "Test/Concurrency"),
+        .testTarget(
+            name: "SabySafeTest",
+            dependencies: ["SabySafe"],
+            path: "Test/Safe"),
     ]
 )
