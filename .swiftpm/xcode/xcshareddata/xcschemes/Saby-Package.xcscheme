@@ -90,6 +90,20 @@
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SabyJSON"
+               BuildableName = "SabyJSON"
+               BlueprintName = "SabyJSON"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -131,6 +145,16 @@
                BlueprintIdentifier = "SabySafeTest"
                BuildableName = "SabySafeTest"
                BlueprintName = "SabySafeTest"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SabyJSONTest"
+               BuildableName = "SabyJSONTest"
+               BlueprintName = "SabyJSONTest"
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>
