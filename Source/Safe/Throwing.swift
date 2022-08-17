@@ -7,10 +7,10 @@
 
 import Foundation
 
-public func throwing<Result>(_ error: Error = ThrowingError()) throws -> Result {
+public func throwing<Result>(_ error: Error = ThrowingError.defaultError) throws -> Result {
     throw error
 }
 
-public struct ThrowingError: Error {
-    public init() {}
+public enum ThrowingError: Error {
+    case defaultError
 }

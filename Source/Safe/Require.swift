@@ -8,9 +8,14 @@
 import Foundation
 
 public func require<Value>(_ type: Value.Type, _ value: Any?) throws -> Value {
-    return try (value as? Value) ?? throwing(RequireError())
+    return try (value as? Value) ?? throwing(RequireError.notRequiredType)
 }
 
-public struct RequireError: Error {
-    public init() {}
+public func require<Value>(_ value: Value?) throws -> Value {
+    return try value ?? throwing(RequireError.notNonNullType)
+}
+
+public enum RequireError: Error {
+    case notRequiredType
+    case notNonNullType
 }
