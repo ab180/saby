@@ -36,7 +36,7 @@ extension JSONClient {
         _ url: URL,
         method: ClientMethod = .get,
         header: ClientHeader = [:],
-        body: JSON,
+        body: JSON = [:],
         optionBlock: (inout URLRequest) -> Void = { _ in }
     ) -> Promise<Result> {
         guard let body = try? body.datafy() else {
