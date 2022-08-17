@@ -88,7 +88,10 @@ extension ContractTest {
         }
     }
     
-    private static func once<Value>(token: OnceToken, block: @escaping (Value) -> Void) -> (Value) -> Void {
+    private static func once<Value>(
+        token: OnceToken = OnceToken(),
+        block: @escaping (Value) -> Void
+    ) -> (Value) -> Void {
         return {
             if case .pending = token.state {
                 token.state = .called

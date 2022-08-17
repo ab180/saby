@@ -169,4 +169,3 @@ extension PromiseTest {
         }
     }
 }
-
