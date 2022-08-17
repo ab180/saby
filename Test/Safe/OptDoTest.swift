@@ -1,5 +1,5 @@
 //
-//  OptTryTest.swift
+//  OptDoTest.swift
 //  SabySafeTest
 //
 //  Created by WOF on 2022/08/08.
@@ -8,13 +8,13 @@
 import XCTest
 @testable import SabySafe
 
-final class OptTryTest: XCTestCase {
+final class OptDoTest: XCTestCase {
     func test__success() {
-        XCTAssertEqual(optTry { 10 }, 10)
+        XCTAssertEqual(optDo { 10 }, 10)
     }
     
     func test__fail() {
-        XCTAssertEqual(optTry { () -> Int in throw TestError() }, nil)
+        XCTAssertEqual(optDo { () -> Int in throw TestError() }, nil)
     }
 }
 

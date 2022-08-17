@@ -18,3 +18,15 @@ public func convert<Value, Result>(
         return nil
     }
 }
+
+public func convert<Value, Result>(
+    _ type: Value.Type,
+    _ value: Any?,
+    _ block: (Value) -> Result?
+) -> Result? {
+    if let value = value as? Value {
+        return block(value)
+    } else {
+        return nil
+    }
+}
