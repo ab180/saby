@@ -5,14 +5,20 @@ let package = Package(
     name: "Saby",
     products: [
         .library(
-            name: "Saby",
-            targets: ["SabyConcurrency", "SabyJSON", "SabySafe"]),
-        .library(
             name: "SabyConcurrency",
             targets: ["SabyConcurrency"]),
         .library(
+            name: "SabyExpect",
+            targets: ["SabyExpect"]),
+        .library(
             name: "SabyJSON",
             targets: ["SabyJSON"]),
+        .library(
+            name: "SabyMock",
+            targets: ["SabyMock"]),
+        .library(
+            name: "SabyNetwork",
+            targets: ["SabyNetwork"]),
         .library(
             name: "SabySafe",
             targets: ["SabySafe"]), 
@@ -25,9 +31,21 @@ let package = Package(
             dependencies: [],
             path: "Source/Concurrency"),
         .target(
+            name: "SabyExpect",
+            dependencies: ["SabyConcurrency"],
+            path: "Source/Expect"),
+        .target(
             name: "SabyJSON",
             dependencies: [],
             path: "Source/JSON"),
+        .target(
+            name: "SabyMock",
+            dependencies: ["SabyJSON"],
+            path: "Source/Mock"),
+        .target(
+            name: "SabyNetwork",
+            dependencies: ["SabyConcurrency", "SabyJSON"],
+            path: "Source/Network"),
         .target(
             name: "SabySafe",
             dependencies: [],
@@ -40,6 +58,10 @@ let package = Package(
             name: "SabyJSONTest",
             dependencies: ["SabyJSON"],
             path: "Test/JSON"),
+        .testTarget(
+            name: "SabyNetworkTest",
+            dependencies: ["SabyNetwork", "SabyMock", "SabyExpect"],
+            path: "Test/Network"),
         .testTarget(
             name: "SabySafeTest",
             dependencies: ["SabySafe"],
