@@ -44,7 +44,7 @@ let package = Package(
             path: "Source/Mock"),
         .target(
             name: "SabyNetwork",
-            dependencies: ["SabyConcurrency", "SabyJSON"],
+            dependencies: ["SabyConcurrency", "SabyJSON", "SabySafe"],
             path: "Source/Network"),
         .target(
             name: "SabySafe",

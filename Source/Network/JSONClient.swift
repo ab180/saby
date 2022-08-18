@@ -9,9 +9,10 @@ import Foundation
 
 import SabyConcurrency
 import SabyJSON
+import SabySafe
 
 public final class JSONClient<Result: Decodable>: Client {
-    public typealias Request = JSON
+    public typealias Request = JSON?
     public typealias Response = Result
     
     let client: DataClient
@@ -36,10 +37,12 @@ extension JSONClient {
         _ url: URL,
         method: ClientMethod = .get,
         header: ClientHeader = [:],
-        body: JSON = [:],
+        body: JSON? = nil,
         optionBlock: (inout URLRequest) -> Void = { _ in }
     ) -> Promise<Result> {
-        guard let body = try? body.datafy() else {
+        guard let body = (optDo {
+            try body?.datafy() ?? Data()
+        }) else {
             return Promise<Result>.rejected(InternalError.bodyJSONIsNotDatafiable)
         }
         
