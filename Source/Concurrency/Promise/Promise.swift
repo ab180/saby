@@ -120,6 +120,23 @@ extension Promise {
 }
 
 extension Promise {
+    public var isPending: Bool {
+        guard case .pending = state else { return false }
+        return true
+    }
+    
+    public var isResolved: Bool {
+        guard case .resolved(_) = state else { return false }
+        return true
+    }
+    
+    public var isRejected: Bool {
+        guard case .rejected(_) = state else { return false }
+        return true
+    }
+}
+
+extension Promise {
     public static func pending(
         on queue: DispatchQueue = Promise<Void>.Setting.defaultQueue
     ) -> (Promise<Value>, Promise<Value>.Resolve, Promise<Value>.Reject)

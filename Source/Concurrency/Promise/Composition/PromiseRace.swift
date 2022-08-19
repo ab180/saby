@@ -10,12 +10,11 @@ import Foundation
 extension Promise {
     public static func race<Result>(
         on queue: DispatchQueue = Setting.defaultQueue,
-        @RaceBuilder builder: () -> [Promise<Result>]
+        _ promises: [Promise<Result>]
     ) -> Promise<Result> where Value == Void
     {
         let promiseReturn = Promise<Result>(queue: queue)
         
-        let promises = builder()
         for promise in promises {
             promise.subscribe(subscriber: Promise<Result>.Subscriber(
                 on: queue,
@@ -25,6 +24,16 @@ extension Promise {
         }
         
         return promiseReturn
+    }
+    
+    public static func race<Result>(
+        on queue: DispatchQueue = Setting.defaultQueue,
+        @RaceBuilder builder: () -> [Promise<Result>]
+    ) -> Promise<Result> where Value == Void
+    {
+        let promises = builder()
+        
+        return Promise.race(on: queue, promises)
     }
     
     @resultBuilder

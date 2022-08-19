@@ -14,7 +14,7 @@ final class PromiseTimeoutTest: XCTestCase {
     func test__timeout() {
         let promise =
         Promise { resolve, reject in
-            DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
+            DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(100)) {
                 resolve(10)
             }
         }.timeout(.milliseconds(200))
@@ -25,7 +25,7 @@ final class PromiseTimeoutTest: XCTestCase {
     func test__timeout_reject() {
         let promise =
         Promise<Int> { resolve, reject in
-            DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
+            DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(100)) {
                 resolve(10)
             }
         }.timeout(.milliseconds(50))
