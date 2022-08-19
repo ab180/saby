@@ -2,7 +2,7 @@
 //  IntervalTest.swift
 //  SabyTimeTest
 //
-//  Created by 0xwof on 2022/08/19.
+//  Created by WOF on 2022/08/19.
 //
 
 import XCTest

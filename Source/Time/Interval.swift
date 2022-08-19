@@ -2,7 +2,7 @@
 //  TimeIntervalConvert.swift
 //  SabyTime
 //
-//  Created by 0xwof on 2022/08/19.
+//  Created by WOF on 2022/08/19.
 //
 
 import Foundation
