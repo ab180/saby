@@ -8,40 +8,45 @@
 import Foundation
 
 public final class Contract<Value> {
-    var lock = pthread_mutex_t()
+    var lock: UnsafeMutablePointer<pthread_mutex_t>
     
     let queue: DispatchQueue
     var subscribers: [Subscriber]
     
     init(queue: DispatchQueue = Contract<Void>.Setting.defaultQueue) {
-        pthread_mutex_init(&lock, nil)
+        self.lock = UnsafeMutablePointer.allocate(capacity: 1)
+        lock.initialize(to: pthread_mutex_t())
         
         self.queue = queue
-        subscribers = []
+        self.subscribers = []
+        
+        pthread_mutex_init(lock, nil)
     }
     
     deinit {
-        pthread_mutex_destroy(&lock)
+        pthread_mutex_destroy(lock)
+        
+        lock.deallocate()
     }
 }
 
 extension Contract {
     func resolve(_ value: Value) {
-        pthread_mutex_lock(&lock)
+        pthread_mutex_lock(lock)
         subscribers.forEach { $0.onResolved(value) }
-        pthread_mutex_unlock(&lock)
+        pthread_mutex_unlock(lock)
     }
 
     func reject(_ error: Error) {
-        pthread_mutex_lock(&lock)
+        pthread_mutex_lock(lock)
         subscribers.forEach { $0.onRejected(error) }
-        pthread_mutex_unlock(&lock)
+        pthread_mutex_unlock(lock)
     }
 
     func subscribe(subscriber: Subscriber) {
-        pthread_mutex_lock(&lock)
+        pthread_mutex_lock(lock)
         subscribers.append(subscriber)
-        pthread_mutex_unlock(&lock)
+        pthread_mutex_unlock(lock)
     }
 }
 
