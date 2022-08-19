@@ -11,3 +11,4 @@ Airbridge SDK core library for swift.
 - Mock: Emulate behavior of instance that make side effect
 - Network: Communicate with server using Promise
 - Safe: Handle Any value safely
+- Time: Time definition
