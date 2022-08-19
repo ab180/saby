@@ -20,6 +20,9 @@ let package = Package(
             name: "SabyNetwork",
             targets: ["SabyNetwork"]),
         .library(
+            name: "SabyNumeric",
+            targets: ["SabyNumeric"]),
+        .library(
             name: "SabySafe",
             targets: ["SabySafe"]),
         .library(
@@ -50,6 +53,10 @@ let package = Package(
             dependencies: ["SabyConcurrency", "SabyJSON", "SabySafe"],
             path: "Source/Network"),
         .target(
+            name: "SabyNumeric",
+            dependencies: [],
+            path: "Source/Numeric"),
+        .target(
             name: "SabySafe",
             dependencies: [],
             path: "Source/Safe"),
@@ -69,6 +76,10 @@ let package = Package(
             name: "SabyNetworkTest",
             dependencies: ["SabyNetwork", "SabyMock", "SabyExpect"],
             path: "Test/Network"),
+        .testTarget(
+            name: "SabyNumericTest",
+            dependencies: ["SabyNumeric"],
+            path: "Test/Numeric"),
         .testTarget(
             name: "SabySafeTest",
             dependencies: ["SabySafe"],

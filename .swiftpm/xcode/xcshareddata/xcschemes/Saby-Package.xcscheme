@@ -160,6 +160,34 @@
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SabyNumber"
+               BuildableName = "SabyNumber"
+               BlueprintName = "SabyNumber"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SabyNumeric"
+               BuildableName = "SabyNumeric"
+               BlueprintName = "SabyNumeric"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -231,6 +259,16 @@
                BlueprintIdentifier = "SabyTimeTest"
                BuildableName = "SabyTimeTest"
                BlueprintName = "SabyTimeTest"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SabyNumericTest"
+               BuildableName = "SabyNumericTest"
+               BlueprintName = "SabyNumericTest"
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>
