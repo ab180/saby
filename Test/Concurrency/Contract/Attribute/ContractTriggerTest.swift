@@ -13,7 +13,7 @@ final class ContractTriggerTest: XCTestCase {
         let contract0 = Contract<Int>()
         let promise0 = Promise<Void>()
         
-        let contract = contract0.trigger(signal: promise0).then { value in
+        let contract = contract0.trigger(when: promise0).then { value in
             value + 1
         }
         

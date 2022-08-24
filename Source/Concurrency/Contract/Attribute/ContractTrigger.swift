@@ -8,10 +8,10 @@
 import Foundation
 
 extension Contract {
-    public func trigger(signal: Promise<Void>) -> Contract<Value> {
+    public func trigger<AnyValue>(when promise: Promise<AnyValue>) -> Contract<Value> {
         let contract = Contract<Value>(on: queue)
         
-        let promiseAtomic = Atomic(Promise<Void>(on: queue) { signal })
+        let promiseAtomic = Atomic(Promise<Void>(on: queue) { promise.toPromiseVoid() })
         
         subscribe(subscriber: Subscriber(
             promiseAtomic: promiseAtomic,
