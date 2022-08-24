@@ -33,13 +33,13 @@ extension JSON {
 }
 
 extension JSON {
-    public static func from<Value: Encodable>(_ value: Value) throws -> JSON {
+    public static func encode<Value: Encodable>(_ value: Value) throws -> JSON {
         let data = try JSONEncoder().encode(value)
         let value = try JSONDecoder().decode(JSON.self, from: data)
         return value
     }
     
-    public func to<Value: Decodable>(_ type: Value.Type) throws -> Value {
+    public func decode<Value: Decodable>(_ type: Value.Type) throws -> Value {
         let data = try JSONEncoder().encode(self)
         let value = try JSONDecoder().decode(type, from: data)
         return value

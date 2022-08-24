@@ -50,11 +50,4 @@ final class JSONExpressionTest: XCTestCase {
         XCTAssertEqual(json, [])
         XCTAssertEqual(json, .array([]))
     }
-    
-    func test__init_nil_literal() {
-        let json: JSON = nil
-        
-        XCTAssertEqual(json, nil)
-        XCTAssertEqual(json, .null)
-    }
 }

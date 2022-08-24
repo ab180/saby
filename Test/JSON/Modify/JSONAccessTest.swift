@@ -26,11 +26,11 @@ final class JSONAccessTest: XCTestCase {
             "e": nil
         ])
         
-        XCTAssertEqual(json["a"]!, "a")
-        XCTAssertEqual(json["b"]!, 1)
-        XCTAssertEqual(json["c"]!["a"], "a")
-        XCTAssertEqual(json["d"]![2], true)
-        XCTAssertEqual(json["e"]!, nil)
+        XCTAssertEqual(json["a"]!, JSON.from("a"))
+        XCTAssertEqual(json["b"]!, JSON.from(1))
+        XCTAssertEqual(json["c"]!["a"], JSON.from("a"))
+        XCTAssertEqual(json["d"]![2], JSON.from(true))
+        XCTAssertEqual(json["e"]!, JSON.from(nil))
     }
     
     func test__get_access_multiple_key() {
@@ -50,8 +50,8 @@ final class JSONAccessTest: XCTestCase {
             "e": nil
         ])
         
-        XCTAssertEqual(json["c", "a"]!, "a")
-        XCTAssertEqual(json["d", 2]!, true)
+        XCTAssertEqual(json["c", "a"]!, JSON.from("a"))
+        XCTAssertEqual(json["d", 2]!, JSON.from(true))
     }
     
     func test__set_access_single_key() {
@@ -72,15 +72,15 @@ final class JSONAccessTest: XCTestCase {
         ])
         
         json["a"]! = [1,2,3]
-        XCTAssertEqual(json["a"]!, [1,2,3])
-        json["b"]! = nil
-        XCTAssertEqual(json["b"]!, nil)
+        XCTAssertEqual(json["a"]!, JSON.from([1,2,3]))
+        json["b"]! = .null
+        XCTAssertEqual(json["b"]!, JSON.from(nil))
         json["c"]!["a"]! = "string"
-        XCTAssertEqual(json["c"]!["a"]!, "string")
+        XCTAssertEqual(json["c"]!["a"]!, JSON.from("string"))
         json["d"]![1]! = 123
-        XCTAssertEqual(json["d"]![1]!, 123)
+        XCTAssertEqual(json["d"]![1]!, JSON.from(123))
         json["e"]! = [:]
-        XCTAssertEqual(json["e"]!, [:])
+        XCTAssertEqual(json["e"]!, JSON.from([:]))
     }
     
     func test__set_access_multiple_key() {
@@ -101,9 +101,9 @@ final class JSONAccessTest: XCTestCase {
         ])
         
         json["c", "a"]! = "string"
-        XCTAssertEqual(json["c", "a"]!, "string")
+        XCTAssertEqual(json["c", "a"]!, JSON.from("string"))
         json["d", 1]! = 123
-        XCTAssertEqual(json["d", 1]!, 123)
+        XCTAssertEqual(json["d", 1]!, JSON.from(123))
     }
     
     func test__delete() {
@@ -126,8 +126,8 @@ final class JSONAccessTest: XCTestCase {
         json["c"]!.delete("a")
         json["d"]!.delete(1)
         
-        XCTAssertEqual(json["c"]!, ["b":1,"c":true])
-        XCTAssertEqual(json["d"]!, ["a",true])
+        XCTAssertEqual(json["c"]!, JSON.from(["b":1,"c":true]))
+        XCTAssertEqual(json["d"]!, JSON.from(["a",true]))
     }
     
     func test__delete_if_object() {
@@ -149,7 +149,7 @@ final class JSONAccessTest: XCTestCase {
         
         json["c"]!.delete(ifObject: "a")
         
-        XCTAssertEqual(json["c"]!, ["b":1,"c":true])
+        XCTAssertEqual(json["c"]!, JSON.from(["b":1,"c":true]))
     }
     
     func test__delete_if_array() {
@@ -171,7 +171,7 @@ final class JSONAccessTest: XCTestCase {
         
         json["d"]!.delete(ifArray: 1)
         
-        XCTAssertEqual(json["d"]!, ["a",true])
+        XCTAssertEqual(json["d"]!, JSON.from(["a",true]))
     }
     
     func test__push() {
@@ -191,9 +191,9 @@ final class JSONAccessTest: XCTestCase {
             "e": nil
         ])
         
-        json["d"]!.push(nil)
+        json["d"]!.push(.null)
         
-        XCTAssertEqual(json["d"]!, ["a",1,true,nil])
+        XCTAssertEqual(json["d"]!, JSON.from(["a",1,true,nil]))
     }
     
     func test__push_if_array() {
@@ -213,8 +213,8 @@ final class JSONAccessTest: XCTestCase {
             "e": nil
         ])
         
-        json["d"]!.push(ifArray: nil)
+        json["d"]!.push(ifArray: .null)
         
-        XCTAssertEqual(json["d"]!, ["a",1,true,nil])
+        XCTAssertEqual(json["d"]!, JSON.from(["a",1,true,nil]))
     }
 }

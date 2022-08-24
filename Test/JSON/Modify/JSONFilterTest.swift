@@ -32,7 +32,7 @@ final class JSONFilterTest: XCTestCase {
         ])
         
         let filtered = json
-            .filter { $0 != nil }!
+            .filter { $0 != .null }!
             .filter { $0 != [:] }!
             .filter { $0 != [] }!
         

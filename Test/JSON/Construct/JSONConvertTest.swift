@@ -77,7 +77,7 @@ final class JSONConvertTest: XCTestCase {
         ])
         let encodable = Codable0(a: "123", b: 10, c: nil)
         
-        XCTAssertEqual(try! JSON.from(encodable), json)
+        XCTAssertEqual(try! JSON.encode(encodable), json)
     }
     
     func test__from_decodable() {
@@ -88,27 +88,27 @@ final class JSONConvertTest: XCTestCase {
         ])
         let decodable = Codable0(a: "123", b: 10, c: nil)
         
-        XCTAssertEqual(try! json.to(Codable0.self), decodable)
+        XCTAssertEqual(try! json.decode(Codable0.self), decodable)
     }
     
     func test__from_any() {
-        XCTAssertEqual(try! JSON.from(unsafe: nil), nil)
-        XCTAssertEqual(try! JSON.from(unsafe: "string"), "string")
-        XCTAssertEqual(try! JSON.from(unsafe: 12345), 12345)
-        XCTAssertEqual(try! JSON.from(unsafe: true), true)
+        XCTAssertEqual(try! JSON.from(unsafe: nil), JSON.from(nil))
+        XCTAssertEqual(try! JSON.from(unsafe: "string"), JSON.from("string"))
+        XCTAssertEqual(try! JSON.from(unsafe: 12345), JSON.from(12345))
+        XCTAssertEqual(try! JSON.from(unsafe: true), JSON.from(true))
     }
     
     func test__from_dictionary_string_any() {
         XCTAssertEqual(JSON.from(unsafe: [:]), [:])
-        XCTAssertEqual(JSON.from(unsafe: ["valid":"1","invalid":JSONEncoder()]), ["valid":"1"])
-        XCTAssertEqual(JSON.from(unsafe: ["valid":nil,"invalid":JSONEncoder()]), ["valid":nil])
-        XCTAssertEqual(JSON.from(unsafe: ["a":["a":nil],"b":["a":JSONEncoder()]]), ["a":["a":nil],"b":[:]])
+        XCTAssertEqual(JSON.from(unsafe: ["valid":"1","invalid":JSONEncoder()]), JSON.from(["valid":"1"]))
+        XCTAssertEqual(JSON.from(unsafe: ["valid":nil,"invalid":JSONEncoder()]), JSON.from(["valid":nil]))
+        XCTAssertEqual(JSON.from(unsafe: ["a":["a":nil],"b":["a":JSONEncoder()]]), JSON.from(["a":["a":nil],"b":[:]]))
     }
     
     func test__from_array_any() {
         XCTAssertEqual(JSON.from(unsafe: []), [])
-        XCTAssertEqual(JSON.from(unsafe: ["1",1,JSONEncoder()]), ["1",1])
-        XCTAssertEqual(JSON.from(unsafe: [nil,1,JSONEncoder()]), [nil,1])
-        XCTAssertEqual(JSON.from(unsafe: [[JSONEncoder(),nil],[1,2,3]]), [[nil],[1,2,3]])
+        XCTAssertEqual(JSON.from(unsafe: ["1",1,JSONEncoder()]), JSON.from(["1",1]))
+        XCTAssertEqual(JSON.from(unsafe: [nil,1,JSONEncoder()]), JSON.from([nil,1]))
+        XCTAssertEqual(JSON.from(unsafe: [[JSONEncoder(),nil],[1,2,3]]), JSON.from([[nil],[1,2,3]]))
     }
 }

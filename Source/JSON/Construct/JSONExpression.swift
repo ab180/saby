@@ -42,9 +42,3 @@ extension JSON: ExpressibleByArrayLiteral {
         self = .array(values)
     }
 }
-
-extension JSON: ExpressibleByNilLiteral {
-    public init(nilLiteral: ()) {
-        self = .null
-    }
-}

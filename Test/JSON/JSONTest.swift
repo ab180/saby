@@ -36,6 +36,6 @@ final class JSONTest: XCTestCase {
     
     func test__null() {
         let json = JSON.null
-        XCTAssertEqual(json, nil)
+        XCTAssertEqual(json, .null)
     }
 }
