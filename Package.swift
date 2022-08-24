@@ -108,6 +108,10 @@ package
         .library(
             name: "SabyAppleDataFetcher",
             targets: ["SabyAppleDataFetcher"]
+        ),
+        .library(
+            name: "SabyAppleLogger",
+            targets: ["SabyAppleLogger"]
         )
     ])
 
@@ -118,9 +122,17 @@ package
             dependencies: ["SabyAppleObjectiveCReflection", "SabyConcurrency"],
             path: "Source/AppleDataFetcher"),
         .target(
+            name: "SabyAppleLogger",
+            dependencies: [],
+            path: "Source/AppleLogger"),
+        .target(
             name: "SabyAppleObjectiveCReflection",
             dependencies: [],
             path: "Source/AppleObjectiveCReflection"),
+        .testTarget(
+            name: "SabyAppleLoggerTest",
+            dependencies: ["SabyAppleLogger"],
+            path: "Test/AppleLogger"),
         .testTarget(
             name: "SabyAppleObjectiveCReflectionTest",
             dependencies: ["SabyAppleObjectiveCReflection"],
