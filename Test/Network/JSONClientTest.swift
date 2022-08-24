@@ -132,4 +132,58 @@ final class JSONClientTest: XCTestCase {
             timeout: .seconds(1)
         )
     }
+    
+    func test__request_response_nil() {
+        final class MockURLResultStorage: URLResultStorage {
+            static var results: [URLResult] = [
+                URLResult(
+                    url: URL(string: "https://mock.api.ab180.co/request")!,
+                    code: 200,
+                    data: nil
+                )
+            ]
+        }
+        let client = JSONClient<Data?>() {
+            $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
+        }
+        
+        let response = client.request(
+            URL(string: "https://mock.api.ab180.co/request")!
+        ).catch { error in
+            print(error)
+        }
+        
+        Expect.promise(
+            response,
+            state: .resolved(Data()),
+            timeout: .seconds(1)
+        )
+    }
+    
+    func test__request_response_empty() {
+        final class MockURLResultStorage: URLResultStorage {
+            static var results: [URLResult] = [
+                URLResult(
+                    url: URL(string: "https://mock.api.ab180.co/request")!,
+                    code: 200,
+                    data: Data()
+                )
+            ]
+        }
+        let client = JSONClient<Data>() {
+            $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
+        }
+        
+        let response = client.request(
+            URL(string: "https://mock.api.ab180.co/request")!
+        ).catch { print($0)
+            
+        }
+        
+        Expect.promise(
+            response,
+            state: .resolved(Data()),
+            timeout: .seconds(1)
+        )
+    }
 }

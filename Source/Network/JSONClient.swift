@@ -40,11 +40,11 @@ extension JSONClient {
         body: JSON? = nil,
         optionBlock: (inout URLRequest) -> Void = { _ in }
     ) -> Promise<Result> {
-        guard let body = (optDo {
-            try body?.datafy() ?? Data()
-        }) else {
+        let datafied = try? body?.datafy()
+        if body != nil, datafied == nil {
             return Promise<Result>.rejected(InternalError.bodyJSONIsNotDatafiable)
         }
+        let body = datafied
         
         return client.request(
             url,
@@ -53,6 +53,13 @@ extension JSONClient {
             body: body,
             optionBlock: optionBlock
         ).then { data -> Result in
+            if
+                (Result.self is Data.Type || Result.self is Data?.Type),
+                let result = data as? Result
+            {
+                return result
+            }
+            
             guard
                 let data = data,
                 let result = try? self.decoder.decode(Result.self, from: data)
