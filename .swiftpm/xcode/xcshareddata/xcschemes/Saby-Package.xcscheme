@@ -188,6 +188,20 @@
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SabyAppleObjectiveCReflection"
+               BuildableName = "SabyAppleObjectiveCReflection"
+               BlueprintName = "SabyAppleObjectiveCReflection"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -269,6 +283,16 @@
                BlueprintIdentifier = "SabyNumericTest"
                BuildableName = "SabyNumericTest"
                BlueprintName = "SabyNumericTest"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SabyAppleObjectiveCReflectionTest"
+               BuildableName = "SabyAppleObjectiveCReflectionTest"
+               BlueprintName = "SabyAppleObjectiveCReflectionTest"
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>

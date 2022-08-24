@@ -1,7 +1,7 @@
 // swift-tools-version: 5.6
 import PackageDescription
 
-let package = Package(
+var package = Package(
     name: "Saby",
     products: [
         .library(
@@ -90,3 +90,26 @@ let package = Package(
             path: "Test/Time"),
     ]
 )
+
+#if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
+package
+    .products.append(contentsOf: [
+        .library(
+            name: "SabyAppleObjectiveCReflection",
+            targets: ["SabyAppleObjectiveCReflection"]
+        ),
+        )
+    ])
+
+package
+    .targets.append(contentsOf: [
+        .target(
+            name: "SabyAppleObjectiveCReflection",
+            dependencies: [],
+            path: "Source/AppleObjectiveCReflection"),
+        .testTarget(
+            name: "SabyAppleObjectiveCReflectionTest",
+            dependencies: ["SabyAppleObjectiveCReflection"],
+            path: "Test/AppleObjectiveCReflection")
+    ])
+#endif
