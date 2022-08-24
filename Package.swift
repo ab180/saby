@@ -101,7 +101,6 @@ package
         .library(
             name: "SabyAppleDataFetcher",
             targets: ["SabyAppleDataFetcher"]
-        ),
         )
     ])
 
