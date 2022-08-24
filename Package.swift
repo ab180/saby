@@ -98,11 +98,19 @@ package
             name: "SabyAppleObjectiveCReflection",
             targets: ["SabyAppleObjectiveCReflection"]
         ),
+        .library(
+            name: "SabyAppleDataFetcher",
+            targets: ["SabyAppleDataFetcher"]
+        ),
         )
     ])
 
 package
     .targets.append(contentsOf: [
+        .target(
+            name: "SabyAppleDataFetcher",
+            dependencies: ["SabyAppleObjectiveCReflection", "SabyConcurrency"],
+            path: "Source/AppleDataFetcher"),
         .target(
             name: "SabyAppleObjectiveCReflection",
             dependencies: [],

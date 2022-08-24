@@ -196,6 +196,20 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SabyAppleDataFetcher"
+               BuildableName = "SabyAppleDataFetcher"
+               BlueprintName = "SabyAppleDataFetcher"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "SabyAppleObjectiveCReflection"
                BuildableName = "SabyAppleObjectiveCReflection"
                BlueprintName = "SabyAppleObjectiveCReflection"
