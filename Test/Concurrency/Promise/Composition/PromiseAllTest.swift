@@ -25,148 +25,148 @@ final class PromiseAllTest: XCTestCase {
     
     func test__all_2() {
         let promise =
-        Promise.all {
+        Promise.all(
             Promise {
                 10
-            }
+            },
             Promise {
                 true
             }
-        }
+        )
         
         PromiseTest.expect(promise: promise, state: .resolved({$0 == (10, true)}), timeout: .seconds(1))
     }
     
     func test__all_2_reject_1() {
         let promise =
-        Promise.all {
+        Promise.all(
             Promise<Int> { () -> Int in
                 throw PromiseTest.Error.one
-            }
+            },
             Promise {
                 true
             }
-        }
+        )
         
         PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
     }
     
     func test__all_3() {
         let promise =
-        Promise.all {
+        Promise.all(
             Promise {
                 10
-            }
+            },
             Promise {
                 true
-            }
+            },
             Promise {
                 "10"
             }
-        }
+        )
         
         PromiseTest.expect(promise: promise, state: .resolved({$0 == (10, true, "10")}), timeout: .seconds(1))
     }
     
     func test__all_3_reject_1() {
         let promise =
-        Promise.all {
+        Promise.all(
             Promise<Int> { () -> Int in
                 throw PromiseTest.Error.one
-            }
+            },
             Promise {
                 true
-            }
+            },
             Promise {
                 "10"
             }
-        }
+        )
         
         PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
     }
     
     func test__all_4() {
         let promise =
-        Promise.all {
+        Promise.all(
             Promise {
                 10
-            }
+            },
             Promise {
                 true
-            }
+            },
             Promise {
                 "10"
-            }
+            },
             Promise {
                 10
             }
-        }
+        )
         
         PromiseTest.expect(promise: promise, state: .resolved({$0 == (10, true, "10", 10)}), timeout: .seconds(1))
     }
     
     func test__all_4_reject_1() {
         let promise =
-        Promise.all {
+        Promise.all(
             Promise<Int> { () -> Int in
                 throw PromiseTest.Error.one
-            }
+            },
             Promise {
                 true
-            }
+            },
             Promise {
                 "10"
-            }
+            },
             Promise {
                 10
             }
-        }
+        )
         
         PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
     }
     
     func test__all_5() {
         let promise =
-        Promise.all {
+        Promise.all(
             Promise {
                 10
-            }
+            },
             Promise {
                 true
-            }
+            },
             Promise {
                 "10"
-            }
+            },
             Promise {
                 10
-            }
+            },
             Promise {
                 true
             }
-        }
+        )
         
         PromiseTest.expect(promise: promise, state: .resolved({$0 == (10, true, "10", 10, true)}), timeout: .seconds(1))
     }
     
     func test__all_5_reject_1() {
         let promise =
-        Promise.all {
+        Promise.all(
             Promise<Int> { () -> Int in
                 throw PromiseTest.Error.one
-            }
+            },
             Promise {
                 true
-            }
+            },
             Promise {
                 "10"
-            }
+            },
             Promise {
                 10
-            }
+            },
             Promise {
                 true
             }
-        }
+        )
         
         PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
     }

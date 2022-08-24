@@ -25,22 +25,4 @@ extension Promise {
         
         return promiseReturn
     }
-    
-    public static func race<Result>(
-        on queue: DispatchQueue = Setting.defaultQueue,
-        @RaceBuilder builder: () -> [Promise<Result>]
-    ) -> Promise<Result> where Value == Void
-    {
-        let promises = builder()
-        
-        return Promise.race(on: queue, promises)
-    }
-    
-    @resultBuilder
-    public struct RaceBuilder {
-        public static func buildBlock<Result>(_ promises: Promise<Result>...) -> [Promise<Result>]
-        {
-            promises
-        }
-    }
 }
