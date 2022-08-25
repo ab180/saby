@@ -65,17 +65,6 @@ extension Interval {
     }
     
     public var dispatchTime: DispatchTimeInterval {
-        .milliseconds({
-            let millisecond = Int64(self.millisecond)
-            if millisecond < Int.min {
-                return Int.min
-            }
-            else if Int.max < millisecond {
-                return Int.max
-            }
-            else {
-                return Int(millisecond)
-            }
-        }())
+        .milliseconds(Int(millisecond))
     }
 }
