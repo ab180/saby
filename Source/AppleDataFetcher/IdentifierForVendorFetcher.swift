@@ -12,8 +12,10 @@ import UIKit
 
 public final class IdentifierForVendorFetcher: Fetcher {
     typealias Value = IdentifierForVendor
+    
+    public init() {}
 
-    func fetch() -> IdentifierForVendor {
+    public func fetch() -> IdentifierForVendor {
         IdentifierForVendor(
             identifier: fetchIdentifier()
         )

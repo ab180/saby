@@ -17,7 +17,7 @@ public final class AppleSearchAdsAttributionFetcher: Fetcher {
     
     private let instanceADClient: InstanceADClient
     
-    init?() {
+    public init?() {
         guard
             let classADClient = ClassADClient(),
             let instanceADClient = classADClient.shared()
@@ -28,7 +28,7 @@ public final class AppleSearchAdsAttributionFetcher: Fetcher {
         self.instanceADClient = instanceADClient
     }
     
-    func fetch() -> Promise<[String: NSObject]> {
+    public func fetch() -> Promise<[String: NSObject]> {
         Promise { resolve, reject in
             self.instanceADClient.requestAttributionDetailsWithBlock { attribution, error in
                 if let attribution = attribution {

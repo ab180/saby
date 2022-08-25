@@ -17,7 +17,7 @@ public final class IdentifierForAdvertiserFetcher: Fetcher {
     
     private let instanceASIdentifierManager: InstanceASIdentifierManager
     
-    init?() {
+    public init?() {
         guard
             let classASIdentifierManager = ClassASIdentifierManager(),
             let instanceASIdentifierManager = classASIdentifierManager.shared()
@@ -28,7 +28,7 @@ public final class IdentifierForAdvertiserFetcher: Fetcher {
         self.instanceASIdentifierManager = instanceASIdentifierManager
     }
     
-    func fetch() -> Promise<IdentifierForAdvertiser> {
+    public func fetch() -> Promise<IdentifierForAdvertiser> {
         Promise {
             IdentifierForAdvertiser(
                 identifier: try self.instanceASIdentifierManager.advertisingIdentifier(),

@@ -11,8 +11,10 @@ import Foundation
 
 public final class TimeFetcher: Fetcher {
     typealias Value = Time
+    
+    public init() {}
 
-    func fetch() -> Time {
+    public func fetch() -> Time {
         Time(
             millisecondsSince1970: fetchMillisecondsSince1970()
         )

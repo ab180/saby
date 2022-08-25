@@ -14,8 +14,10 @@ import SabyConcurrency
 
 public final class NetworkFetcher: Fetcher {
     typealias Value = Network
+    
+    public init() {}
 
-    func fetch() -> Network {
+    public func fetch() -> Network {
         let ip = fetchIP()
         let type = fetchType()
         

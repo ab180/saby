@@ -17,13 +17,13 @@ public final class AppleAdsAttributionTokenFetcher: Fetcher {
     
     private let classAAAttribution: ClassAAAttribution
     
-    init?() {
+    public init?() {
         guard let classAAAttribution = ClassAAAttribution() else { return nil }
         
         self.classAAAttribution = classAAAttribution
     }
     
-    func fetch() -> Promise<String> {
+    public func fetch() -> Promise<String> {
         Promise {
             try self.classAAAttribution.attributionToken()
         }

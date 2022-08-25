@@ -12,8 +12,10 @@ import CoreTelephony
 
 public final class CarrierFetcher: Fetcher {
     typealias Value = Carrier?
-
-    func fetch() -> Carrier? {
+    
+    public init() {}
+    
+    public func fetch() -> Carrier? {
         guard let carrier = fetchCTCarrier() else { return nil }
         
         return Carrier(

@@ -12,8 +12,10 @@ import UIKit
 
 public final class ModelFetcher: Fetcher {
     typealias Value = Model
+    
+    public init() {}
 
-    func fetch() -> Model {
+    public func fetch() -> Model {
         let name = fetchName()
         let identifier = fetchIdentifier()
 

@@ -12,8 +12,10 @@ import UIKit
 
 public final class OSFetcher: Fetcher {
     typealias Value = OS
+    
+    public init() {}
 
-    func fetch() -> OS {
+    public func fetch() -> OS {
         OS(
             name: fetchName(),
             version: fetchVersion()

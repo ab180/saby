@@ -14,8 +14,10 @@ import SabyConcurrency
 
 public final class ScreenFetcher: Fetcher {
     typealias Value = Promise<Screen>
+    
+    public init() {}
 
-    func fetch() -> Promise<Screen> {
+    public func fetch() -> Promise<Screen> {
         return Promise.all(
             Promise.resolved(fetchSize()),
             Promise.resolved(fetchScale()),

@@ -17,13 +17,13 @@ public final class TrackingAuthorizationStatusFetcher: Fetcher {
     
     private let classATTrackingManager: ClassATTrackingManager
     
-    init?() {
+    public init?() {
         guard let classATTrackingManager = ClassATTrackingManager() else { return nil }
         
         self.classATTrackingManager = classATTrackingManager
     }
     
-    func fetch() -> Promise<TrackingAuthorizationStatus> {
+    public func fetch() -> Promise<TrackingAuthorizationStatus> {
         Promise {
             try self.classATTrackingManager.trackingAuthorizationStatus()
         }

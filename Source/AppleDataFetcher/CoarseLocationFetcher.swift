@@ -13,8 +13,10 @@ import SabyConcurrency
 
 public final class CoarseLocationFetcher: Fetcher {
     typealias Value = CoarseLocation
+    
+    public init() {}
 
-    func fetch() -> CoarseLocation {
+    public func fetch() -> CoarseLocation {
         CoarseLocation(
             locale: fetchLocale(),
             timezone: fetchTimezone()

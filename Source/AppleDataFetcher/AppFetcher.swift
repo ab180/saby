@@ -11,8 +11,10 @@ import Foundation
 
 public final class AppFetcher: Fetcher {
     typealias Value = App
+    
+    public init() {}
 
-    func fetch() -> App {
+    public func fetch() -> App {
         App(
             identifier: fetchIdentifier(),
             name: fetchName(),
