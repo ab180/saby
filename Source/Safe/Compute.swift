@@ -13,3 +13,26 @@ public func compute<Result>(
     return block()
 }
 
+public func compute<Value, Result>(
+    _ type: Value.Type,
+    _ value: Any?,
+    _ block: (Value) -> Result
+) -> Result? {
+    if let value = value as? Value {
+        return block(value)
+    } else {
+        return nil
+    }
+}
+
+public func compute<Value, Result>(
+    _ type: Value.Type,
+    _ value: Any?,
+    _ block: (Value) -> Result?
+) -> Result? {
+    if let value = value as? Value {
+        return block(value)
+    } else {
+        return nil
+    }
+}
