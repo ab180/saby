@@ -1,5 +1,5 @@
 //
-//  ContractTrigger.swift
+//  ContractDelay.swift
 //  SabyConcurrency
 //
 //  Created by WOF on 2022/07/18.
@@ -8,7 +8,7 @@
 import Foundation
 
 extension Contract {
-    public func trigger<AnyValue>(when promise: Promise<AnyValue>) -> Contract<Value> {
+    public func delay<AnyValue>(until promise: Promise<AnyValue>) -> Contract<Value> {
         let contract = Contract<Value>(on: queue)
         
         let promiseAtomic = Atomic(Promise<Void>(on: queue) { promise.toPromiseVoid() })

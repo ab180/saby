@@ -1,5 +1,5 @@
 //
-//  ContractTriggerTest.swift
+//  ContractDelayTest.swift
 //  SabyConcurrencyTest
 //
 //  Created by WOF on 2022/07/21.
@@ -8,12 +8,12 @@
 import XCTest
 @testable import SabyConcurrency
 
-final class ContractTriggerTest: XCTestCase {
-    func test__trigger_resolve() {
+final class ContractDelayTest: XCTestCase {
+    func test__delay_resolve() {
         let contract0 = Contract<Int>()
         let promise0 = Promise<Void>()
         
-        let contract = contract0.trigger(when: promise0).then { value in
+        let contract = contract0.delay(until: promise0).then { value in
             value + 1
         }
         
