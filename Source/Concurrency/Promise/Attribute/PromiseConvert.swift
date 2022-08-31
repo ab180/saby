@@ -8,11 +8,28 @@
 import Foundation
 
 extension Promise {
-    func toPromiseVoid() -> Promise<Void> {
+    public static func from(
+        _ promise: Promise<Value>?
+    ) -> Promise<Value?> {
+        if let promise = promise {
+            return promise.toPromiseOptional()
+        }
+        else {
+            return Promise<Value?>.resolved(nil)
+        }
+    }
+}
+
+extension Promise {
+    public func toPromiseOptional() -> Promise<Value?> {
+        self.then { $0 }
+    }
+    
+    public func toPromiseVoid() -> Promise<Void> {
         self.then { _ in }
     }
     
-    func toPromiseAny() -> Promise<Any> {
+    public func toPromiseAny() -> Promise<Any> {
         self.then { $0 }
     }
 }
