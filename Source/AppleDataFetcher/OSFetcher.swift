@@ -24,8 +24,8 @@ public final class OSFetcher: Fetcher {
 }
 
 public struct OS {
-    let name: String
-    let version: String
+    public let name: String
+    public let version: String
 }
 
 extension OSFetcher {

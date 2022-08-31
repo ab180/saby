@@ -22,7 +22,7 @@ public final class TimeFetcher: Fetcher {
 }
 
 public struct Time {
-    let millisecondsSince1970: UInt64
+    public let millisecondsSince1970: UInt64
 }
 
 extension TimeFetcher {

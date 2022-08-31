@@ -39,8 +39,8 @@ public final class IdentifierForAdvertiserFetcher: Fetcher {
 }
 
 public struct IdentifierForAdvertiser {
-    let identifier: String
-    let limitAdTracking: Bool
+    public let identifier: String
+    public let limitAdTracking: Bool
 }
 
 private final class ClassASIdentifierManager {

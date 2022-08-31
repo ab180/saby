@@ -24,9 +24,9 @@ public final class AppFetcher: Fetcher {
 }
 
 public struct App {
-    let identifier: String?
-    let name: String?
-    let version: String?
+    public let identifier: String?
+    public let name: String?
+    public let version: String?
 }
 
 extension AppFetcher {

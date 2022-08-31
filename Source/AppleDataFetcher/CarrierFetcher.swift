@@ -27,9 +27,9 @@ public final class CarrierFetcher: Fetcher {
 }
 
 public struct Carrier {
-    let name: String?
-    let mobileNetworkCode: String?
-    let mobileCountryCode: String?
+    public let name: String?
+    public let mobileNetworkCode: String?
+    public let mobileCountryCode: String?
 }
 
 extension CarrierFetcher {

@@ -27,8 +27,8 @@ public final class ModelFetcher: Fetcher {
 }
 
 public struct Model {
-    let name: String
-    let identifier: String?
+    public let name: String
+    public let identifier: String?
 }
 
 extension ModelFetcher {

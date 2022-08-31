@@ -35,10 +35,10 @@ public final class ScreenFetcher: Fetcher {
 }
 
 public struct Screen {
-    let width: Double
-    let height: Double
-    let scale: Double
-    let orientation: String
+    public let width: Double
+    public let height: Double
+    public let scale: Double
+    public let orientation: String
 }
 
 extension ScreenFetcher {

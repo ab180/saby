@@ -23,7 +23,7 @@ public final class IdentifierForVendorFetcher: Fetcher {
 }
 
 public struct IdentifierForVendor {
-    let identifier: String?
+    public let identifier: String?
 }
 
 extension IdentifierForVendorFetcher {

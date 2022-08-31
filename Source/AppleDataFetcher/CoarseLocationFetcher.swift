@@ -25,8 +25,8 @@ public final class CoarseLocationFetcher: Fetcher {
 }
 
 public struct CoarseLocation {
-    let locale: String
-    let timezone: String
+    public let locale: String
+    public let timezone: String
 }
 
 extension CoarseLocationFetcher {

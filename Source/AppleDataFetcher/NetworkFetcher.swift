@@ -30,9 +30,9 @@ public final class NetworkFetcher: Fetcher {
 }
 
 public struct Network {
-    let ip: String?
-    let isCellular: Bool
-    let isWiFi: Bool
+    public let ip: String?
+    public let isCellular: Bool
+    public let isWiFi: Bool
 }
 
 extension NetworkFetcher {
