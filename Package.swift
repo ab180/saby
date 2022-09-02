@@ -8,6 +8,9 @@ var package = Package(
             name: "SabyConcurrency",
             targets: ["SabyConcurrency"]),
         .library(
+            name: "SabyESCArchitecture",
+            targets: ["SabyESCArchitecture"]),
+        .library(
             name: "SabyExpect",
             targets: ["SabyExpect"]),
         .library(
@@ -36,6 +39,10 @@ var package = Package(
             name: "SabyConcurrency",
             dependencies: [],
             path: "Source/Concurrency"),
+        .target(
+            name: "SabyESCArchitecture",
+            dependencies: [],
+            path: "Source/ESCArchitecture"),
         .target(
             name: "SabyExpect",
             dependencies: ["SabyConcurrency"],
