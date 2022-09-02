@@ -13,7 +13,7 @@ import SabyAppleObjectiveCReflection
 import SabyConcurrency
 
 public final class AppleSearchAdsAttributionFetcher: Fetcher {
-    typealias Value = Promise<[String: NSObject]>
+    public typealias Value = Promise<[String: NSObject]>
     
     private let instanceADClient: InstanceADClient
     

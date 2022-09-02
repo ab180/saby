@@ -11,7 +11,7 @@ import Foundation
 import UIKit
 
 public final class ModelFetcher: Fetcher {
-    typealias Value = Model
+    public typealias Value = Model
     
     public init() {}
 

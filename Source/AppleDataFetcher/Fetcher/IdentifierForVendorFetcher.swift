@@ -11,7 +11,7 @@ import Foundation
 import UIKit
 
 public final class IdentifierForVendorFetcher: Fetcher {
-    typealias Value = IdentifierForVendor
+    public typealias Value = IdentifierForVendor
     
     public init() {}
 

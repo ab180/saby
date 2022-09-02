@@ -13,7 +13,7 @@ import SabyAppleObjectiveCReflection
 import SabyConcurrency
 
 public final class AppleAdsAttributionTokenFetcher: Fetcher {
-    typealias Value = Promise<String>
+    public typealias Value = Promise<String>
     
     private let classAAAttribution: ClassAAAttribution
     

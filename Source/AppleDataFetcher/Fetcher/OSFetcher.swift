@@ -11,7 +11,7 @@ import Foundation
 import UIKit
 
 public final class OSFetcher: Fetcher {
-    typealias Value = OS
+    public typealias Value = OS
     
     public init() {}
 

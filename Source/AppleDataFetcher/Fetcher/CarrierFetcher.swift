@@ -11,7 +11,7 @@ import Foundation
 import CoreTelephony
 
 public final class CarrierFetcher: Fetcher {
-    typealias Value = Carrier?
+    public typealias Value = Carrier?
     
     public init() {}
     

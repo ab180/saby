@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol Fetcher {
+public protocol Fetcher {
     associatedtype Value
     
     func fetch() -> Value

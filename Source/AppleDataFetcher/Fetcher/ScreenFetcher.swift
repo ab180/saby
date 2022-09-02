@@ -13,7 +13,7 @@ import UIKit
 import SabyConcurrency
 
 public final class ScreenFetcher: Fetcher {
-    typealias Value = Promise<Screen>
+    public typealias Value = Promise<Screen>
     
     public init() {}
 

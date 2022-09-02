@@ -13,7 +13,7 @@ import SystemConfiguration
 import SabyConcurrency
 
 public final class NetworkFetcher: Fetcher {
-    typealias Value = Network
+    public typealias Value = Network
     
     public init() {}
 

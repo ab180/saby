@@ -10,7 +10,7 @@
 import Foundation
 
 public final class TimeFetcher: Fetcher {
-    typealias Value = Time
+    public typealias Value = Time
     
     public init() {}
 

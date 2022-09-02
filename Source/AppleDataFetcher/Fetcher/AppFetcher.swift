@@ -10,7 +10,7 @@
 import Foundation
 
 public final class AppFetcher: Fetcher {
-    typealias Value = App
+    public typealias Value = App
     
     public init() {}
 

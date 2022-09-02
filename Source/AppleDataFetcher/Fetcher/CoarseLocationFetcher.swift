@@ -12,7 +12,7 @@ import Foundation
 import SabyConcurrency
 
 public final class CoarseLocationFetcher: Fetcher {
-    typealias Value = CoarseLocation
+    public typealias Value = CoarseLocation
     
     public init() {}
 
