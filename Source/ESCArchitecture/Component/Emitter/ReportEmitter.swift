@@ -7,7 +7,7 @@
 
 import SabyConcurrency
 
-public class ReportEmitter<State>: Emitter {
+open class ReportEmitter<State>: Emitter {
     let resolve: (State) -> Void
     let reject: (Error) -> Void
     
