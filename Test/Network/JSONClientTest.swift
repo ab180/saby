@@ -14,14 +14,14 @@ import SabyExpect
 
 final class JSONClientTest: XCTestCase {
     func test__init() {
-        let client = JSONClient<JSON>()
+        let client = JSONClient<JSON, JSON>()
         let configuration = URLSessionConfiguration.default
         
         XCTAssertEqual(client.client.session.configuration, configuration)
     }
     
     func test__init_option_block() {
-        let client = JSONClient<JSON>() {
+        let client = JSONClient<JSON, JSON>() {
             $0.timeoutIntervalForRequest = 3000
         }
         let configuration = URLSessionConfiguration.default
@@ -40,7 +40,7 @@ final class JSONClientTest: XCTestCase {
                 )
             ]
         }
-        let client = JSONClient<JSON>() {
+        let client = JSONClient<JSON?, JSON>() {
             $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
         
@@ -66,7 +66,7 @@ final class JSONClientTest: XCTestCase {
                 )
             ]
         }
-        let client = JSONClient<JSON>() {
+        let client = JSONClient<JSON?, JSON>() {
             $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
         
@@ -77,7 +77,7 @@ final class JSONClientTest: XCTestCase {
         
         Expect.promise(
             response,
-            state: .rejected(JSONClient<JSON>.InternalError.responseDataIsNotDecodable),
+            state: .rejected(JSONClient<JSON?, JSON>.InternalError.responseDataIsNotDecodable),
             timeout: .seconds(1)
         )
     }
@@ -92,7 +92,7 @@ final class JSONClientTest: XCTestCase {
                 )
             ]
         }
-        let client = JSONClient<JSON>() {
+        let client = JSONClient<JSON?, JSON>() {
             $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
         
@@ -117,7 +117,7 @@ final class JSONClientTest: XCTestCase {
                 )
             ]
         }
-        let client = JSONClient<JSON>() {
+        let client = JSONClient<JSON?, JSON>() {
             $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
         
@@ -143,15 +143,13 @@ final class JSONClientTest: XCTestCase {
                 )
             ]
         }
-        let client = JSONClient<Data?>() {
+        let client = JSONClient<JSON?, Data?>() {
             $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
         
         let response = client.request(
             URL(string: "https://mock.api.ab180.co/request")!
-        ).catch { error in
-            print(error)
-        }
+        )
         
         Expect.promise(
             response,
@@ -170,15 +168,13 @@ final class JSONClientTest: XCTestCase {
                 )
             ]
         }
-        let client = JSONClient<Data>() {
+        let client = JSONClient<JSON?, Data>() {
             $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
         
         let response = client.request(
             URL(string: "https://mock.api.ab180.co/request")!
-        ).catch { print($0)
-            
-        }
+        )
         
         Expect.promise(
             response,
