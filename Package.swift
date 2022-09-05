@@ -41,7 +41,7 @@ var package = Package(
             path: "Source/Concurrency"),
         .target(
             name: "SabyESCArchitecture",
-            dependencies: [],
+            dependencies: ["SabyConcurrency"],
             path: "Source/ESCArchitecture"),
         .target(
             name: "SabyExpect",
