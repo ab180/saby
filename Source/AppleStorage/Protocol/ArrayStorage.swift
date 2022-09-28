@@ -12,6 +12,6 @@ public protocol ArrayStorage {
     
     func push(_ value: Value)
     func delete(_ value: Value)
-    func get(key: Value.Key) -> Value
+    func get(key: Value.Key) -> Value?
     func get(limit: GetLimit) -> [Value]
 }
