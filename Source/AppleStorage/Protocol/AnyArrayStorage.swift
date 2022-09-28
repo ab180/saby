@@ -41,7 +41,7 @@ public struct AnyArrayStorage<Value: KeyIdentifiable>: ArrayStorage {
     }
     
     @inline(__always) @inlinable
-    public func get(key: Value.Key) -> Value {
+    public func get(key: Value.Key) -> Value? {
         arrayStorageBox.get(key: key)
     }
     
@@ -67,7 +67,7 @@ class AnyArrayStorageBoxBase<Value: KeyIdentifiable>: ArrayStorage {
     }
     
     @inline(__always) @inlinable
-    func get(key: Value.Key) -> Value {
+    func get(key: Value.Key) -> Value? {
         fatalError()
     }
     
@@ -102,7 +102,7 @@ final class AnyArrayStorageBox<
     }
     
     @inline(__always) @inlinable
-    override func get(key: Value.Key) -> Value {
+    override func get(key: Value.Key) -> Value? {
         arrayStorage.get(key: key)
     }
     
