@@ -19,8 +19,8 @@ fileprivate class CoredataTestItem: NSManagedObject, KeyIdentifiable, ManagedObj
     typealias Key = UUID
     @NSManaged var key: UUID
     
-    func update(_ from: CoredataTestItem) {
-        self.key = from.key
+    func update(_ mock: CoredataTestItem) {
+        self.key = mock.key
     }
 }
 

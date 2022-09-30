@@ -9,7 +9,7 @@ import Foundation
 import CoreData
 
 public protocol ManagedObjectUpdater {
-    func update(_ from: Self)
+    func update(_ mock: Self)
 }
 
 public class CoreDataArrayStorage<Item>: ArrayStorage
