@@ -8,7 +8,7 @@
 import XCTest
 @testable import SabyAppleStorage
 
-struct DummyItem: Codable, KeyIdentifiable {
+fileprivate struct DummyItem: Codable, KeyIdentifiable {
     typealias Key = UUID
     var key: UUID
 }
@@ -33,7 +33,7 @@ final class FileArrayStorageTests: XCTestCase {
         
         let storageManager: FileArrayStorage<DummyItem> = FileArrayStorage()
         
-        let processingCount = 100
+        let processingCount = 1000
         let removeCount = Int(processingCount / 10)
         
         // make items
@@ -52,7 +52,11 @@ final class FileArrayStorageTests: XCTestCase {
         
         // delete
         deleteTargetItems.forEach(storageManager.delete)
-        XCTAssertEqual(storageManager.get(limit: .unlimited).count, processingCount - removeCount)
+        let survivalCount = storageManager.get(limit: .unlimited).count
+        XCTAssertEqual(survivalCount, processingCount - removeCount)
+        
+        // survival
+        XCTAssertEqual(storageManager.get(limit: .count(UInt.max)).count, survivalCount)
     }
     
     func testDeleteInEmptyStorarges() {
@@ -63,5 +67,12 @@ final class FileArrayStorageTests: XCTestCase {
         XCTAssertEqual(storageManager.get(limit: .unlimited).count, 0)
         storageManager.delete(DummyItem(key: UUID()))
         XCTAssertEqual(storageManager.get(limit: .unlimited).count, 0)
+    }
+    
+    func testGetInEmptyStorages() {
+        defer { FileArrayStorageTests.clear() }
+        
+        let storageManager: FileArrayStorage<DummyItem> = FileArrayStorage()
+        XCTAssertEqual(storageManager.get(limit: .count(UInt.max)).count, 0)
     }
 }
