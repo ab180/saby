@@ -11,11 +11,11 @@ public class FileArrayStorage<Item>: ArrayStorage where Item: KeyIdentifiable & 
     public typealias Value = Item
     
     public func push(_ value: Item) {
-        try? performer(item: value)(pushConverter)
+        try? write(item: value)(pushConverter)
     }
     
     public func delete(_ value: Item) {
-        try? performer(item: value)(deleteConverter)
+        try? write(item: value)(deleteConverter)
     }
     
     public func get(key: Item.Key) -> Item? {
@@ -62,7 +62,7 @@ public class FileArrayStorage<Item>: ArrayStorage where Item: KeyIdentifiable & 
     }
     
     private typealias DataConverter<O> = (O) throws -> Data
-    private func performer(item: Item) -> (DataConverter<Item>) throws -> Void {
+    private func write(item: Item) -> (DataConverter<Item>) throws -> Void {
         return { handler in
             guard let filePath = self.filePath else { throw URLError(.badURL) }
             try handler(item).write(to: filePath)
