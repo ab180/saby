@@ -130,7 +130,7 @@ fileprivate struct MockPrintService: LogService {
 }
 
 fileprivate func printAllLogs(_ logger: SabyAppleLogger.Logger) {
-    logger.falut("TEST: FAULT LOG")
+    logger.fault("TEST: FAULT LOG")
     logger.error("TEST: ERROR LOG")
     logger.info("TEST: INFO LOG")
     logger.debug("TEST: DEFAULT LOG")

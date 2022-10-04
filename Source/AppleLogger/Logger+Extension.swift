@@ -18,7 +18,7 @@ extension Logger {
         self.log(level: .error, message)
     }
     
-    public func falut(_ message: String) {
+    public func fault(_ message: String) {
         self.log(level: .fault, message)
     }
 }
