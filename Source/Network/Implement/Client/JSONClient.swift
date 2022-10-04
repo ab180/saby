@@ -8,7 +8,6 @@
 import Foundation
 
 import SabyConcurrency
-import SabyJSON
 import SabySafe
 
 public final class JSONClient<Request: Encodable, Response: Decodable>: Client {
@@ -53,15 +52,9 @@ extension JSONClient {
         body: Request,
         optionBlock: (inout URLRequest) -> Void = { _ in }
     ) -> Promise<Response> {
-        guard let json = try? JSON.encode(body) else {
+        guard let body = try? self.encoder.encode(body) else {
             return Promise<Response>.rejected(InternalError.bodyIsNotEncodable)
         }
-        
-        let data = try? json.datafy()
-        if !json.isNull, data == nil {
-            return Promise<Response>.rejected(InternalError.bodyJSONIsNotDatafiable)
-        }
-        let body = data
         
         return client.request(
             url: url,
@@ -93,6 +86,5 @@ extension JSONClient {
     public enum InternalError: Error {
         case responseDataIsNotDecodable
         case bodyIsNotEncodable
-        case bodyJSONIsNotDatafiable
     }
 }
