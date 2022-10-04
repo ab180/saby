@@ -30,15 +30,11 @@ where Item: KeyIdentifiable & NSManagedObject & ManagedObjectUpdater {
     }
     
     public func get(limit: GetLimit) -> [Item] {
-        let items = getAll()
-        
         switch limit {
         case .unlimited:
-            return items
+            return getAll()
         case .count(let uInt):
-            let maxCount: Int
-            (uInt >= items.count) ? (maxCount = items.count) : (maxCount = Int(uInt))
-            return Array(items[0..<maxCount])
+            return getAll(limit: Int(uInt % .max))
         }
     }
     
@@ -76,12 +72,14 @@ where Item: KeyIdentifiable & NSManagedObject & ManagedObjectUpdater {
         }
     }
     
-    private func fetchRequest(for name: String) -> NSFetchRequest<NSFetchRequestResult> {
-        NSFetchRequest<NSFetchRequestResult>(entityName: name)
+    private func fetchRequest(for name: String, limit: Int? = nil) -> NSFetchRequest<NSFetchRequestResult> {
+        let result = NSFetchRequest<NSFetchRequestResult>(entityName: name)
+        if let limit = limit { result.fetchLimit = limit }
+        return result
     }
     
-    func getAll() -> [Item] {
-        let request = fetchRequest(for: String(describing: Item.self))
+    func getAll(limit: Int? = nil) -> [Item] {
+        let request = fetchRequest(for: String(describing: Item.self), limit: limit)
         let items = try? container.viewContext.fetch(request) as? [Item]
         return items ?? []
     }
