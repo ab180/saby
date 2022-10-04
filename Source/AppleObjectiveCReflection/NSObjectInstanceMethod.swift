@@ -88,4 +88,39 @@ extension NSObject.Instance {
         
         return function(object, instanceMethod.selector, argument0, argument1, argument2)
     }
+    
+    @discardableResult
+    public func call(
+        _ instanceMethod: NSObject.InstanceMethod,
+        with argument0: Any?,
+        with argument1: Any?,
+        with argument2: Any?,
+        with argument3: Any?
+    ) -> Any? {
+        guard object == instanceMethod.object else { return nil }
+        
+        typealias Function = @convention(c)(NSObject, Selector, Any?, Any?, Any?, Any?)->Any?
+        let implementation = method_getImplementation(instanceMethod.method)
+        let function = unsafeBitCast(implementation, to: Function.self)
+        
+        return function(object, instanceMethod.selector, argument0, argument1, argument2, argument3)
+    }
+    
+    @discardableResult
+    public func call(
+        _ instanceMethod: NSObject.InstanceMethod,
+        with argument0: Any?,
+        with argument1: Any?,
+        with argument2: Any?,
+        with argument3: Any?,
+        with argument4: Any?
+    ) -> Any? {
+        guard object == instanceMethod.object else { return nil }
+        
+        typealias Function = @convention(c)(NSObject, Selector, Any?, Any?, Any?, Any?, Any?)->Any?
+        let implementation = method_getImplementation(instanceMethod.method)
+        let function = unsafeBitCast(implementation, to: Function.self)
+        
+        return function(object, instanceMethod.selector, argument0, argument1, argument2, argument3, argument4)
+    }
 }
