@@ -8,8 +8,12 @@
 import Foundation
 
 extension Fetcher {
+    public typealias AnyFetcher = SabyAppleDataFetcher.AnyFetcher<Self.Value>
+}
+
+extension Fetcher {
     @inline(__always) @inlinable
-    public func toAnyFetcher() -> AnyFetcher<Value> {
+    public func toAnyFetcher() -> AnyFetcher {
         AnyFetcher(self)
     }
 }

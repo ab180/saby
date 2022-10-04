@@ -10,8 +10,12 @@ import Foundation
 import SabyConcurrency
 
 extension Client {
+    public typealias AnyClient = SabyNetwork.AnyClient<Self.Request, Self.Response>
+}
+
+extension Client {
     @inline(__always) @inlinable
-    public func toAnyClient() -> AnyClient<Request, Response> {
+    public func toAnyClient() -> AnyClient {
         AnyClient(self)
     }
 }
