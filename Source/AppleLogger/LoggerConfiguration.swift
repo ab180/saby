@@ -19,7 +19,7 @@ public struct LoggerConfiguration {
     /// Use `print` to show logs  instead of `OS_log` when set to `true`
     public var usePrint: Bool
     
-    init(logLevel: LogLevel?, usePrint: Bool) {
+    public init(logLevel: LogLevel?, usePrint: Bool) {
         self.logLevel = logLevel
         self.usePrint = usePrint
     }
