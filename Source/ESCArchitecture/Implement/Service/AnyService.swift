@@ -6,8 +6,12 @@
 //
 
 extension Service {
+    public typealias AnyService = SabyESCArchitecture.AnyService<Self.Command, Self.Result>
+}
+
+extension Service {
     @inline(__always) @inlinable
-    public func toAnyService() -> AnyService<Command, Result> {
+    public func toAnyService() -> AnyService {
         AnyService(self)
     }
 }
