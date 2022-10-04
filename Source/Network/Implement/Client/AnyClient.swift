@@ -35,14 +35,14 @@ public struct AnyClient<Request, Response>: Client {
     
     @inline(__always) @inlinable
     public func request(
-        _ url: URL,
+        url: URL,
         method: ClientMethod,
         header: ClientHeader,
         body: Request,
         optionBlock: (inout URLRequest) -> Void
     ) -> Promise<Response> {
         clientBox.request(
-            url,
+            url: url,
             method: method,
             header: header,
             body: body,
@@ -58,7 +58,7 @@ class AnyClientBoxBase<Request, Response>: Client {
     
     @inline(__always) @inlinable
     func request(
-        _ url: URL,
+        url: URL,
         method: ClientMethod,
         header: ClientHeader,
         body: Request,
@@ -83,14 +83,14 @@ final class AnyClientBox<ActualClient: Client>: AnyClientBoxBase<
 
     @inline(__always) @inlinable
     override func request(
-        _ url: URL,
+        url: URL,
         method: ClientMethod,
         header: ClientHeader,
         body: Request,
         optionBlock: (inout URLRequest) -> Void
     ) -> Promise<Response> {
         client.request(
-            url,
+            url: url,
             method: method,
             header: header,
             body: body,

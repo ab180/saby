@@ -33,7 +33,7 @@ extension DataClient {
 
 extension DataClient {
     public func request(
-        _ url: URL,
+        url: URL,
         method: ClientMethod = .get,
         header: ClientHeader = [:],
         body: Data? = nil,

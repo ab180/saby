@@ -38,16 +38,16 @@ extension JSONClient {
     
 extension JSONClient {
     public func request<RequestValue>(
-        _ url: URL,
+        url: URL,
         method: ClientMethod = .get,
         header: ClientHeader = [:],
         optionBlock: (inout URLRequest) -> Void = { _ in }
     ) -> Promise<Response> where RequestValue? == Request {
-        request(url, method: method, header: header, body: nil, optionBlock: optionBlock)
+        request(url: url, method: method, header: header, body: nil, optionBlock: optionBlock)
     }
     
     public func request(
-        _ url: URL,
+        url: URL,
         method: ClientMethod = .get,
         header: ClientHeader = [:],
         body: Request,
@@ -64,7 +64,7 @@ extension JSONClient {
         let body = data
         
         return client.request(
-            url,
+            url: url,
             method: method,
             header: header,
             body: body,
