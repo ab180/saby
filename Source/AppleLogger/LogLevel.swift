@@ -31,6 +31,32 @@ public enum LogLevel: Comparable, CaseIterable {
         }
     }
     
+    var osLogType: OSLogType {
+        switch self {
+        case .debug:
+            return .default
+        case .info:
+            return .info
+        case .error:
+            return .error
+        case .fault:
+            return .fault
+        }
+    }
+    
+    var osLog: OSLog {
+        switch self {
+        case .debug:
+            return .default
+        case .info:
+            return .info
+        case .error:
+            return .error
+        case .fault:
+            return .falut
+        }
+    }
+    
     func isHigherOrEqual(to level: LogLevel) -> Bool {
         return self >= level
     }
