@@ -14,24 +14,24 @@ extension Service {
 
 public struct AnyService<Command, Result>: Service {
     @usableFromInline
-    let requesterBox: AnyServiceBoxBase<Command, Result>
+    let serviceBox: AnyServiceBoxBase<Command, Result>
     
     @inline(__always) @inlinable
-    public init<ActualService: Service>(_ requester: ActualService) where
+    public init<ActualService: Service>(_ service: ActualService) where
         ActualService.Command == Command,
         ActualService.Result == Result
     {
-        if let anyService = requester as? AnyService<Command, Result> {
-            self.requesterBox = anyService.requesterBox
+        if let anyService = service as? AnyService<Command, Result> {
+            self.serviceBox = anyService.serviceBox
         }
         else {
-            self.requesterBox = AnyServiceBox(requester)
+            self.serviceBox = AnyServiceBox(service)
         }
     }
     
     @inline(__always) @inlinable
-    public func request(_ command: Command) -> Result {
-        requesterBox.request(command)
+    public func handle(_ command: Command) -> Result {
+        serviceBox.handle(command)
     }
 }
 
@@ -41,7 +41,7 @@ class AnyServiceBoxBase<Command, Result>: Service {
     init() {}
     
     @inline(__always) @inlinable
-    func request(_ command: Command) -> Result { fatalError() }
+    func handle(_ command: Command) -> Result { fatalError() }
 }
 
 @usableFromInline
@@ -50,15 +50,15 @@ final class AnyServiceBox<ActualService: Service>: AnyServiceBoxBase<
     ActualService.Result
 > {
     @usableFromInline
-    let requester: ActualService
+    let service: ActualService
     
     @inline(__always) @inlinable
-    init(_ requester: ActualService) {
-        self.requester = requester
+    init(_ service: ActualService) {
+        self.service = service
     }
 
     @inline(__always) @inlinable
-    override func request(_ command: Command) -> Result {
-        requester.request(command)
+    override func handle(_ command: Command) -> Result {
+        service.handle(command)
     }
 }

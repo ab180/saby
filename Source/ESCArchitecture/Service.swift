@@ -9,5 +9,5 @@ public protocol Service {
     associatedtype Command
     associatedtype Result
     
-    func request(_ command: Command) -> Result
+    func handle(_ command: Command) -> Result
 }
