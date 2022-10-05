@@ -5,7 +5,7 @@
 //  Created by WOF on 2022/09/06.
 //
 
-import Foundation
+import SabyConcurrency
 
 extension DictionaryStorage {
     @inline(__always) @inlinable
@@ -47,13 +47,18 @@ public struct AnyDictionaryStorage<
     }
     
     @inline(__always) @inlinable
-    public func get(key: Key) -> Value {
+    public func get(key: Key) -> Value? {
         dictionaryStorageBox.get(key: key)
     }
     
     @inline(__always) @inlinable
     public func get(limit: GetLimit) -> [(Key, Value)] {
         dictionaryStorageBox.get(limit: limit)
+    }
+    
+    @inline(__always) @inlinable
+    public func save() -> Promise<Void> {
+        dictionaryStorageBox.save()
     }
 }
 
@@ -73,12 +78,17 @@ class AnyDictionaryStorageBoxBase<Key: Hashable, Value>: DictionaryStorage {
     }
     
     @inline(__always) @inlinable
-    func get(key: Key) -> Value {
+    func get(key: Key) -> Value? {
         fatalError()
     }
     
     @inline(__always) @inlinable
     func get(limit: GetLimit) -> [(Key, Value)] {
+        fatalError()
+    }
+    
+    @inline(__always) @inlinable
+    public func save() -> Promise<Void> {
         fatalError()
     }
 }
@@ -109,12 +119,17 @@ final class AnyDictionaryStorageBox<
     }
     
     @inline(__always) @inlinable
-    override func get(key: Key) -> Value {
+    override func get(key: Key) -> Value? {
         dictionaryStorage.get(key: key)
     }
     
     @inline(__always) @inlinable
     override func get(limit: GetLimit) -> [(Key, Value)] {
         dictionaryStorage.get(limit: limit)
+    }
+    
+    @inline(__always) @inlinable
+    override func save() -> Promise<Void> {
+        dictionaryStorage.save()
     }
 }
