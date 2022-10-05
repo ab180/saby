@@ -12,8 +12,36 @@ public protocol ManagedObjectUpdater {
     func update(_ mock: Self)
 }
 
-public class CoreDataArrayStorage<Item>: ArrayStorage
-where Item: KeyIdentifiable & NSManagedObject & ManagedObjectUpdater {
+// MARK: CoreDataArrayStorage
+public final class CoreDataArrayStorage<Item>  where
+    Item: (
+        KeyIdentifiable
+        & NSManagedObject
+        & ManagedObjectUpdater
+    )
+{
+    private let container: NSPersistentContainer
+    private var hasChanges: Bool { container.viewContext.hasChanges }
+    
+    public let mockContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
+    
+    public init?(bundle: Bundle, modelNamed: String) {
+        guard
+            let url = bundle.url(forResource: modelNamed, withExtension: "momd"),
+            let managedObjectModel = NSManagedObjectModel(contentsOf: url)
+        else { return nil }
+        
+        self.container = NSPersistentContainer(
+            name: modelNamed, managedObjectModel: managedObjectModel
+        )
+        
+        container.loadPersistentStores { _, error in
+            guard nil == error else { fatalError() }
+        }
+    }
+}
+
+extension CoreDataArrayStorage: ArrayStorage {
     public typealias Value = Item
     
     public func push(_ value: Item) {
@@ -37,7 +65,9 @@ where Item: KeyIdentifiable & NSManagedObject & ManagedObjectUpdater {
             return getAll(limit: Int(uInt % .max))
         }
     }
-    
+}
+
+extension CoreDataArrayStorage {
     public func save() throws {
         try container.viewContext.save()
     }
@@ -50,42 +80,23 @@ where Item: KeyIdentifiable & NSManagedObject & ManagedObjectUpdater {
         let request = fetchRequest(for: String(describing: Item.self))
         try container.viewContext.execute(NSBatchDeleteRequest(fetchRequest: request))
     }
-    
-    // MARK: -
-    public let mockContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
-    private let container: NSPersistentContainer
-    
-    private var hasChanges: Bool { container.viewContext.hasChanges }
-    
-    public init?(bundle: Bundle, modelNamed: String) {
-        guard
-            let url = bundle.url(forResource: modelNamed, withExtension: "momd"),
-            let managedObjectModel = NSManagedObjectModel(contentsOf: url)
-        else { return nil }
-        
-        self.container = NSPersistentContainer(
-            name: modelNamed, managedObjectModel: managedObjectModel
-        )
-        
-        container.loadPersistentStores { _, error in
-            guard nil == error else { fatalError() }
-        }
-    }
-    
+}
+
+extension CoreDataArrayStorage {
     private func fetchRequest(for name: String, limit: Int? = nil) -> NSFetchRequest<NSFetchRequestResult> {
         let result = NSFetchRequest<NSFetchRequestResult>(entityName: name)
         if let limit = limit { result.fetchLimit = limit }
         return result
     }
     
-    func getAll(limit: Int? = nil) -> [Item] {
+    private func getAll(limit: Int? = nil) -> [Item] {
         let request = fetchRequest(for: String(describing: Item.self), limit: limit)
         let items = try? container.viewContext.fetch(request) as? [Item]
         return items ?? []
     }
 }
 
-// MARK: - Extensions
+// MARK: - NSManagedObject
 fileprivate extension NSManagedObject {
     static func creator<O>() -> (NSManagedObjectContext) -> O? {
         {
