@@ -7,41 +7,30 @@
 
 import Foundation
 
-public class FileArrayStorage<Item>: ArrayStorage where Item: KeyIdentifiable & Codable {
-    public typealias Value = Item
+// MARK: FileArrayStorage
+public final class FileArrayStorage<Item> where
+    Item: (
+        KeyIdentifiable
+        & Codable
+    )
+{
+    private let queue: OperationQueue = {
+        let result = OperationQueue()
+        result.maxConcurrentOperationCount = 1
+        return result
+    }()
     
-    public func push(_ value: Item) {
-        try? write(item: value)(pushConverter)
+    private let directoryName: String
+    
+    public init(directoryName: String = "saby.storage") {
+        self.directoryName = directoryName
     }
     
-    public func delete(_ value: Item) {
-        try? write(item: value)(deleteConverter)
-    }
-    
-    public func get(key: Item.Key) -> Item? {
-        getAll().first { $0.key == key }
-    }
-    
-    public func get(limit: GetLimit) -> [Item] {
-        let items = getAll()
-        
-        switch limit {
-        case .unlimited:
-            return items
-        case .count(let uInt):
-            let maxCount: Int
-            (uInt >= items.count) ? (maxCount = items.count) : (maxCount = Int(uInt))
-            return Array(items[0..<maxCount])
-        }
-    }
-    
-    // MARK: - Inner Methods
     private var filePath: URL? {
         let manager = FileManager.default
         let urls = manager.urls(for: .libraryDirectory, in: .userDomainMask)
         guard false == urls.isEmpty else { return nil }
         
-        let directoryName = "saby.storage"
         var result = urls[0].appendingPathComponent(directoryName)
         if false == manager.fileExists(atPath: result.path) {
             try? manager.createDirectory(at: result, withIntermediateDirectories: true)
@@ -50,15 +39,63 @@ public class FileArrayStorage<Item>: ArrayStorage where Item: KeyIdentifiable & 
         result = result.appendingPathComponent(String(describing: Item.self))
         return result
     }
+}
+
+
+extension FileArrayStorage: ArrayStorage {
+    public typealias Value = Item
     
-    private func getAll() -> [Item] {
-        guard
-            let filePath = self.filePath,
-            let data = try? Data(contentsOf: filePath),
-            let decodedData = try? PropertyListDecoder().decode([Item].self, from: data)
-        else { return [] }
+    public func push(_ value: Item) {
+        queue.addOperation {
+            try? self.write(item: value)(self.pushConverter)
+        }
+    }
+    
+    public func delete(_ value: Item) {
+        queue.addOperation {
+            try? self.write(item: value)(self.deleteConverter)
+        }
+    }
+    
+    public func get(key: Item.Key) -> Item? {
+        (try? getAll())?.first { $0.key == key }
+    }
+    
+    public func get(limit: GetLimit) -> [Item] {
+        let items = (try? getAll()) ?? []
         
-        return decodedData
+        switch limit {
+        case .unlimited:
+            return items
+        case .count(let uInt):
+            let maxCount: Int
+            (uInt >= items.count) ? (maxCount = items.count) : (maxCount = Int(uInt))
+            return Array(items[0 ..< maxCount])
+        }
+    }
+}
+
+extension FileArrayStorage {
+    func addOperation(_ block: BlockOperation) {
+        queue.addOperation(block)
+    }
+}
+
+extension FileArrayStorage {
+    private func getAll() throws -> [Item] {
+        guard
+            let filePath = self.filePath
+        else { throw URLError(.badURL) }
+        
+        do {
+            let data = try Data(contentsOf: filePath)
+            return try PropertyListDecoder().decode([Item].self, from: data)
+        } catch (let error) {
+            let nsError = error as NSError
+            if (nsError.domain == NSCocoaErrorDomain) { return [] }
+            
+            throw error
+        }
     }
     
     private typealias DataConverter<O> = (O) throws -> Data
@@ -70,13 +107,13 @@ public class FileArrayStorage<Item>: ArrayStorage where Item: KeyIdentifiable & 
     }
     
     private func pushConverter(_ value: Item) throws -> Data {
-        var items = getAll()
+        var items = try getAll()
         items.append(value)
         return try PropertyListEncoder().encode(items)
     }
     
     private func deleteConverter(_ value: Item) throws -> Data {
-        let items = getAll().filter { $0.key != value.key }
+        let items = try getAll().filter { $0.key != value.key }
         return try PropertyListEncoder().encode(items)
     }
 }
