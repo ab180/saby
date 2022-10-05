@@ -5,7 +5,7 @@
 //  Created by WOF on 2022/09/06.
 //
 
-import Foundation
+import SabyConcurrency
 
 extension ArrayStorage {
     @inline(__always) @inlinable
@@ -49,6 +49,11 @@ public struct AnyArrayStorage<Value: KeyIdentifiable>: ArrayStorage {
     public func get(limit: GetLimit) -> [Value] {
         arrayStorageBox.get(limit: limit)
     }
+    
+    @inline(__always) @inlinable
+    public func save() -> Promise<Void> {
+        arrayStorageBox.save()
+    }
 }
 
 @usableFromInline
@@ -73,6 +78,11 @@ class AnyArrayStorageBoxBase<Value: KeyIdentifiable>: ArrayStorage {
     
     @inline(__always) @inlinable
     func get(limit: GetLimit) -> [Value] {
+        fatalError()
+    }
+    
+    @inline(__always) @inlinable
+    func save() -> Promise<Void> {
         fatalError()
     }
 }
@@ -109,5 +119,10 @@ final class AnyArrayStorageBox<
     @inline(__always) @inlinable
     override func get(limit: GetLimit) -> [Value] {
         arrayStorage.get(limit: limit)
+    }
+    
+    @inline(__always) @inlinable
+    override func save() -> Promise<Void> {
+        arrayStorage.save()
     }
 }
