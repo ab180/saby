@@ -93,31 +93,6 @@ extension Contract {
                       onResolved: onResolved,
                       onRejected: onRejected)
         }
-        
-        init(promiseAtomic: Atomic<Promise<Void>>,
-             onResolved: @escaping (Value) -> Promise<Void>,
-             onRejected: @escaping (Error) -> Promise<Void>)
-        {
-            self.onResolved = { value in
-                promiseAtomic.mutate { promise in
-                    promise.then { onResolved(value) }
-                }
-            }
-            self.onRejected = { error in
-                promiseAtomic.use { promise in
-                    promise.then { onRejected(error) }
-                }
-            }
-        }
-        
-        init(on queue: DispatchQueue,
-             onResolved: @escaping (Value) -> Promise<Void>,
-             onRejected: @escaping (Error) -> Promise<Void>)
-        {
-            self.init(promiseAtomic: Atomic(Promise<Void>.resolved(on: queue, ())),
-                      onResolved: onResolved,
-                      onRejected: onRejected)
-        }
     }
     
     public enum Setting where Value == Void {
