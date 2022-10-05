@@ -5,7 +5,7 @@
 //  Created by WOF on 2022/08/25.
 //
 
-import Foundation
+import SabyConcurrency
 
 public protocol ArrayStorage {
     associatedtype Value: KeyIdentifiable
@@ -14,4 +14,5 @@ public protocol ArrayStorage {
     func delete(_ value: Value)
     func get(key: Value.Key) -> Value?
     func get(limit: GetLimit) -> [Value]
+    func save() -> Promise<Void>
 }
