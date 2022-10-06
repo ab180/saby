@@ -52,7 +52,7 @@ final class FileArrayStorageTests: XCTestCase {
         let storage = FileArrayStorageTests.storage
         let testItems = TestItemGroup()
         
-        let expectation = expectation(description: "testRemove")
+        let expectation = expectation(description: "testPush")
         expectation.expectedFulfillmentCount = 1
         
         testItems.pushItems.forEach(storage.push)
@@ -79,11 +79,13 @@ final class FileArrayStorageTests: XCTestCase {
         storage.save().then { _ in
             let fetchedItems = storage.get(limit: .unlimited)
             fetchedItems[0 ... testItems.removeCount - 1].forEach(storage.delete)
-        }.then { _ in
-            let fetchedItems = storage.get(limit: .unlimited)
-            XCTAssertEqual(fetchedItems.count, testItems.pushCount - testItems.removeCount)
             
-            expectation.fulfill()
+            storage.save().then { _ in
+                let fetchedItems = storage.get(limit: .unlimited)
+                XCTAssertEqual(fetchedItems.count, testItems.pushCount - testItems.removeCount)
+                
+                expectation.fulfill()
+            }
         }
         
         wait(for: [expectation], timeout: 5)
