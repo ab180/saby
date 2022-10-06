@@ -10,18 +10,20 @@ import Foundation
 public struct LoggerConfiguration {
     /// A default logger configuration object
     public static var `default`: LoggerConfiguration {
-        LoggerConfiguration(logLevel: .debug, usePrint: false)
+        LoggerConfiguration()
     }
     
     /// A variable indicating logger's logging level. Set  to `.none` to not show logs.
-    public var logLevel: LogLevel?
+    public var logLevel: LogLevel? = .debug
     
     /// Use `print` to show logs  instead of `OS_log` when set to `true`
-    public var usePrint: Bool
+    public var usePrint: Bool = false
     
-    public init(logLevel: LogLevel?, usePrint: Bool) {
-        self.logLevel = logLevel
-        self.usePrint = usePrint
+    public var subSystem: String = Bundle.main.bundleIdentifier ?? "SabyAppleLogger"
+    
+    public init() {}
+    
+    public init(subSystem: String) {
+        self.subSystem = subSystem
     }
 }
-

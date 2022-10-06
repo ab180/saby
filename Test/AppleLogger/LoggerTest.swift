@@ -21,7 +21,11 @@ final class LoggerTest: XCTestCase {
     func test__configure() {
         let logger = Logger.shared
         let loggerConfiguration = logger.configuration
-        let mockConfiguration = LoggerConfiguration(logLevel: .none, usePrint: true)
+        
+        var mockConfiguration = LoggerConfiguration()
+        mockConfiguration.logLevel = .none
+        mockConfiguration.usePrint = true
+        
         XCTAssertNotEqual(loggerConfiguration.logLevel, mockConfiguration.logLevel)
         
         logger.configure(with: mockConfiguration)
