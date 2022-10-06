@@ -9,7 +9,7 @@ import Foundation
 import OSLog
 
 @available(iOS 10.0, *)
-public class Logger {
+public final class Logger {
     /// The shared singleton logger object
     public static let shared = Logger(configuration: LoggerConfiguration.default)
     
