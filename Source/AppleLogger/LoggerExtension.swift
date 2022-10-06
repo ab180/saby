@@ -23,3 +23,38 @@ extension Logger {
     }
 }
 
+extension Logger {
+    /// A copy of configuration object of this logger
+    public var configuration: LoggerConfiguration {
+        return loggerConfiguration
+    }
+}
+
+extension Logger {
+    /// Configures the instance with given configuration
+    public func configure(with configuration: LoggerConfiguration) {
+        loggerConfiguration = configuration
+    }
+    
+    /// Sets the instance's logging level to the given value
+    public func setLogLevel(to level: LogLevel) {
+        loggerConfiguration.logLevel = level
+    }
+}
+
+extension Logger {
+    /// Displays a log for specified level
+    func log(level: LogLevel, _ message: String) {
+        guard let loggerLevel = configuration.logLevel else {
+            return
+        }
+        
+        if level.isHigherOrEqual(to: loggerLevel) {
+            if configuration.usePrint {
+                logService.printLog(type: level, message)
+            } else {
+                logService.log("%s", log: level.osLog, type: level.osLogType, message)
+            }
+        }
+    }
+}
