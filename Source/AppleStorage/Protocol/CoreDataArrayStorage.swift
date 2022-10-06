@@ -5,7 +5,7 @@
 //  Created by MinJae on 9/27/22.
 //
 
-import Foundation
+import SabyConcurrency
 import CoreData
 
 public protocol ManagedObjectUpdater {
@@ -65,18 +65,17 @@ extension CoreDataArrayStorage: ArrayStorage {
             return getAll(limit: Int(uInt % .max))
         }
     }
+    
+    public func save() -> SabyConcurrency.Promise<Void> {
+        return Promise<Void>(on: .main) { resolve, reject in
+            try self.container.viewContext.save()
+            resolve(())
+        }
+    }
 }
 
 extension CoreDataArrayStorage {
-    public func save() throws {
-        try container.viewContext.save()
-    }
-    
-    public func rollback() {
-        container.viewContext.rollback()
-    }
-    
-    public func removeAll() throws {
+    func removeAll() throws {
         let request = fetchRequest(for: String(describing: Item.self))
         try container.viewContext.execute(NSBatchDeleteRequest(fetchRequest: request))
     }

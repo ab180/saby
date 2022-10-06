@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SabyConcurrency
 
 // MARK: FileArrayStorage
 public final class FileArrayStorage<Item> where
@@ -21,6 +22,13 @@ public final class FileArrayStorage<Item> where
     }()
     
     private let directoryName: String
+    private lazy var cachedItems: [Item] = (try? getAll()) ?? []
+    private var willDeleteItems: Set<Item.Key> = []
+    private var filterdItems: [Item] {
+        cachedItems.filter {
+            false == willDeleteItems.contains($0.key)
+        }
+    }
     
     public init(directoryName: String = "saby.storage") {
         self.directoryName = directoryName
@@ -46,31 +54,55 @@ extension FileArrayStorage: ArrayStorage {
     public typealias Value = Item
     
     public func push(_ value: Item) {
-        queue.addOperation {
-            try? self.write(item: value)(self.pushConverter)
-        }
+        cachedItems.append(value)
     }
     
     public func delete(_ value: Item) {
-        queue.addOperation {
-            try? self.write(item: value)(self.deleteConverter)
-        }
+        willDeleteItems.insert(value.key)
     }
     
     public func get(key: Item.Key) -> Item? {
-        (try? getAll())?.first { $0.key == key }
+        filterdItems.first { $0.key == key }
     }
     
     public func get(limit: GetLimit) -> [Item] {
-        let items = (try? getAll()) ?? []
-        
+        let filterdItems = self.filterdItems
         switch limit {
         case .unlimited:
-            return items
+            return filterdItems
         case .count(let uInt):
             let maxCount: Int
-            (uInt >= items.count) ? (maxCount = items.count) : (maxCount = Int(uInt))
-            return Array(items[0 ..< maxCount])
+            (uInt >= filterdItems.count) ? (maxCount = filterdItems.count) : (maxCount = Int(uInt))
+            return Array(filterdItems[0 ..< maxCount])
+        }
+    }
+    
+    public func save() -> SabyConcurrency.Promise<Void> {
+        return Promise<Void>(on: .main) { resolve, reject in
+            let completeBlock = BlockOperation {
+                resolve(())
+            }
+            
+            let saveBlock = BlockOperation {
+                
+                let savedData = self.filterdItems
+                
+                do {
+                    let data = try PropertyListEncoder().encode(savedData)
+                    guard let filePath = self.filePath else { throw URLError(.badURL) }
+                    try data.write(to: filePath)
+                    
+                    self.willDeleteItems = []
+                    self.cachedItems = (try? self.getAll()) ?? []
+                    
+                } catch {
+                    reject(error)
+                }
+            }
+            
+            completeBlock.addDependency(saveBlock)
+            self.queue.addOperation(completeBlock)
+            self.queue.addOperation(saveBlock)
         }
     }
 }
@@ -98,22 +130,14 @@ extension FileArrayStorage {
         }
     }
     
-    private typealias DataConverter<O> = (O) throws -> Data
-    private func write(item: Item) -> (DataConverter<Item>) throws -> Void {
-        return { handler in
-            guard let filePath = self.filePath else { throw URLError(.badURL) }
-            try handler(item).write(to: filePath)
-        }
-    }
-    
-    private func pushConverter(_ value: Item) throws -> Data {
-        var items = try getAll()
-        items.append(value)
-        return try PropertyListEncoder().encode(items)
-    }
-    
-    private func deleteConverter(_ value: Item) throws -> Data {
-        let items = try getAll().filter { $0.key != value.key }
-        return try PropertyListEncoder().encode(items)
+    func removeAll() {
+        let manager = FileManager.default
+        let urls = manager.urls(for: .libraryDirectory, in: .userDomainMask)
+        guard false == urls.isEmpty else { return }
+        
+        let result = urls[0].appendingPathComponent(directoryName)
+        try? manager.removeItem(at: result)
+        
+        cachedItems = (try? getAll()) ?? []
     }
 }
