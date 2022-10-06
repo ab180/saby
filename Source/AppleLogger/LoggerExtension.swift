@@ -1,6 +1,6 @@
 //
-//  File.swift
-//  
+//  LoggerExtension.swift
+//  SabyAppleLogger
 //
 //  Created by 이영빈 on 2022/09/30.
 //

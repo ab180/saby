@@ -1,6 +1,6 @@
 //
-//  File.swift
-//  
+//  LoggerConfiguration.swift
+//  SabyAppleLogger
 //
 //  Created by 이영빈 on 2022/09/30.
 //
@@ -24,3 +24,4 @@ public struct LoggerConfiguration {
         self.usePrint = usePrint
     }
 }
+
