@@ -22,8 +22,10 @@ public final class FileArrayStorage<Item> where
     }()
     
     private let directoryName: String
+    
     private lazy var cachedItems: [Item] = (try? getAll()) ?? []
     private var willDeleteItems: Set<Item.Key> = []
+    
     private var filterdItems: [Item] {
         cachedItems.filter {
             false == willDeleteItems.contains($0.key)
@@ -85,10 +87,8 @@ extension FileArrayStorage: ArrayStorage {
             
             let saveBlock = BlockOperation {
                 
-                let savedData = self.filterdItems
-                
                 do {
-                    let data = try PropertyListEncoder().encode(savedData)
+                    let data = try PropertyListEncoder().encode(self.filterdItems)
                     guard let filePath = self.filePath else { throw URLError(.badURL) }
                     try data.write(to: filePath)
                     

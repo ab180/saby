@@ -66,11 +66,18 @@ final class CoreDataArrayStorageTests: XCTestCase {
         let storage = CoreDataArrayStorageTests.storage
         let testItems = TestItemGroup(storage: storage)
         
+        let expectation = expectation(description: "testPush")
+        expectation.expectedFulfillmentCount = 1
+        
         testItems.pushItems.forEach(storage.push)
         storage.save().then { _ in
             XCTAssertEqual(storage.get(limit: .unlimited).count, testItems.pushCount)
             XCTAssertEqual(storage.get(limit: .count(UInt.max)).count, testItems.pushCount)
+            
+            expectation.fulfill()
         }
+        
+        wait(for: [expectation], timeout: 5)
     }
     
     func testRemove() {
@@ -79,13 +86,22 @@ final class CoreDataArrayStorageTests: XCTestCase {
         let storage = CoreDataArrayStorageTests.storage
         let testItems = TestItemGroup(storage: storage)
         
+        let expectation = expectation(description: "testRemove")
+        expectation.expectedFulfillmentCount = 1
+        
         testItems.pushItems.forEach(storage.push)
         storage.save().then { _ in
             let fetchedItems = storage.get(limit: .unlimited)
             fetchedItems[0 ... testItems.removeCount - 1].forEach(storage.delete)
-        }.then { _ in
-            let fetchedItems = storage.get(limit: .unlimited)
-            XCTAssertEqual(fetchedItems.count, testItems.pushCount - testItems.removeCount)
+            
+            storage.save().then { _ in
+                let fetchedItems = storage.get(limit: .unlimited)
+                XCTAssertEqual(fetchedItems.count, testItems.pushCount - testItems.removeCount)
+                
+                expectation.fulfill()
+            }
         }
+        
+        wait(for: [expectation], timeout: 5)
     }
 }
