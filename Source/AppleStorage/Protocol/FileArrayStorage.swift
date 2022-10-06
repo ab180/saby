@@ -23,11 +23,11 @@ public final class FileArrayStorage<Item> where
     
     private let directoryName: String
     
-    private lazy var cachedItems: [Item] = (try? getAll()) ?? []
+    private lazy var cachedItems: Atomic<[Item]> = Atomic((try? getAll()) ?? [])
     private var willDeleteItems: Set<Item.Key> = []
     
     private var filterdItems: [Item] {
-        cachedItems.filter {
+        cachedItems.capture.filter {
             false == willDeleteItems.contains($0.key)
         }
     }
@@ -56,7 +56,9 @@ extension FileArrayStorage: ArrayStorage {
     public typealias Value = Item
     
     public func push(_ value: Item) {
-        cachedItems.append(value)
+        cachedItems.mutate({ items in
+            return items + [value]
+        })
     }
     
     public func delete(_ value: Item) {
@@ -93,7 +95,7 @@ extension FileArrayStorage: ArrayStorage {
                     try data.write(to: filePath)
                     
                     self.willDeleteItems = []
-                    self.cachedItems = try self.getAll()
+                    self.cachedItems = Atomic(try self.getAll())
                     
                 } catch {
                     reject(error)
@@ -138,6 +140,7 @@ extension FileArrayStorage {
         let result = urls[0].appendingPathComponent(directoryName)
         try? manager.removeItem(at: result)
         
-        cachedItems = (try? getAll()) ?? []
+        let fetchedItems = (try? getAll()) ?? []
+        cachedItems = Atomic(fetchedItems)
     }
 }
