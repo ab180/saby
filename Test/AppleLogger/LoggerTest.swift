@@ -10,7 +10,7 @@ import OSLog
 @testable import SabyAppleLogger
 
 final class LoggerTest: XCTestCase {
-    func test_SetLogLevel() {
+    func test__set_log_level() {
         let logger = Logger.shared
         XCTAssertNotEqual(logger.configuration.logLevel, LogLevel.fault)
         
@@ -18,7 +18,7 @@ final class LoggerTest: XCTestCase {
         XCTAssertEqual(logger.configuration.logLevel, LogLevel.fault)
     }
     
-    func test_Configure() {
+    func test__configure() {
         let logger = Logger.shared
         let loggerConfiguration = logger.configuration
         let mockConfiguration = LoggerConfiguration(logLevel: .none, usePrint: true)
@@ -28,7 +28,7 @@ final class LoggerTest: XCTestCase {
         XCTAssertEqual(logger.configuration.logLevel, mockConfiguration.logLevel)
     }
     
-    func test_UsePrintOption() {
+    func test__use_print_option() {
         let printerExp = XCTestExpectation(description: "Should show print, not log")
         let loggerExp = XCTestExpectation(description: "Should show log, not print")
         
@@ -50,7 +50,7 @@ final class LoggerTest: XCTestCase {
         wait(for: [printerExp, loggerExp], timeout: 0.5)
     }
     
-    func test_ShouldNotShowLowerLevelLogs() {
+    func test__should_not_show_lower_level_logs() {
         let allLogLevels = LogLevel.allCases
         let numberOfLogLevels = allLogLevels.count
                 
@@ -78,7 +78,7 @@ final class LoggerTest: XCTestCase {
         }
     }
     
-    func test_ShouldNotShowAnyLogsWhenLevelIsNone() {
+    func test__should_not_show_any_logs_when_level_is_none() {
         let expectation = XCTestExpectation(description: "Should not show any logs")
         expectation.isInverted = true
         
