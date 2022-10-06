@@ -7,8 +7,9 @@
 
 import XCTest
 import Foundation
-import SabyAppleStorage
 import CoreData
+@testable import SabyAppleStorage
+
 
 @objc(CoredataTestItem)
 fileprivate class CoredataTestItem: NSManagedObject, KeyIdentifiable, ManagedObjectUpdater {
@@ -26,57 +27,65 @@ fileprivate class CoredataTestItem: NSManagedObject, KeyIdentifiable, ManagedObj
 
 
 final class CoreDataArrayStorageTests: XCTestCase {
+    
+    fileprivate static let storage = CoreDataArrayStorage<CoredataTestItem>(bundle: Bundle.module, modelNamed: "Model")!
+    
     class func clear() {
-        let storage = CoreDataArrayStorage<CoredataTestItem>(bundle: Bundle.module, modelNamed: "Model")
-        try? storage?.removeAll()
+        try? storage.removeAll()
+    }
+    
+    override class func setUp() {
+        clear()
     }
     
     override class func tearDown() {
         clear()
     }
     
-    func testBasic() {
+    private struct TestItemGroup {
+        private static let testCount = 100
+        
+        let pushCount = TestItemGroup.testCount
+        let removeCount = Int(TestItemGroup.testCount / 10)
+        
+        var pushItems: [CoredataTestItem] = []
+        var removeItems: [CoredataTestItem] = []
+        init(storage: CoreDataArrayStorage<CoredataTestItem>) {
+            for index in Range(0 ... pushCount - 1) {
+                let item = CoredataTestItem(context: storage.mockContext)
+                item.key = UUID()
+                pushItems.append(item)
+                if removeCount > index { removeItems.append(item) }
+            }
+        }
+    }
+    
+    func testPush() {
         defer { CoreDataArrayStorageTests.clear() }
         
-        let storage = CoreDataArrayStorage<CoredataTestItem>(bundle: Bundle.module, modelNamed: "Model")
-        XCTAssertNotNil(storage)
-        guard let storage = storage else { return }
+        let storage = CoreDataArrayStorageTests.storage
+        let testItems = TestItemGroup(storage: storage)
         
-        let data = storage.get(limit: .unlimited)
-        XCTAssertEqual(data.count, 0)
-        
-        let processingCount = 1000
-        let removeCount = Int(processingCount / 10)
-        
-        var appendTargetItems: [CoredataTestItem] = []
-        for _ in Range(0 ... processingCount - 1) {
-            let item = CoredataTestItem(context: storage.mockContext)
-            item.key = UUID()
-            appendTargetItems.append(item)
+        testItems.pushItems.forEach(storage.push)
+        storage.save().then { _ in
+            XCTAssertEqual(storage.get(limit: .unlimited).count, testItems.pushCount)
+            XCTAssertEqual(storage.get(limit: .count(UInt.max)).count, testItems.pushCount)
         }
+    }
+    
+    func testRemove() {
+        defer { CoreDataArrayStorageTests.clear() }
         
-        // Append
-        appendTargetItems.forEach(storage.push)
-        try? storage.save()
-        var fetchedItems = storage.get(limit: .unlimited)
-        XCTAssertEqual(fetchedItems.count, processingCount)
-        XCTAssertEqual(storage.get(limit: .count(UInt.max)).count, processingCount)
+        let storage = CoreDataArrayStorageTests.storage
+        let testItems = TestItemGroup(storage: storage)
         
-        // Delete
-        fetchedItems[0 ... removeCount - 1].forEach(storage.delete)
-        try? storage.save()
-        fetchedItems = storage.get(limit: .unlimited)
-        XCTAssertEqual(fetchedItems.count, processingCount - removeCount)
-        
-        // Rollback
-        fetchedItems[0 ... removeCount - 1].forEach(storage.delete)
-        storage.rollback()
-        fetchedItems = storage.get(limit: .unlimited)
-        XCTAssertEqual(fetchedItems.count, processingCount - removeCount)
-        
-        // Remove All
-        try? storage.removeAll()
-        fetchedItems = storage.get(limit: .unlimited)
-        XCTAssertEqual(fetchedItems.count, 0)
+        testItems.pushItems.forEach(storage.push)
+        storage.save().then { _ in
+            let fetchedItems = storage.get(limit: .unlimited)
+            fetchedItems[0 ... testItems.removeCount - 1].forEach(storage.delete)
+        }.then { _ in
+            let fetchedItems = storage.get(limit: .unlimited)
+            XCTAssertEqual(fetchedItems.count, testItems.pushCount - testItems.removeCount)
+        }
     }
 }
