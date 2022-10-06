@@ -93,7 +93,7 @@ extension FileArrayStorage: ArrayStorage {
                     try data.write(to: filePath)
                     
                     self.willDeleteItems = []
-                    self.cachedItems = (try? self.getAll()) ?? []
+                    self.cachedItems = try self.getAll()
                     
                 } catch {
                     reject(error)
