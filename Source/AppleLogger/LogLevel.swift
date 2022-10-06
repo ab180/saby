@@ -1,6 +1,6 @@
 //
-//  File.swift
-//  
+//  LogLevel.swift
+//  SabyAppleLogger
 //
 //  Created by 이영빈 on 2022/10/04.
 //
