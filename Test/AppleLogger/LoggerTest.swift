@@ -20,30 +20,34 @@ final class LoggerTest: XCTestCase {
     
     func test__configure() {
         let logger = Logger.shared
-        let loggerConfiguration = logger.configuration
+        let configBeforeChange = logger.configuration
         
-        var mockConfiguration = LoggerSetting()
-        mockConfiguration.logLevel = .none
-        mockConfiguration.usePrint = true
+        var configAfterChange = Logger.Setting()
+        configAfterChange.logLevel = .none
+        configAfterChange.usePrint = true
+        configAfterChange.category = "network"
+        configAfterChange.subsystem = "SomeApp"
         
-        XCTAssertNotEqual(loggerConfiguration.logLevel, mockConfiguration.logLevel)
-        
-        logger.configure(with: mockConfiguration)
-        XCTAssertEqual(logger.configuration.logLevel, mockConfiguration.logLevel)
+        XCTAssertNotEqual(configBeforeChange.logLevel, configAfterChange.logLevel)
+        XCTAssertNotEqual(configBeforeChange.osLog, configAfterChange.osLog)
+
+        logger.configure(with: configAfterChange)
+        XCTAssertEqual(logger.configuration.logLevel, configAfterChange.logLevel)
+        XCTAssertEqual(logger.configuration.osLog, configAfterChange.osLog)
     }
     
     func test__use_print_option() {
         let printerExp = XCTestExpectation(description: "Should show print, not log")
         let loggerExp = XCTestExpectation(description: "Should show log, not print")
         
-        var loggerConfiguration = LoggerSetting.default
-        loggerConfiguration.usePrint = true
+        var commonConfiguration = Logger.Setting.default
+        commonConfiguration.usePrint = true
         
-        let testPrinter = Logger(configuration: loggerConfiguration)
+        let testPrinter = Logger(configuration: commonConfiguration)
         testPrinter.logService = MockPrintService(expectation: printerExp, showLogs: false)
         
-        loggerConfiguration.usePrint = false
-        let testLogger = Logger(configuration: loggerConfiguration)
+        commonConfiguration.usePrint = false
+        let testLogger = Logger(configuration: commonConfiguration)
         testLogger.logService = MockLogService(expectation: loggerExp, showLogs: false)
         
         // XCTFail will be triggered if `log` is called in this case.
@@ -61,7 +65,7 @@ final class LoggerTest: XCTestCase {
         for levelIndex in allLogLevels.indices {
             let level = allLogLevels[levelIndex]
             
-            var loggerConfiguration = LoggerSetting.default
+            var loggerConfiguration = Logger.Setting.default
             loggerConfiguration.logLevel = level
             
             let testLogger = Logger(configuration: loggerConfiguration)
@@ -86,10 +90,10 @@ final class LoggerTest: XCTestCase {
         let expectation = XCTestExpectation(description: "Should not show any logs")
         expectation.isInverted = true
         
-        var loggerConfiguration = LoggerSetting.default
-        loggerConfiguration.logLevel = .none
+        var configuration = Logger.Setting.default
+        configuration.logLevel = .none
         
-        let testLogger = Logger(configuration: loggerConfiguration)
+        let testLogger = Logger(configuration: configuration)
         testLogger.logService = MockLogService(expectation: expectation, showLogs: true)
         
         printAllLogs(testLogger)
