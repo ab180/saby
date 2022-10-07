@@ -16,7 +16,7 @@ extension Logger {
             if configuration.usePrint {
                 logService.printLog(type: level, message)
             } else {
-                logService.log("%s", log: level.osLog, type: level.osLogType, message)
+                logService.log("%s", log: configuration.osLog, type: level.osLogType, message)
             }
         }
     }

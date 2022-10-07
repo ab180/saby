@@ -12,7 +12,6 @@ import OSLog
 /// It basically follows Apple's unified logging system.
 /// `default` is the lowest level while `fault` is the highest.
 public enum LogLevel: Comparable, CaseIterable {
-    /// debug
     case debug
     case info
     case error
@@ -41,19 +40,6 @@ public enum LogLevel: Comparable, CaseIterable {
             return .error
         case .fault:
             return .fault
-        }
-    }
-    
-    var osLog: OSLog {
-        switch self {
-        case .debug:
-            return .default
-        case .info:
-            return .info
-        case .error:
-            return .error
-        case .fault:
-            return .falut
         }
     }
     
