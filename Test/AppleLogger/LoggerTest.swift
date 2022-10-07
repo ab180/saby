@@ -101,7 +101,7 @@ fileprivate struct MockLogService: LogService {
     let expectation: XCTestExpectation
     var showLogs: Bool
     
-    func log(_ message: StaticString, log: OSLog, type: OSLogType, _ args: CVarArg) {
+    func log(_ message: StaticString, log: OSLog?, type: OSLogType, _ args: CVarArg) {
         if showLogs {
             print(args)
         }
@@ -119,7 +119,7 @@ fileprivate struct MockPrintService: LogService {
     let expectation: XCTestExpectation
     var showLogs: Bool
     
-    func log(_ message: StaticString, log: OSLog, type: OSLogType, _ args: CVarArg) {
+    func log(_ message: StaticString, log: OSLog?, type: OSLogType, _ args: CVarArg) {
         XCTFail("Test aborted because log method called")
         return
     }
