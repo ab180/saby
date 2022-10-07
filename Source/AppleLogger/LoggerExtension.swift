@@ -43,18 +43,18 @@ extension Logger {
 extension Logger {
     /// A copy of configuration object of this logger
     public var configuration: Setting {
-        return loggerConfiguration
+        return loggerSetting
     }
 }
 
 extension Logger {
     /// Configures the instance with given configuration
     public func configure(with configuration: Setting) {
-        loggerConfiguration = configuration
+        loggerSetting = configuration
     }
     
     /// Sets the instance's logging level to the given value
     public func setLogLevel(to level: LogLevel) {
-        loggerConfiguration.logLevel = level
+        loggerSetting.logLevel = level
     }
 }
