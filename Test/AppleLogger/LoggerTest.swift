@@ -22,7 +22,7 @@ final class LoggerTest: XCTestCase {
         let logger = Logger.shared
         let loggerConfiguration = logger.configuration
         
-        var mockConfiguration = LoggerConfiguration()
+        var mockConfiguration = LoggerSetting()
         mockConfiguration.logLevel = .none
         mockConfiguration.usePrint = true
         
@@ -36,7 +36,7 @@ final class LoggerTest: XCTestCase {
         let printerExp = XCTestExpectation(description: "Should show print, not log")
         let loggerExp = XCTestExpectation(description: "Should show log, not print")
         
-        var loggerConfiguration = LoggerConfiguration.default
+        var loggerConfiguration = LoggerSetting.default
         loggerConfiguration.usePrint = true
         
         let testPrinter = Logger(configuration: loggerConfiguration)
@@ -61,7 +61,7 @@ final class LoggerTest: XCTestCase {
         for levelIndex in allLogLevels.indices {
             let level = allLogLevels[levelIndex]
             
-            var loggerConfiguration = LoggerConfiguration.default
+            var loggerConfiguration = LoggerSetting.default
             loggerConfiguration.logLevel = level
             
             let testLogger = Logger(configuration: loggerConfiguration)
@@ -86,7 +86,7 @@ final class LoggerTest: XCTestCase {
         let expectation = XCTestExpectation(description: "Should not show any logs")
         expectation.isInverted = true
         
-        var loggerConfiguration = LoggerConfiguration.default
+        var loggerConfiguration = LoggerSetting.default
         loggerConfiguration.logLevel = .none
         
         let testLogger = Logger(configuration: loggerConfiguration)

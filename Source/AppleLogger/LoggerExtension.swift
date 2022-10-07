@@ -42,14 +42,14 @@ extension Logger {
 
 extension Logger {
     /// A copy of configuration object of this logger
-    public var configuration: LoggerConfiguration {
+    public var configuration: Setting {
         return loggerConfiguration
     }
 }
 
 extension Logger {
     /// Configures the instance with given configuration
-    public func configure(with configuration: LoggerConfiguration) {
+    public func configure(with configuration: Setting) {
         loggerConfiguration = configuration
     }
     

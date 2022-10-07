@@ -15,18 +15,18 @@ public final class Logger {
     /// - Warning: `shared` logger has empty subsystem or category value.
     public static let shared = Logger()
     
-    var loggerConfiguration: LoggerConfiguration
+    var loggerConfiguration: Logger.Setting
     var logService: LogService = OSLogService()
     
     public init() {
-        self.loggerConfiguration = LoggerConfiguration.default
+        self.loggerConfiguration = Setting.default
     }
     
     public init(_ subsystem: String, category: String) {
-        self.loggerConfiguration = LoggerConfiguration(subsystem: subsystem, category: category)
+        self.loggerConfiguration = Setting(subsystem: subsystem, category: category)
     }
     
-    public init(configuration: LoggerConfiguration) {
+    public init(configuration: Setting) {
         self.loggerConfiguration = configuration
     }
 }
