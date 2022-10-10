@@ -5,7 +5,7 @@
 //  Created by WOF on 2022/10/03.
 //
 
-public protocol Service {
+public protocol Service<Command, Result> {
     associatedtype Command
     associatedtype Result
     

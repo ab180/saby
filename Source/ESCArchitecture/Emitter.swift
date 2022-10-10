@@ -7,7 +7,7 @@
 
 import SabyConcurrency
 
-public protocol Emitter {
+public protocol Emitter<State> {
     associatedtype State
     
     var contract: Contract<State> { get }

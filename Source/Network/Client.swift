@@ -9,7 +9,7 @@ import Foundation
 
 import SabyConcurrency
 
-public protocol Client {
+public protocol Client<Request, Response> {
     associatedtype Request
     associatedtype Response
     

@@ -7,7 +7,7 @@
 
 import SabyConcurrency
 
-public protocol Signaler {
+public protocol Signaler<State> {
     associatedtype State
     
     var promise: Promise<State> { get }
