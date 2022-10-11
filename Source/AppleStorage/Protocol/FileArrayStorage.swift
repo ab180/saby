@@ -24,13 +24,6 @@ public final class FileArrayStorage<Item> where
     private let directoryName: String
     
     private lazy var cachedItems: Atomic<[Item]> = Atomic((try? getAll()) ?? [])
-    private var willDeleteItems: Set<Item.Key> = []
-    
-    private var filterdItems: [Item] {
-        cachedItems.capture.filter {
-            false == willDeleteItems.contains($0.key)
-        }
-    }
     
     public init(directoryName: String = "saby.storage") {
         self.directoryName = directoryName
@@ -56,47 +49,39 @@ extension FileArrayStorage: ArrayStorage {
     public typealias Value = Item
     
     public func push(_ value: Item) {
-        cachedItems.mutate({ items in
-            return items + [value]
-        })
+        cachedItems.mutate({ $0 + [value] })
     }
     
     public func delete(_ value: Item) {
-        willDeleteItems.insert(value.key)
+        cachedItems = Atomic(cachedItems.capture.filter { $0.key != value.key })
     }
     
     public func get(key: Item.Key) -> Item? {
-        filterdItems.first { $0.key == key }
+        cachedItems.capture.first { $0.key == key }
     }
     
     public func get(limit: GetLimit) -> [Item] {
-        let filterdItems = self.filterdItems
+        let capturedItems = cachedItems.capture
         switch limit {
         case .unlimited:
-            return filterdItems
-        case .count(let uInt):
-            let maxCount: Int
-            (uInt >= filterdItems.count) ? (maxCount = filterdItems.count) : (maxCount = Int(uInt))
-            return Array(filterdItems[0 ..< maxCount])
+            return capturedItems
+        case .count(let limit):
+            let min = Int(min(UInt(capturedItems.count), limit))
+            return Array(capturedItems[0 ..< min])
         }
     }
     
-    public func save() -> SabyConcurrency.Promise<Void> {
+    public func save() -> Promise<Void> {
         return Promise<Void>(on: .main) { resolve, reject in
             let completeBlock = BlockOperation {
                 resolve(())
             }
             
             let saveBlock = BlockOperation {
-                
                 do {
-                    let data = try PropertyListEncoder().encode(self.filterdItems)
+                    let data = try PropertyListEncoder().encode(self.cachedItems.capture)
                     guard let filePath = self.filePath else { throw URLError(.badURL) }
                     try data.write(to: filePath)
-                    
-                    self.willDeleteItems = []
-                    self.cachedItems = Atomic(try self.getAll())
-                    
                 } catch {
                     reject(error)
                 }
