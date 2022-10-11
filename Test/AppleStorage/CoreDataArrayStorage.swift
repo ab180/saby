@@ -27,7 +27,7 @@ fileprivate class CoredataTestItem: NSManagedObject, KeyIdentifiable, ManagedObj
 
 final class CoreDataArrayStorageTests: XCTestCase {
     
-    fileprivate static let storage = CoreDataArrayStorage<CoredataTestItem>(bundle: Bundle.module, modelNamed: "Model")!
+    fileprivate static let storage = CoreDataArrayStorage<CoredataTestItem>(bundle: Bundle.module, modelNamed: "Model", keyEntityNamed: "key")!
     
     class func clear() {
         try? storage.removeAll()
@@ -64,7 +64,7 @@ final class CoreDataArrayStorageTests: XCTestCase {
         
         let storage = CoreDataArrayStorageTests.storage
         let testItems = TestItemGroup(storage: storage).pushItems
-        let targetItem = testItems[50]
+        let targetItem = testItems[Int.random(in: 0 ... Int.max) % testItems.count]
         let uuid = targetItem.key
         
         let expectation = expectation(description: "testGet")
