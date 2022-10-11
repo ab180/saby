@@ -17,11 +17,10 @@ fileprivate class CoredataTestItem: NSManagedObject, KeyIdentifiable, ManagedObj
         NSFetchRequest<CoredataTestItem>(entityName: String(describing: self))
     }
     
-    typealias Key = UUID
     @NSManaged var key: UUID
     
-    func update(_ mock: CoredataTestItem) {
-        self.key = mock.key
+    func updateData(_ mock: CoredataTestItem) {
+        key = mock.key
     }
 }
 
@@ -58,6 +57,28 @@ final class CoreDataArrayStorageTests: XCTestCase {
                 if removeCount > index { removeItems.append(item) }
             }
         }
+    }
+    
+    func testGet() {
+        defer { CoreDataArrayStorageTests.clear() }
+        
+        let storage = CoreDataArrayStorageTests.storage
+        let testItems = TestItemGroup(storage: storage).pushItems
+        let targetItem = testItems[50]
+        let uuid = targetItem.key
+        
+        let expectation = expectation(description: "testGet")
+        expectation.expectedFulfillmentCount = 1
+        
+        testItems.forEach(storage.push)
+        storage.save().then { _ in
+            let item = storage.get(key: uuid)
+            XCTAssertNotNil(item)
+            
+            expectation.fulfill()
+        }
+        
+        wait(for: [expectation], timeout: 5)
     }
     
     func testPush() {
