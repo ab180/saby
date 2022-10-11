@@ -25,10 +25,6 @@ public final class FileArrayStorage<Item> where
     
     private lazy var cachedItems: Atomic<[Item]> = Atomic((try? getAll()) ?? [])
     
-    public init(directoryName: String = "saby.storage") {
-        self.directoryName = directoryName
-    }
-    
     private var filePath: URL? {
         let manager = FileManager.default
         let urls = manager.urls(for: .libraryDirectory, in: .userDomainMask)
@@ -41,6 +37,10 @@ public final class FileArrayStorage<Item> where
         
         result = result.appendingPathComponent(String(describing: Item.self))
         return result
+    }
+    
+    public init(directoryName: String = "saby.storage") {
+        self.directoryName = directoryName
     }
 }
 
