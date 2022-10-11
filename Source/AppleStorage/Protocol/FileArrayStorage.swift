@@ -72,7 +72,7 @@ extension FileArrayStorage: ArrayStorage {
     }
     
     public func save() -> Promise<Void> {
-        return Promise<Void>(on: .main) { resolve, reject in
+        Promise<Void> { resolve, reject in
             let completeBlock = BlockOperation {
                 resolve(())
             }
