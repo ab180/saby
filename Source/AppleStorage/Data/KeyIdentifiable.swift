@@ -8,7 +8,7 @@
 import Foundation
 
 public protocol KeyIdentifiable {
-    associatedtype Key: Hashable
+    associatedtype Key: Hashable, CustomStringConvertible
     
     var key: Key { get }
 }
