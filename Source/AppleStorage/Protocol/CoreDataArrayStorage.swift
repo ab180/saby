@@ -9,11 +9,11 @@ import SabyConcurrency
 import CoreData
 
 public protocol ManagedObjectUpdater {
-    func update(_ mock: Self)
+    func updateData(_ mock: Self)
 }
 
 // MARK: CoreDataArrayStorage
-public final class CoreDataArrayStorage<Item>  where
+public final class CoreDataArrayStorage<Item> where
     Item: (
         KeyIdentifiable
         & NSManagedObject
@@ -46,7 +46,7 @@ extension CoreDataArrayStorage: ArrayStorage {
     
     public func push(_ value: Item) {
         guard let item: Item = Item.creator()(container.viewContext) else { return }
-        item.update(value)
+        item.updateData(value)
     }
     
     public func delete(_ value: Item) {
@@ -54,15 +54,16 @@ extension CoreDataArrayStorage: ArrayStorage {
     }
     
     public func get(key: Item.Key) -> Item? {
-        getAll().first { $0.key == key }
+        let predicate = NSPredicate(format: "key == %@", String(describing: key))
+        return getAll(predicate: predicate).first
     }
     
     public func get(limit: GetLimit) -> [Item] {
         switch limit {
         case .unlimited:
             return getAll()
-        case .count(let uInt):
-            return getAll(limit: Int(uInt % .max))
+        case .count(let limit):
+            return getAll(limit: Int(limit % .max))
         }
     }
     
@@ -76,20 +77,21 @@ extension CoreDataArrayStorage: ArrayStorage {
 
 extension CoreDataArrayStorage {
     func removeAll() throws {
-        let request = fetchRequest(for: String(describing: Item.self))
+        let request = fetchRequest()
         try container.viewContext.execute(NSBatchDeleteRequest(fetchRequest: request))
     }
 }
 
 extension CoreDataArrayStorage {
-    private func fetchRequest(for name: String, limit: Int? = nil) -> NSFetchRequest<NSFetchRequestResult> {
-        let result = NSFetchRequest<NSFetchRequestResult>(entityName: name)
+    private func fetchRequest(limit: Int? = nil) -> NSFetchRequest<NSFetchRequestResult> {
+        let result = NSFetchRequest<NSFetchRequestResult>(entityName: String(describing: Item.self))
         if let limit = limit { result.fetchLimit = limit }
         return result
     }
     
-    private func getAll(limit: Int? = nil) -> [Item] {
-        let request = fetchRequest(for: String(describing: Item.self), limit: limit)
+    private func getAll(predicate: NSPredicate? = nil, limit: Int? = nil) -> [Item] {
+        let request = fetchRequest(limit: limit)
+        request.predicate = predicate
         let items = try? container.viewContext.fetch(request) as? [Item]
         return items ?? []
     }
@@ -98,10 +100,14 @@ extension CoreDataArrayStorage {
 // MARK: - NSManagedObject
 fileprivate extension NSManagedObject {
     static func creator<O>() -> (NSManagedObjectContext) -> O? {
-        {
-            let name = String(describing: self)
-            let description = NSEntityDescription.entity(forEntityName: name, in: $0)!
-            return self.init(entity: description, insertInto: $0) as? O
+        return { viewContext in
+            guard
+                let description = NSEntityDescription.entity(
+                    forEntityName: String(describing: self),
+                    in: viewContext
+                )
+            else { return nil }
+            return (self.init(entity: description, insertInto: viewContext) as! O)
         }
     }
 }
