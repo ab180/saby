@@ -21,13 +21,17 @@ public final class CoreDataArrayStorage<Item> where
     )
 {
     private let container: NSPersistentContainer
-    private var hasChanges: Bool { container.viewContext.hasChanges }
+    private let keyEntityNamed: String
     
     public let mockContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
     
-    public init?(bundle: Bundle, modelNamed: String) {
+    public init?(bundle: Bundle, modelNamed: String, keyEntityNamed: String) {
+        self.keyEntityNamed = keyEntityNamed
+        
         guard
+            false == keyEntityNamed.isEmpty,
             let url = bundle.url(forResource: modelNamed, withExtension: "momd"),
+            FileManager.default.fileExists(atPath: url.path),
             let managedObjectModel = NSManagedObjectModel(contentsOf: url)
         else { return nil }
         
@@ -45,7 +49,7 @@ extension CoreDataArrayStorage: ArrayStorage {
     public typealias Value = Item
     
     public func push(_ value: Item) {
-        guard let item: Item = Item.creator()(container.viewContext) else { return }
+        guard let item: Item = Item.creator(context: container.viewContext) else { return }
         item.updateData(value)
     }
     
@@ -54,7 +58,7 @@ extension CoreDataArrayStorage: ArrayStorage {
     }
     
     public func get(key: Item.Key) -> Item? {
-        let predicate = NSPredicate(format: "key == %@", String(describing: key))
+        let predicate = NSPredicate(format: "\(keyEntityNamed) == %@", String(describing: key))
         return getAll(predicate: predicate).first
     }
     
@@ -99,15 +103,13 @@ extension CoreDataArrayStorage {
 
 // MARK: - NSManagedObject
 fileprivate extension NSManagedObject {
-    static func creator<O>() -> (NSManagedObjectContext) -> O? {
-        return { viewContext in
-            guard
-                let description = NSEntityDescription.entity(
-                    forEntityName: String(describing: self),
-                    in: viewContext
-                )
-            else { return nil }
-            return (self.init(entity: description, insertInto: viewContext) as! O)
-        }
+    static func creator<O>(context: NSManagedObjectContext) -> O? {
+        guard
+            let description = NSEntityDescription.entity(
+                forEntityName: String(describing: self),
+                in: context
+            )
+        else { return nil }
+        return (self.init(entity: description, insertInto: context) as! O)
     }
 }
