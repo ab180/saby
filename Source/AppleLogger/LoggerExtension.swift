@@ -6,23 +6,6 @@
 //
 
 extension Logger {
-    /// Displays a log for specified level
-    func log(level: LogLevel, _ message: String) {
-        guard let loggerLevel = configuration.logLevel else {
-            return
-        }
-        
-        if level.isHigherOrEqual(to: loggerLevel) {
-            if configuration.usePrint {
-                logService.printLog(type: level, message)
-            } else {
-                logService.log("%s", log: configuration.osLog, type: level.osLogType, message)
-            }
-        }
-    }
-}
-
-extension Logger {
     public func info(_ message: String) {
         self.log(level: .info, message)
     }
@@ -42,15 +25,15 @@ extension Logger {
 
 extension Logger {
     /// A copy of configuration object of this logger
-    public var configuration: Setting {
+    public var setting: Setting {
         return loggerSetting
     }
 }
 
 extension Logger {
     /// Configures the instance with given configuration
-    public func configure(with configuration: Setting) {
-        loggerSetting = configuration
+    public func configure(with setting: Setting) {
+        loggerSetting = setting
     }
     
     /// Sets the instance's logging level to the given value

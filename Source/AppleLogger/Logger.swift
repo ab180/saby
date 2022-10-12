@@ -26,8 +26,23 @@ public final class Logger {
         self.loggerSetting = Setting(subsystem: subsystem, category: category)
     }
     
-    public init(configuration: Setting) {
-        self.loggerSetting = configuration
+    public init(setting: Setting) {
+        self.loggerSetting = setting
+    }
+    
+    /// Displays a log for specified level
+    func log(level: LogLevel, _ message: String) {
+        guard let loggerLevel = setting.logLevel else {
+            return
+        }
+        
+        if level.isHigherOrEqual(to: loggerLevel) {
+            if setting.usePrint {
+                logService.printLog(type: level, message)
+            } else {
+                logService.log("%s", log: setting.osLog, type: level.osLogType, message)
+            }
+        }
     }
 }
 
