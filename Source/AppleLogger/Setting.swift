@@ -16,25 +16,18 @@ extension Logger {
         public var usePrint: Bool = false
         
         /// A variable used for displaying `subsystem` value in console
-        public var subsystem: String {
-            didSet {
-                osLog = OSLog(subsystem: subsystem, category: category)
-            }
-        }
+        public let subsystem: String
         
         /// A variable used for displaying `category` value in console
-        public var category: String {
-            didSet {
-                osLog = OSLog(subsystem: subsystem, category: category)
-            }
-        }
+        public let category: String
         
         /// An internal variable used to execute `os_log`
-        var osLog: OSLog?
+        var osLog: OSLog
         
         public init(subsystem: String, category: String) {
             self.subsystem = subsystem
             self.category = category
+            self.osLog = OSLog(subsystem: subsystem, category: category)
         }
     }
 }

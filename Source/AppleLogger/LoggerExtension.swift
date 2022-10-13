@@ -31,11 +31,6 @@ extension Logger {
 }
 
 extension Logger {
-    /// Configures the instance with given configuration
-    public func configure(with setting: Setting) {
-        loggerSetting = setting
-    }
-    
     /// Sets the instance's logging level to the given value
     public func setLogLevel(to level: LogLevel) {
         loggerSetting.logLevel = level
