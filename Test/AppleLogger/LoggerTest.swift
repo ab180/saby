@@ -11,36 +11,31 @@ import OSLog
 
 final class LoggerTest: XCTestCase {
     func test__set_log_level() {
-        let logger = sharedLogger
+        let logger = defaultLogger
         XCTAssertNotEqual(logger.setting.logLevel, LogLevel.fault)
         
         logger.setLogLevel(to: .fault)
         XCTAssertEqual(logger.setting.logLevel, LogLevel.fault)
     }
     
-    func test__configure() {
-        let logger = sharedLogger
+    func test__instantiate_setting() {
+        let logger = defaultLogger
         let configBeforeChange = logger.setting
         
-        var configAfterChange = sharedSetting
+        var configAfterChange = defaultSetting
         configAfterChange.logLevel = .none
         configAfterChange.usePrint = true
-        configAfterChange.category = "network"
-        configAfterChange.subsystem = "SomeApp"
-        
-        XCTAssertNotEqual(configBeforeChange.logLevel, configAfterChange.logLevel)
-        XCTAssertNotEqual(configBeforeChange.osLog, configAfterChange.osLog)
 
-        logger.configure(with: configAfterChange)
-        XCTAssertEqual(logger.setting.logLevel, configAfterChange.logLevel)
-        XCTAssertEqual(logger.setting.osLog, configAfterChange.osLog)
+        XCTAssertNotNil(configBeforeChange.osLog)
+        XCTAssertNotNil(configAfterChange.osLog)
+        XCTAssertNotEqual(configBeforeChange.logLevel, configAfterChange.logLevel)
     }
     
     func test__use_print_option() {
         let printerExp = XCTestExpectation(description: "Should show print, not log")
         let loggerExp = XCTestExpectation(description: "Should show log, not print")
         
-        var commonConfiguration = sharedSetting
+        var commonConfiguration = defaultSetting
         commonConfiguration.usePrint = true
         
         let testPrinter = Logger(setting: commonConfiguration)
@@ -65,7 +60,7 @@ final class LoggerTest: XCTestCase {
         for levelIndex in allLogLevels.indices {
             let level = allLogLevels[levelIndex]
             
-            var loggerConfiguration = sharedSetting
+            var loggerConfiguration = defaultSetting
             loggerConfiguration.logLevel = level
             
             let testLogger = Logger(setting: loggerConfiguration)
@@ -90,7 +85,7 @@ final class LoggerTest: XCTestCase {
         let expectation = XCTestExpectation(description: "Should not show any logs")
         expectation.isInverted = true
         
-        var configuration = sharedSetting
+        var configuration = defaultSetting
         configuration.logLevel = .none
         
         let testLogger = Logger(setting: configuration)
@@ -101,11 +96,11 @@ final class LoggerTest: XCTestCase {
     }
 }
 
-fileprivate var sharedLogger: SabyAppleLogger.Logger {
+fileprivate var defaultLogger: SabyAppleLogger.Logger {
     Logger("", category: "")
 }
 
-fileprivate var sharedSetting: SabyAppleLogger.Logger.Setting {
+fileprivate var defaultSetting: SabyAppleLogger.Logger.Setting {
     Logger.Setting(subsystem: "", category: "")
 }
 
@@ -113,7 +108,7 @@ fileprivate struct MockLogService: LogService {
     let expectation: XCTestExpectation
     var showLogs: Bool
     
-    func log(_ message: StaticString, log: OSLog?, type: OSLogType, _ args: CVarArg) {
+    func log(_ message: StaticString, log: OSLog, type: OSLogType, _ args: CVarArg) {
         if showLogs {
             print(args)
         }
@@ -131,7 +126,7 @@ fileprivate struct MockPrintService: LogService {
     let expectation: XCTestExpectation
     var showLogs: Bool
     
-    func log(_ message: StaticString, log: OSLog?, type: OSLogType, _ args: CVarArg) {
+    func log(_ message: StaticString, log: OSLog, type: OSLogType, _ args: CVarArg) {
         XCTFail("Test aborted because log method called")
         return
     }
