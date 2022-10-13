@@ -8,7 +8,6 @@
 import Foundation
 import OSLog
 
-@available(iOS 10.0, *)
 public final class Logger {
     var loggerSetting: Logger.Setting
     var logService: LogService = OSLogService()
