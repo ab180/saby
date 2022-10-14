@@ -196,6 +196,20 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SabyAppleLogger"
+               BuildableName = "SabyAppleLogger"
+               BlueprintName = "SabyAppleLogger"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "SabyAppleDataFetcher"
                BuildableName = "SabyAppleDataFetcher"
                BlueprintName = "SabyAppleDataFetcher"
@@ -321,6 +335,16 @@
                BlueprintIdentifier = "SabyAppleObjectiveCReflectionTest"
                BuildableName = "SabyAppleObjectiveCReflectionTest"
                BlueprintName = "SabyAppleObjectiveCReflectionTest"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SabyAppleLoggerTest"
+               BuildableName = "SabyAppleLoggerTest"
+               BlueprintName = "SabyAppleLoggerTest"
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>
