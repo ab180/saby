@@ -27,10 +27,12 @@ fileprivate class CoredataTestItem: NSManagedObject, KeyIdentifiable, ManagedObj
 
 final class CoreDataArrayStorageTests: XCTestCase {
     
-    fileprivate static let storage = CoreDataArrayStorage<CoredataTestItem>(bundle: Bundle.module, modelNamed: "Model", keyEntityNamed: "key")!
+    fileprivate static let storage = CoreDataArrayStorage<CoredataTestItem>.create(bundle: Bundle.module, modelNamed: "Model", keyEntityNamed: "key")
     
     class func clear() {
-        try? storage.removeAll()
+        storage.then({
+            try? $0.removeAll()
+        })
     }
     
     override class func setUp() {
@@ -60,69 +62,69 @@ final class CoreDataArrayStorageTests: XCTestCase {
     }
     
     func testGet() {
-        defer { CoreDataArrayStorageTests.clear() }
-        
-        let storage = CoreDataArrayStorageTests.storage
-        let testItems = TestItemGroup(storage: storage).pushItems
-        let targetItem = testItems[Int.random(in: 0 ... Int.max) % testItems.count]
-        let uuid = targetItem.key
-        
-        let expectation = expectation(description: "testGet")
+        let expectation = self.expectation(description: "testGet")
         expectation.expectedFulfillmentCount = 1
         
-        testItems.forEach(storage.push)
-        storage.save().then { _ in
-            let item = storage.get(key: uuid)
-            XCTAssertNotNil(item)
+        CoreDataArrayStorageTests.storage.then { storage in
+            let testItems = TestItemGroup(storage: storage).pushItems
+            let targetItem = testItems[Int.random(in: 0 ... Int.max) % testItems.count]
+            let uuid = targetItem.key
             
-            expectation.fulfill()
-        }
-        
-        wait(for: [expectation], timeout: 5)
-    }
-    
-    func testPush() {
-        defer { CoreDataArrayStorageTests.clear() }
-        
-        let storage = CoreDataArrayStorageTests.storage
-        let testItems = TestItemGroup(storage: storage)
-        
-        let expectation = expectation(description: "testPush")
-        expectation.expectedFulfillmentCount = 1
-        
-        testItems.pushItems.forEach(storage.push)
-        storage.save().then { _ in
-            XCTAssertEqual(storage.get(limit: .unlimited).count, testItems.pushCount)
-            XCTAssertEqual(storage.get(limit: .count(UInt.max)).count, testItems.pushCount)
-            
-            expectation.fulfill()
-        }
-        
-        wait(for: [expectation], timeout: 5)
-    }
-    
-    func testRemove() {
-        defer { CoreDataArrayStorageTests.clear() }
-        
-        let storage = CoreDataArrayStorageTests.storage
-        let testItems = TestItemGroup(storage: storage)
-        
-        let expectation = expectation(description: "testRemove")
-        expectation.expectedFulfillmentCount = 1
-        
-        testItems.pushItems.forEach(storage.push)
-        storage.save().then { _ in
-            let fetchedItems = storage.get(limit: .unlimited)
-            fetchedItems[0 ... testItems.removeCount - 1].forEach(storage.delete)
-            
+            testItems.forEach(storage.push)
             storage.save().then { _ in
-                let fetchedItems = storage.get(limit: .unlimited)
-                XCTAssertEqual(fetchedItems.count, testItems.pushCount - testItems.removeCount)
+                let item = storage.get(key: uuid)
+                XCTAssertNotNil(item)
                 
+                CoreDataArrayStorageTests.clear()
                 expectation.fulfill()
             }
         }
         
-        wait(for: [expectation], timeout: 5)
+        self.wait(for: [expectation], timeout: 5)
+    }
+    
+    func testPush() {
+        let expectation = self.expectation(description: "testPush")
+        expectation.expectedFulfillmentCount = 1
+        
+        CoreDataArrayStorageTests.storage.then { storage in
+            let testItems = TestItemGroup(storage: storage)
+            
+            testItems.pushItems.forEach(storage.push)
+            storage.save().then { _ in
+                XCTAssertEqual(storage.get(limit: .unlimited).count, testItems.pushCount)
+                XCTAssertEqual(storage.get(limit: .count(UInt.max)).count, testItems.pushCount)
+                
+                CoreDataArrayStorageTests.clear()
+                expectation.fulfill()
+            }
+        }
+        
+        self.wait(for: [expectation], timeout: 5)
+    }
+    
+    func testRemove() {
+        let expectation = self.expectation(description: "testRemove")
+        expectation.expectedFulfillmentCount = 1
+        
+        CoreDataArrayStorageTests.storage.then { storage in
+            let testItems = TestItemGroup(storage: storage)
+            
+            testItems.pushItems.forEach(storage.push)
+            storage.save().then { _ in
+                let fetchedItems = storage.get(limit: .unlimited)
+                fetchedItems[0 ... testItems.removeCount - 1].forEach(storage.delete)
+                
+                storage.save().then { _ in
+                    let fetchedItems = storage.get(limit: .unlimited)
+                    XCTAssertEqual(fetchedItems.count, testItems.pushCount - testItems.removeCount)
+                    
+                    CoreDataArrayStorageTests.clear()
+                    expectation.fulfill()
+                }
+            }
+        }
+        
+        self.wait(for: [expectation], timeout: 5)
     }
 }
