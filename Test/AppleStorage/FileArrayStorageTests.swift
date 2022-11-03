@@ -52,18 +52,17 @@ final class FileArrayStorageTests: XCTestCase {
         let storage = FileArrayStorageTests.storage
         let testItems = TestItemGroup()
         
-        let expectation = expectation(description: "testPush")
-        expectation.expectedFulfillmentCount = 1
-        
         testItems.pushItems.forEach(storage.push)
-        storage.save().then { _ in
-            XCTAssertEqual(storage.get(limit: .unlimited).count, testItems.pushCount)
-            XCTAssertEqual(storage.get(limit: .count(UInt.max)).count, testItems.pushCount)
-            
-            expectation.fulfill()
+        try? storage.save()
+        XCTAssertEqual(storage.get(limit: .unlimited).count, testItems.pushCount)
+        XCTAssertEqual(storage.get(limit: .count(UInt.max)).count, testItems.pushCount)
+    }
+    
+    func testForStress() {
+        for _ in 0 ... 1000 {
+            testRemove()
+            CoreDataArrayStorageTests.clear()
         }
-        
-        wait(for: [expectation], timeout: 5)
     }
     
     func testRemove() {
@@ -72,23 +71,12 @@ final class FileArrayStorageTests: XCTestCase {
         let storage = FileArrayStorageTests.storage
         let testItems = TestItemGroup()
         
-        let expectation = expectation(description: "testRemove")
-        expectation.expectedFulfillmentCount = 1
-        
         testItems.pushItems.forEach(storage.push)
-        storage.save().then { _ in
-            let fetchedItems = storage.get(limit: .unlimited)
-            fetchedItems[0 ... testItems.removeCount - 1].forEach(storage.delete)
-            
-            storage.save().then { _ in
-                let fetchedItems = storage.get(limit: .unlimited)
-                XCTAssertEqual(fetchedItems.count, testItems.pushCount - testItems.removeCount)
-                
-                expectation.fulfill()
-            }
-        }
+        try? storage.save()
+        storage.get(limit: .unlimited)[0 ... testItems.removeCount - 1].forEach(storage.delete)
         
-        wait(for: [expectation], timeout: 5)
+        try? storage.save()
+        let fetchedItems = storage.get(limit: .unlimited)
+        XCTAssertEqual(fetchedItems.count, testItems.pushCount - testItems.removeCount)
     }
-    
 }

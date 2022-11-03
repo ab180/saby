@@ -71,12 +71,13 @@ extension FileArrayStorage: ArrayStorage {
         }
     }
     
+    public func save() throws {
         locker.lock()
         defer { locker.unlock() }
-            
-                    let data = try PropertyListEncoder().encode(self.cachedItems.capture)
-                    guard let filePath = self.filePath else { throw URLError(.badURL) }
-                    try data.write(to: filePath)
+        
+        let data = try PropertyListEncoder().encode(self.cachedItems.capture)
+        guard let filePath = self.filePath else { throw URLError(.badURL) }
+        try data.write(to: filePath)
     }
 }
 
