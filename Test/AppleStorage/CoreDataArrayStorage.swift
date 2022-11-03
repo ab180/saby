@@ -74,7 +74,7 @@ final class CoreDataArrayStorageTests: XCTestCase {
                 let uuid = targetItem.key
                 
                 testItems.forEach(storage.push)
-                storage.nonPromiseSave()
+                try? storage.save()
                 let item = storage.get(key: uuid)
                 XCTAssertNotNil(item)
                 
@@ -95,7 +95,8 @@ final class CoreDataArrayStorageTests: XCTestCase {
                 let testItems = TestItemGroup(storage: storage)
                 
                 testItems.pushItems.forEach(storage.push)
-                storage.nonPromiseSave()
+                try? storage.save()
+                
                 XCTAssertEqual(storage.get(limit: .unlimited).count, testItems.pushCount)
                 XCTAssertEqual(storage.get(limit: .count(UInt.max)).count, testItems.pushCount)
                 
@@ -123,9 +124,9 @@ final class CoreDataArrayStorageTests: XCTestCase {
                 let testItems = TestItemGroup(storage: storage)
             
                 testItems.pushItems.forEach(storage.push)
-                storage.nonPromiseSave()
+                try? storage.save()
                 storage.get(limit: .unlimited)[0 ... testItems.removeCount - 1].forEach(storage.delete)
-                storage.nonPromiseSave()
+                try? storage.save()
                 let fetchedItems = storage.get(limit: .unlimited)
                 XCTAssertEqual(fetchedItems.count, testItems.pushCount - testItems.removeCount)
             
