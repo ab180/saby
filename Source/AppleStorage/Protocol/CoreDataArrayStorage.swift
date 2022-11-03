@@ -8,51 +8,67 @@
 import SabyConcurrency
 import CoreData
 
+public typealias CoreDataValue = KeyIdentifiable & NSManagedObject & ManagedObjectUpdater
+
 public protocol ManagedObjectUpdater {
     func updateData(_ mock: Self)
 }
 
+public struct CoreDataRawObjectPointer: Equatable {
+    let bundle: Bundle
+    let modelName: String
+}
+
+fileprivate struct CoreDataResource {
+    let rawObjectPointer: CoreDataRawObjectPointer
+    let container: NSPersistentContainer
+}
+
+fileprivate final class CoreDataContextManager {
+    static var shared = CoreDataContextManager()
+    var data: CoreDataResource?
+}
+
 // MARK: CoreDataArrayStorage
-public final class CoreDataArrayStorage<Item> where
-    Item: (
-        KeyIdentifiable
-        & NSManagedObject
-        & ManagedObjectUpdater
-    )
-{
-    private var container: NSPersistentContainer?
-    private var context: NSManagedObjectContext
-    private var keyEntityNamed: String?
+public final class CoreDataArrayStorage<Item> where Item: CoreDataValue {
+    private var resource: CoreDataResource
+    private let entityName: String
     
+    public let context: NSManagedObjectContext
     public let mockContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
     
-    private init() {
-        context = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
+    fileprivate init(entityName: String, resource: CoreDataResource) {
+        self.entityName = entityName
+        self.resource = resource
+        self.context = resource.container.newBackgroundContext()
+        self.context.automaticallyMergesChangesFromParent = true
     }
     
-    public class func create(bundle: Bundle, modelNamed: String, keyEntityNamed: String) -> Promise<CoreDataArrayStorage> {
-        return Promise<CoreDataArrayStorage> { resolve, reject in
-            let storage = CoreDataArrayStorage()
-            storage.keyEntityNamed = keyEntityNamed
+    public class func create(objectPointer: CoreDataRawObjectPointer, entityName: String) -> Promise<CoreDataArrayStorage> {
+        return create(objectPointer: objectPointer)
+            .toStorage(entityName: entityName)
+    }
+    
+    private class func create(objectPointer: CoreDataRawObjectPointer) -> Promise<CoreDataResource> {
+        return Promise<CoreDataResource>(on: .main) { resolve, reject in
+            if
+                let managedData = CoreDataContextManager.shared.data,
+                managedData.rawObjectPointer == objectPointer {
+                resolve(managedData)
+                return
+            }
             
             guard
-                false == keyEntityNamed.isEmpty,
-                let url = bundle.url(forResource: modelNamed, withExtension: "momd"),
+                let url = objectPointer.bundle.url(forResource: objectPointer.modelName, withExtension: "momd"),
                 FileManager.default.fileExists(atPath: url.path),
                 let managedObjectModel = NSManagedObjectModel(contentsOf: url)
             else {
-                reject(URLError(.badURL))
-                return
+                throw URLError(.badURL)
             }
             
-            storage.container = NSPersistentContainer(
-                name: modelNamed, managedObjectModel: managedObjectModel
+            let container = NSPersistentContainer(
+                name: objectPointer.modelName, managedObjectModel: managedObjectModel
             )
-            
-            guard let container = storage.container else {
-                reject(URLError(.fileDoesNotExist))
-                return
-            }
             
             container.loadPersistentStores { _, error in
                 if let error = error {
@@ -60,14 +76,13 @@ public final class CoreDataArrayStorage<Item> where
                     return
                 }
                 
-                if (false) {
-                    storage.context = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
-                    storage.context.automaticallyMergesChangesFromParent = true
-                } else if let context = storage.container?.viewContext {
-                    storage.context = context
-                }
+                let resource = CoreDataResource(
+                    rawObjectPointer: objectPointer,
+                    container: container
+                )
                 
-                resolve(storage)
+                CoreDataContextManager.shared.data = resource
+                resolve(resource)
             }
         }
     }
@@ -77,12 +92,12 @@ extension CoreDataArrayStorage: ArrayStorage {
     public typealias Value = Item
     
     public func push(_ value: Item) {
-        guard let item: Item = Item.creator(context: self.context) else { return }
+        guard let item: Item = Item.creator(context: context) else { return }
         item.updateData(value)
     }
     
     public func delete(_ value: Item) {
-        self.context.delete(value)
+        context.delete(value)
     }
     
     public func get(key: Item.Key) -> Item? {
@@ -92,7 +107,7 @@ extension CoreDataArrayStorage: ArrayStorage {
         default: keyString = String(describing: key)
         }
         
-        let predicate = NSPredicate(format: "\(keyEntityNamed ?? "") == %@", keyString)
+        let predicate = NSPredicate(format: "\(entityName) == %@", keyString)
         print(predicate.predicateFormat)
         return getAll(predicate: predicate).first
     }
@@ -106,20 +121,23 @@ extension CoreDataArrayStorage: ArrayStorage {
         }
     }
     
+    public func nonPromiseSave() {
+        try? self.context.save()
+    }
+    
     public func save() -> Promise<Void> {
-        return Promise<Void> { resolve, reject in
+        return Promise<Void> {
             try self.context.save()
-            resolve(())
         }
     }
 }
 
 extension CoreDataArrayStorage {
     func removeAll() throws {
-        let request = fetchRequest()
-        try self.context.execute(NSBatchDeleteRequest(fetchRequest: request))
-        
-        
+        let request = self.fetchRequest()
+        context.performAndWait({
+            _ = try? context.execute(NSBatchDeleteRequest(fetchRequest: request))
+        })
     }
 }
 
@@ -133,7 +151,7 @@ extension CoreDataArrayStorage {
     private func getAll(predicate: NSPredicate? = nil, limit: Int? = nil) -> [Item] {
         let request = fetchRequest(limit: limit)
         request.predicate = predicate
-        let items = try? self.context.fetch(request) as? [Item]
+        let items = try? context.fetch(request) as? [Item]
         return items ?? []
     }
 }
@@ -148,5 +166,17 @@ fileprivate extension NSManagedObject {
             )
         else { return nil }
         return (self.init(entity: description, insertInto: context) as! O)
+    }
+}
+
+// MARK: - Promise
+fileprivate extension Promise where Value == CoreDataResource {
+    func toStorage<Item: CoreDataValue>(entityName: String) -> Promise<CoreDataArrayStorage<Item>> {
+        self.then { resource in
+            let storage = CoreDataArrayStorage<Item>(entityName: entityName, resource: resource)
+            return Promise<CoreDataArrayStorage>(on: .main) {
+                return storage
+            }
+        }
     }
 }
