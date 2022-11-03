@@ -27,7 +27,9 @@ fileprivate class CoredataTestItem: NSManagedObject, KeyIdentifiable, ManagedObj
 
 final class CoreDataArrayStorageTests: XCTestCase {
     
-    fileprivate static let storage = CoreDataArrayStorage<CoredataTestItem>.create(bundle: Bundle.module, modelNamed: "Model", keyEntityNamed: "key")
+    fileprivate static let storage = CoreDataArrayStorage<CoredataTestItem>.create(
+        objectPointer: CoreDataRawObjectPointer(bundle: Bundle.module, modelName: "Model"), entityName: "key"
+    )
     
     class func clear() {
         storage.then({
@@ -66,12 +68,13 @@ final class CoreDataArrayStorageTests: XCTestCase {
         expectation.expectedFulfillmentCount = 1
         
         CoreDataArrayStorageTests.storage.then { storage in
-            let testItems = TestItemGroup(storage: storage).pushItems
-            let targetItem = testItems[Int.random(in: 0 ... Int.max) % testItems.count]
-            let uuid = targetItem.key
-            
-            testItems.forEach(storage.push)
-            storage.save().then { _ in
+            storage.context.performAndWait {
+                let testItems = TestItemGroup(storage: storage).pushItems
+                let targetItem = testItems[Int.random(in: 0 ... Int.max) % testItems.count]
+                let uuid = targetItem.key
+                
+                testItems.forEach(storage.push)
+                storage.nonPromiseSave()
                 let item = storage.get(key: uuid)
                 XCTAssertNotNil(item)
                 
@@ -88,10 +91,11 @@ final class CoreDataArrayStorageTests: XCTestCase {
         expectation.expectedFulfillmentCount = 1
         
         CoreDataArrayStorageTests.storage.then { storage in
-            let testItems = TestItemGroup(storage: storage)
-            
-            testItems.pushItems.forEach(storage.push)
-            storage.save().then { _ in
+            storage.context.performAndWait {
+                let testItems = TestItemGroup(storage: storage)
+                
+                testItems.pushItems.forEach(storage.push)
+                storage.nonPromiseSave()
                 XCTAssertEqual(storage.get(limit: .unlimited).count, testItems.pushCount)
                 XCTAssertEqual(storage.get(limit: .count(UInt.max)).count, testItems.pushCount)
                 
@@ -103,25 +107,30 @@ final class CoreDataArrayStorageTests: XCTestCase {
         self.wait(for: [expectation], timeout: 5)
     }
     
+    func testForStress() {
+        for _ in 0 ... 1000 {
+            testRemove()
+            CoreDataArrayStorageTests.clear()
+        }
+    }
+    
     func testRemove() {
         let expectation = self.expectation(description: "testRemove")
         expectation.expectedFulfillmentCount = 1
         
         CoreDataArrayStorageTests.storage.then { storage in
-            let testItems = TestItemGroup(storage: storage)
+            storage.context.performAndWait {
+                let testItems = TestItemGroup(storage: storage)
             
-            testItems.pushItems.forEach(storage.push)
-            storage.save().then { _ in
+                testItems.pushItems.forEach(storage.push)
+                storage.nonPromiseSave()
+                storage.get(limit: .unlimited)[0 ... testItems.removeCount - 1].forEach(storage.delete)
+                storage.nonPromiseSave()
                 let fetchedItems = storage.get(limit: .unlimited)
-                fetchedItems[0 ... testItems.removeCount - 1].forEach(storage.delete)
-                
-                storage.save().then { _ in
-                    let fetchedItems = storage.get(limit: .unlimited)
-                    XCTAssertEqual(fetchedItems.count, testItems.pushCount - testItems.removeCount)
-                    
-                    CoreDataArrayStorageTests.clear()
-                    expectation.fulfill()
-                }
+                XCTAssertEqual(fetchedItems.count, testItems.pushCount - testItems.removeCount)
+            
+                CoreDataArrayStorageTests.clear()
+                expectation.fulfill()
             }
         }
         
