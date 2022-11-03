@@ -121,14 +121,8 @@ extension CoreDataArrayStorage: ArrayStorage {
         }
     }
     
-    public func nonPromiseSave() {
-        try? self.context.save()
-    }
-    
-    public func save() -> Promise<Void> {
-        return Promise<Void> {
-            try self.context.save()
-        }
+    public func save() throws {
+        try self.context.save()
     }
 }
 
