@@ -15,14 +15,8 @@ public final class FileArrayStorage<Item> where
         & Codable
     )
 {
-    private let queue: OperationQueue = {
-        let result = OperationQueue()
-        result.maxConcurrentOperationCount = 1
-        return result
-    }()
-    
+    private let locker = Lock()
     private let directoryName: String
-    
     private lazy var cachedItems: Atomic<[Item]> = Atomic((try? getAll()) ?? [])
     
     private var filePath: URL? {
@@ -49,10 +43,16 @@ extension FileArrayStorage: ArrayStorage {
     public typealias Value = Item
     
     public func push(_ value: Item) {
+        locker.lock()
+        defer { locker.unlock() }
+        
         cachedItems.mutate({ $0 + [value] })
     }
     
     public func delete(_ value: Item) {
+        locker.lock()
+        defer { locker.unlock() }
+        
         cachedItems = Atomic(cachedItems.capture.filter { $0.key != value.key })
     }
     
@@ -71,32 +71,12 @@ extension FileArrayStorage: ArrayStorage {
         }
     }
     
-    public func save() -> Promise<Void> {
-        Promise<Void> { resolve, reject in
-            let completeBlock = BlockOperation {
-                resolve(())
-            }
+        locker.lock()
+        defer { locker.unlock() }
             
-            let saveBlock = BlockOperation {
-                do {
                     let data = try PropertyListEncoder().encode(self.cachedItems.capture)
                     guard let filePath = self.filePath else { throw URLError(.badURL) }
                     try data.write(to: filePath)
-                } catch {
-                    reject(error)
-                }
-            }
-            
-            completeBlock.addDependency(saveBlock)
-            self.queue.addOperation(completeBlock)
-            self.queue.addOperation(saveBlock)
-        }
-    }
-}
-
-extension FileArrayStorage {
-    func addOperation(_ block: BlockOperation) {
-        queue.addOperation(block)
     }
 }
 
