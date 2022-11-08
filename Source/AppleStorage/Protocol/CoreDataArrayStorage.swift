@@ -8,82 +8,108 @@
 import SabyConcurrency
 import CoreData
 
-public typealias CoreDataValue = KeyIdentifiable & NSManagedObject & ManagedObjectUpdater
+public typealias CoreDataStorageDatable = KeyIdentifiable & NSManagedObject & CoreDataStorageDataUpdater
 
-public protocol ManagedObjectUpdater {
+public protocol CoreDataStorageDataUpdater {
     func updateData(_ mock: Self)
 }
 
-public struct CoreDataRawObjectPointer: Equatable {
+public struct CoreDataFetchPointer {
     let bundle: Bundle
     let modelName: String
 }
 
 fileprivate struct CoreDataResource {
-    let rawObjectPointer: CoreDataRawObjectPointer
+    let rawObjectPointer: CoreDataFetchPointer
     let container: NSPersistentContainer
 }
 
 fileprivate final class CoreDataContextManager {
     static var shared = CoreDataContextManager()
-    var data: CoreDataResource?
+    
+    /// Using for making a ``NSPersistentContainer`` on Main thread to lock. Might of crash to accessing loadPersistentStores method in multi-threaded environment.
+    let locker = Lock()
+    
+    var storages: [String: any ArrayStorage] = [:]
+    var resource: CoreDataResource?
 }
 
 // MARK: CoreDataArrayStorage
-public final class CoreDataArrayStorage<Item> where Item: CoreDataValue {
+/// ``CoreDataArrayStorage`` running on asynchronously.
+public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable {
     private var resource: CoreDataResource
-    private let entityName: String
+    private let entityKeyName: String
     
+    /// When a user append extra action after async method, using to ``perform(_ block: @escaping () -> Void)``.
     public let context: NSManagedObjectContext
+    
+    /// Just for create temporary NSManagedObject instance. more desctiption is refer to ``NSManagedObjectContext`` initializer.
     public let mockContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
     
-    fileprivate init(entityName: String, resource: CoreDataResource) {
-        self.entityName = entityName
+    /// Initializer. make a new context though the container in resource(``CoreDataResource``) parameters.
+    ///
+    /// - Parameters:
+    ///   - entityKeyName:Use the filtering key for fetching data. this same to ``create(objectPointer:entityKeyName:)``
+    ///   ``entityKeyName`` parameters.
+    ///   - resource:Used for making new context. (and not using this variable directly.)
+    private init(entityKeyName: String, resource: CoreDataResource) {
+        self.entityKeyName = entityKeyName
         self.resource = resource
         self.context = resource.container.newBackgroundContext()
         self.context.automaticallyMergesChangesFromParent = true
     }
     
-    public class func create(objectPointer: CoreDataRawObjectPointer, entityName: String) -> Promise<CoreDataArrayStorage> {
+    /// Is substituted for initializer. because a ``loadPersistentStores`` in ``NSPersistentContext`` method is asyncronize.
+    ///
+    /// private class method ``create(objectPointer:entityKeyName:)`` return type is ``Promise<CoreDataResource>``.
+    /// and Convert to Promise<CoreDataArrayStorage>.
+    ///
+    /// - Parameters:
+    ///   - objectPointer: Bundle Target with CoreData model Name to load.
+    ///   - entityKeyName: Use the filtering key for fetching data. this parameter is key column name. referring to ``NSPredicate``
+    /// - Returns: Async(Promise) result object a CoreDataArrayStorage. Plus, consider an **exception** while in create instance.
+    public class func create(objectPointer: CoreDataFetchPointer, entityKeyName: String) -> Promise<CoreDataArrayStorage> {
+        let objectKeyID = String(describing: Item.self)
+        
         return create(objectPointer: objectPointer)
-            .toStorage(entityName: entityName)
-    }
-    
-    private class func create(objectPointer: CoreDataRawObjectPointer) -> Promise<CoreDataResource> {
-        return Promise<CoreDataResource>(on: .main) { resolve, reject in
-            if
-                let managedData = CoreDataContextManager.shared.data,
-                managedData.rawObjectPointer == objectPointer {
-                resolve(managedData)
-                return
-            }
-            
-            guard
-                let url = objectPointer.bundle.url(forResource: objectPointer.modelName, withExtension: "momd"),
-                FileManager.default.fileExists(atPath: url.path),
-                let managedObjectModel = NSManagedObjectModel(contentsOf: url)
-            else {
-                throw URLError(.badURL)
-            }
-            
-            let container = NSPersistentContainer(
-                name: objectPointer.modelName, managedObjectModel: managedObjectModel
-            )
-            
-            container.loadPersistentStores { _, error in
-                if let error = error {
-                    reject(error)
-                    return
+            .then {
+                if
+                    let arrayStorage = CoreDataContextManager.shared.storages[objectKeyID],
+                    let storage = arrayStorage as? CoreDataArrayStorage<Item> {
+                    return storage
                 }
                 
-                let resource = CoreDataResource(
-                    rawObjectPointer: objectPointer,
-                    container: container
-                )
-                
-                CoreDataContextManager.shared.data = resource
-                resolve(resource)
+                let storage = CoreDataArrayStorage<Item>(entityKeyName: entityKeyName, resource: $0)
+                CoreDataContextManager.shared.storages[objectKeyID] = storage
+                return storage
             }
+    }
+    
+    private class func create(objectPointer: CoreDataFetchPointer) -> Promise<CoreDataResource> {
+        Promise<NSPersistentContainer>(on: .main) {
+            CoreDataContextManager.shared.locker.lock()
+            
+            if let container = CoreDataContextManager.shared.resource?.container {
+                return container.toPromise
+            }
+            
+            let container = try NSPersistentContainer(
+                name: objectPointer.modelName,
+                managedObjectModel: fetchManagedObjectModel(objectPointer)
+            )
+            
+            return container.loadPersistentStores()
+        }
+        .then {
+            let resource = CoreDataResource(
+                rawObjectPointer: objectPointer,
+                container: $0
+            )
+            CoreDataContextManager.shared.resource = resource
+            return resource
+        }
+        .finally {
+            CoreDataContextManager.shared.locker.unlock()
         }
     }
 }
@@ -107,7 +133,7 @@ extension CoreDataArrayStorage: ArrayStorage {
         default: keyString = String(describing: key)
         }
         
-        let predicate = NSPredicate(format: "\(entityName) == %@", keyString)
+        let predicate = NSPredicate(format: "\(entityKeyName) == %@", keyString)
         print(predicate.predicateFormat)
         return getAll(predicate: predicate).first
     }
@@ -128,14 +154,23 @@ extension CoreDataArrayStorage: ArrayStorage {
 
 extension CoreDataArrayStorage {
     func removeAll() throws {
-        let request = self.fetchRequest()
-        context.performAndWait({
-            _ = try? context.execute(NSBatchDeleteRequest(fetchRequest: request))
-        })
+        _ = try? context.execute(NSBatchDeleteRequest(fetchRequest: fetchRequest()))
     }
 }
 
 extension CoreDataArrayStorage {
+    private class func fetchManagedObjectModel(_ from: CoreDataFetchPointer) throws -> NSManagedObjectModel {
+        guard
+            let url = from.bundle.url(forResource: from.modelName, withExtension: "momd"),
+            FileManager.default.fileExists(atPath: url.path),
+            let managedObjectModel = NSManagedObjectModel(contentsOf: url)
+        else {
+            throw URLError(.badURL)
+        }
+        
+        return managedObjectModel
+    }
+    
     private func fetchRequest(limit: Int? = nil) -> NSFetchRequest<NSFetchRequestResult> {
         let result = NSFetchRequest<NSFetchRequestResult>(entityName: String(describing: Item.self))
         if let limit = limit { result.fetchLimit = limit }
@@ -159,18 +194,28 @@ fileprivate extension NSManagedObject {
                 in: context
             )
         else { return nil }
-        return (self.init(entity: description, insertInto: context) as! O)
+        return (self.init(entity: description, insertInto: context) as? O)
     }
 }
 
-// MARK: - Promise
-fileprivate extension Promise where Value == CoreDataResource {
-    func toStorage<Item: CoreDataValue>(entityName: String) -> Promise<CoreDataArrayStorage<Item>> {
-        self.then { resource in
-            let storage = CoreDataArrayStorage<Item>(entityName: entityName, resource: resource)
-            return Promise<CoreDataArrayStorage>(on: .main) {
-                return storage
+// MARK: - NSManagedObject
+fileprivate extension NSPersistentContainer {
+    
+    /// It's same to `loadPersistentStores:CompletionHandler` method. Is converted a completionHandler to Promise
+    /// - Returns: loaded `NSPersistentContainer`.
+    func loadPersistentStores() -> Promise<NSPersistentContainer> {
+        return Promise(on: .main) { resolve, reject in
+            self.loadPersistentStores { _, error in
+                guard let error = error else {
+                    resolve(self)
+                    return
+                }
+                reject(error)
             }
         }
+    }
+    
+    var toPromise: Promise<NSPersistentContainer> {
+        Promise(on: .main) { self }
     }
 }

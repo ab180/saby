@@ -10,25 +10,42 @@ import Foundation
 import CoreData
 @testable import SabyAppleStorage
 
-
-@objc(CoredataTestItem)
-fileprivate class CoredataTestItem: NSManagedObject, KeyIdentifiable, ManagedObjectUpdater {
-    @nonobjc class func fetchRequest() -> NSFetchRequest<CoredataTestItem> {
-        NSFetchRequest<CoredataTestItem>(entityName: String(describing: self))
+@objc(TestItem)
+fileprivate class TestItem: CoreDataStorageDatable {
+    @nonobjc class func fetchRequest() -> NSFetchRequest<TestItem> {
+        NSFetchRequest<TestItem>(entityName: String(describing: self))
     }
     
     @NSManaged var key: UUID
     
-    func updateData(_ mock: CoredataTestItem) {
+    func updateData(_ mock: TestItem) {
         key = mock.key
     }
 }
 
+@objc(SecondTestItem)
+fileprivate class SecondTestItem: CoreDataStorageDatable {
+    @nonobjc class func fetchRequest() -> NSFetchRequest<SecondTestItem> {
+        NSFetchRequest<SecondTestItem>(entityName: String(describing: self))
+    }
+    
+    @NSManaged var key: UUID
+    
+    func updateData(_ mock: SecondTestItem) {
+        key = mock.key
+    }
+}
 
 final class CoreDataArrayStorageTests: XCTestCase {
     
-    fileprivate static let storage = CoreDataArrayStorage<CoredataTestItem>.create(
-        objectPointer: CoreDataRawObjectPointer(bundle: Bundle.module, modelName: "Model"), entityName: "key"
+    fileprivate static let storage = CoreDataArrayStorage<TestItem>.create(
+        objectPointer: CoreDataFetchPointer(bundle: Bundle.module, modelName: "Model"), entityKeyName: "key"
+    )
+    fileprivate static let storage2 = CoreDataArrayStorage<SecondTestItem>.create(
+        objectPointer: CoreDataFetchPointer(bundle: Bundle.module, modelName: "Model"), entityKeyName: "key"
+    )
+    fileprivate static let duplicateStorage = CoreDataArrayStorage<SecondTestItem>.create(
+        objectPointer: CoreDataFetchPointer(bundle: Bundle.module, modelName: "Model"), entityKeyName: "key"
     )
     
     class func clear() {
@@ -51,16 +68,45 @@ final class CoreDataArrayStorageTests: XCTestCase {
         let pushCount = TestItemGroup.testCount
         let removeCount = Int(TestItemGroup.testCount / 10)
         
-        var pushItems: [CoredataTestItem] = []
-        var removeItems: [CoredataTestItem] = []
-        init(storage: CoreDataArrayStorage<CoredataTestItem>) {
+        var pushItems: [TestItem] = []
+        var removeItems: [TestItem] = []
+        init(storage: CoreDataArrayStorage<TestItem>) {
             for index in Range(0 ... pushCount - 1) {
-                let item = CoredataTestItem(context: storage.mockContext)
+                let item = TestItem(context: storage.mockContext)
                 item.key = UUID()
                 pushItems.append(item)
                 if removeCount > index { removeItems.append(item) }
             }
         }
+    }
+    
+    func testManagingMultipleEntity() {
+        let expectation = self.expectation(description: "testManagingMultipleEntity")
+        expectation.expectedFulfillmentCount = 3
+        
+        CoreDataArrayStorageTests.storage.then { storage in
+            let item = TestItem(context: storage.mockContext)
+            item.key = UUID()
+            storage.push(item)
+            try? storage.save()
+            
+            CoreDataArrayStorageTests.clear()
+            expectation.fulfill()
+        }
+        
+        CoreDataArrayStorageTests.storage2.then { storage in
+            let item = SecondTestItem(context: storage.mockContext)
+            item.key = UUID()
+            storage.push(item)
+            try? storage.save()
+            expectation.fulfill()
+        }
+        
+        CoreDataArrayStorageTests.duplicateStorage.then { _ in
+            expectation.fulfill()
+        }
+        
+        self.wait(for: [expectation], timeout: 5)
     }
     
     func testGet() {
