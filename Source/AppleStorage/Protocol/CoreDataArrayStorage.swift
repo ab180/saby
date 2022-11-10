@@ -86,11 +86,13 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
     }
     
     private class func create(objectPointer: CoreDataFetchPointer) -> Promise<CoreDataResource> {
-        Promise<NSPersistentContainer>(on: .main) {
+        Promise(on: .main) { resolve, reject in
             CoreDataContextManager.shared.locker.lock()
             
-            if let container = CoreDataContextManager.shared.resource?.container {
-                return container.toPromise
+            if let resource = CoreDataContextManager.shared.resource {
+                CoreDataContextManager.shared.locker.unlock()
+                resolve(resource)
+                return
             }
             
             let container = try NSPersistentContainer(
@@ -98,18 +100,22 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
                 managedObjectModel: fetchManagedObjectModel(objectPointer)
             )
             
-            return container.loadPersistentStores()
-        }
-        .then {
-            let resource = CoreDataResource(
-                rawObjectPointer: objectPointer,
-                container: $0
-            )
-            CoreDataContextManager.shared.resource = resource
-            return resource
-        }
-        .finally {
-            CoreDataContextManager.shared.locker.unlock()
+            container.loadPersistentStores { _, error in
+                if let error = error {
+                    CoreDataContextManager.shared.locker.unlock()
+                    reject(error)
+                    return
+                }
+                
+                let resource = CoreDataResource(
+                    rawObjectPointer: objectPointer,
+                    container: container
+                )
+                CoreDataContextManager.shared.resource = resource
+                
+                CoreDataContextManager.shared.locker.unlock()
+                resolve(resource)
+            }
         }
     }
 }
