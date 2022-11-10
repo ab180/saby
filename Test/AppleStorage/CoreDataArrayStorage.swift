@@ -101,7 +101,7 @@ final class CoreDataArrayStorageTests: XCTestCase {
             try? storage.save()
             expectation.fulfill()
         }
-        
+
         CoreDataArrayStorageTests.duplicateStorage.then { _ in
             expectation.fulfill()
         }
