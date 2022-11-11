@@ -24,7 +24,6 @@ final class LoggerTest: XCTestCase {
         
         var configAfterChange = defaultSetting
         configAfterChange.logLevel = .none
-        configAfterChange.usePrint = true
 
         XCTAssertNotNil(configBeforeChange.osLog)
         XCTAssertNotNil(configAfterChange.osLog)
@@ -32,25 +31,17 @@ final class LoggerTest: XCTestCase {
     }
     
     func test__use_print_option() {
-        let printerExp = XCTestExpectation(description: "Should show print, not log")
-        let loggerExp = XCTestExpectation(description: "Should show log, not print")
+        let printerExp = XCTestExpectation(description: "Should use print, not log")
         
-        var commonConfiguration = defaultSetting
-        commonConfiguration.usePrint = true
+        let printerSetting = Logger.Setting(subsystem: "", category: "", usePrint: true)
         
-        let testPrinter = Logger(setting: commonConfiguration)
+        let testPrinter = Logger(setting: printerSetting)
         testPrinter.logService = MockPrintService(expectation: printerExp, showLogs: false)
-        
-        commonConfiguration.usePrint = false
-        let testLogger = Logger(setting: commonConfiguration)
-        testLogger.logService = MockLogService(expectation: loggerExp, showLogs: false)
         
         // XCTFail will be triggered if `log` is called in this case.
         printAllLogs(testPrinter)
-        
-        // XCTFail will be triggered if `print` is called in this case.
-        printAllLogs(testLogger)
-        wait(for: [printerExp, loggerExp], timeout: 0.5)
+
+        wait(for: [printerExp], timeout: 0.5)
     }
     
     func test__should_not_show_lower_level_logs() {
