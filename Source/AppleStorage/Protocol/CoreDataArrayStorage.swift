@@ -6,12 +6,17 @@
 //
 
 import SabyConcurrency
+import SabySafe
 import CoreData
 
 public typealias CoreDataStorageDatable = KeyIdentifiable & NSManagedObject & CoreDataStorageDataUpdater
 
 public protocol CoreDataStorageDataUpdater {
     func updateData(_ mock: Self)
+}
+
+public enum CoreDataStorageError: Error {
+    case badURL
 }
 
 public struct CoreDataFetchPointer {
@@ -27,14 +32,15 @@ fileprivate struct CoreDataResource {
 fileprivate final class CoreDataContextManager {
     static var shared = CoreDataContextManager()
     
-    /// Using for making a ``NSPersistentContainer`` on Main thread to lock. Might of crash to accessing loadPersistentStores method in multi-threaded environment.
+    /// Using for making a ``NSPersistentContainer`` on Main thread to lock.
+    /// Might of crash to accessing loadPersistentStores method in multi-threaded environment.
     let locker = Lock()
     
     var storages: [String: any ArrayStorage] = [:]
     var resource: CoreDataResource?
 }
 
-// MARK: CoreDataArrayStorage
+// MARK: - CoreDataArrayStorage
 /// ``CoreDataArrayStorage`` running on asynchronously.
 public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable {
     private var resource: CoreDataResource
@@ -43,7 +49,7 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
     /// When a user append extra action after async method, using to ``perform(_ block: @escaping () -> Void)``.
     public let context: NSManagedObjectContext
     
-    /// Just for create temporary NSManagedObject instance. more desctiption is refer to ``NSManagedObjectContext`` initializer.
+    /// Just for create temporary NSManagedObject instance. more description is refer to ``NSManagedObjectContext`` initializer.
     public let mockContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
     
     /// Initializer. make a new context though the container in resource(``CoreDataResource``) parameters.
@@ -55,11 +61,18 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
     private init(entityKeyName: String, resource: CoreDataResource) {
         self.entityKeyName = entityKeyName
         self.resource = resource
-        self.context = resource.container.newBackgroundContext()
-        self.context.automaticallyMergesChangesFromParent = true
+        context = resource.container.newBackgroundContext()
+        context.automaticallyMergesChangesFromParent = true
+        
+        NotificationCenter.default.addObserver(
+            forName: .NSManagedObjectContextDidSave,
+            object: nil,
+            queue: .main) { notification in
+                
+            }
     }
     
-    /// Is substituted for initializer. because a ``loadPersistentStores`` in ``NSPersistentContext`` method is asyncronize.
+    /// Is substituted for initializer. because a ``loadPersistentStores`` in ``NSPersistentContext`` method is synchronize.
     ///
     /// private class method ``create(objectPointer:entityKeyName:)`` return type is ``Promise<CoreDataResource>``.
     /// and Convert to Promise<CoreDataArrayStorage>.
@@ -70,51 +83,55 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
     /// - Returns: Async(Promise) result object a CoreDataArrayStorage. Plus, consider an **exception** while in create instance.
     public class func create(objectPointer: CoreDataFetchPointer, entityKeyName: String) -> Promise<CoreDataArrayStorage> {
         let objectKeyID = String(describing: Item.self)
-        
-        return create(objectPointer: objectPointer)
-            .then {
-                if
-                    let arrayStorage = CoreDataContextManager.shared.storages[objectKeyID],
-                    let storage = arrayStorage as? CoreDataArrayStorage<Item> {
-                    return storage
-                }
-                
-                let storage = CoreDataArrayStorage<Item>(entityKeyName: entityKeyName, resource: $0)
-                CoreDataContextManager.shared.storages[objectKeyID] = storage
+
+        return create(objectPointer: objectPointer).then {
+            if let arrayStorage = CoreDataContextManager.shared.storages[objectKeyID],
+               let storage = arrayStorage as? CoreDataArrayStorage<Item> {
                 return storage
             }
+
+            let storage = CoreDataArrayStorage<Item>(entityKeyName: entityKeyName, resource: $0)
+            CoreDataContextManager.shared.storages[objectKeyID] = storage
+            return storage
+        }
     }
     
     private class func create(objectPointer: CoreDataFetchPointer) -> Promise<CoreDataResource> {
         Promise(on: .main) { resolve, reject in
             CoreDataContextManager.shared.locker.lock()
-            
+
             if let resource = CoreDataContextManager.shared.resource {
                 CoreDataContextManager.shared.locker.unlock()
                 resolve(resource)
                 return
             }
-            
-            let container = try NSPersistentContainer(
-                name: objectPointer.modelName,
-                managedObjectModel: fetchManagedObjectModel(objectPointer)
-            )
-            
-            container.loadPersistentStores { _, error in
-                if let error = error {
-                    CoreDataContextManager.shared.locker.unlock()
-                    reject(error)
-                    return
-                }
-                
-                let resource = CoreDataResource(
-                    rawObjectPointer: objectPointer,
-                    container: container
+
+            // TODO: When occur a exception to locked 'Promise' method, not escpaped.
+            do {
+                let container = try NSPersistentContainer(
+                    name: objectPointer.modelName,
+                    managedObjectModel: fetchManagedObjectModel(objectPointer)
                 )
-                CoreDataContextManager.shared.resource = resource
                 
+                container.loadPersistentStores { _, error in
+                    if let error = error {
+                        CoreDataContextManager.shared.locker.unlock()
+                        reject(error)
+                        return
+                    }
+                    
+                    let resource = CoreDataResource(
+                        rawObjectPointer: objectPointer,
+                        container: container
+                    )
+                    CoreDataContextManager.shared.resource = resource
+                    
+                    CoreDataContextManager.shared.locker.unlock()
+                    resolve(resource)
+                }
+            } catch {
                 CoreDataContextManager.shared.locker.unlock()
-                resolve(resource)
+                reject(error)
             }
         }
     }
@@ -129,10 +146,12 @@ extension CoreDataArrayStorage: ArrayStorage {
     }
     
     public func delete(_ value: Item) {
-        context.delete(value)
+        context.perform {
+            self.context.delete(value)
+        }
     }
     
-    public func get(key: Item.Key) -> Item? {
+    public func get(key: Item.Key) -> Promise<Item> {
         let keyString: CVarArg
         switch key {
         case let key as UUID: keyString = (key as CVarArg)
@@ -140,11 +159,15 @@ extension CoreDataArrayStorage: ArrayStorage {
         }
         
         let predicate = NSPredicate(format: "\(entityKeyName) == %@", keyString)
-        print(predicate.predicateFormat)
-        return getAll(predicate: predicate).first
+        
+        return Promise {
+            self.getAll(predicate: predicate).then {
+                try $0.first ?? throwing()
+            }
+        }
     }
     
-    public func get(limit: GetLimit) -> [Item] {
+    public func get(limit: GetLimit) -> Promise<[Item]> {
         switch limit {
         case .unlimited:
             return getAll()
@@ -153,14 +176,23 @@ extension CoreDataArrayStorage: ArrayStorage {
         }
     }
     
-    public func save() throws {
-        try self.context.save()
+    public func save() -> Promise<Void> {
+        return Promise { resolve, reject in
+            self.context.perform {
+                do {
+                    try self.context.save()
+                    resolve(())
+                } catch { reject(error) }
+            }
+        }
     }
 }
 
 extension CoreDataArrayStorage {
     func removeAll() throws {
-        _ = try? context.execute(NSBatchDeleteRequest(fetchRequest: fetchRequest()))
+        context.perform {
+            _ = try? self.context.execute(NSBatchDeleteRequest(fetchRequest: self.fetchRequest()))
+        }
     }
 }
 
@@ -171,7 +203,7 @@ extension CoreDataArrayStorage {
             FileManager.default.fileExists(atPath: url.path),
             let managedObjectModel = NSManagedObjectModel(contentsOf: url)
         else {
-            throw URLError(.badURL)
+            throw CoreDataStorageError.badURL
         }
         
         return managedObjectModel
@@ -183,11 +215,24 @@ extension CoreDataArrayStorage {
         return result
     }
     
-    private func getAll(predicate: NSPredicate? = nil, limit: Int? = nil) -> [Item] {
-        let request = fetchRequest(limit: limit)
-        request.predicate = predicate
-        let items = try? context.fetch(request) as? [Item]
-        return items ?? []
+    private func getAll(predicate: NSPredicate? = nil, limit: Int? = nil) -> Promise<[Item]> {
+        let fetchRequest = fetchRequest(limit: limit)
+        fetchRequest.predicate = predicate
+        
+        return Promise { resolve, reject in
+            self.context.perform {
+                do {
+                    guard let data = try self.context.fetch(fetchRequest) as? [Item] else {
+                        resolve([])
+                        return
+                    }
+                    
+                    resolve(data)
+                } catch {
+                    reject(error)
+                }
+            }
+        }
     }
 }
 
@@ -210,7 +255,7 @@ fileprivate extension NSPersistentContainer {
     /// It's same to `loadPersistentStores:CompletionHandler` method. Is converted a completionHandler to Promise
     /// - Returns: loaded `NSPersistentContainer`.
     func loadPersistentStores() -> Promise<NSPersistentContainer> {
-        return Promise(on: .main) { resolve, reject in
+        Promise(on: .global()) { resolve, reject in
             self.loadPersistentStores { _, error in
                 guard let error = error else {
                     resolve(self)

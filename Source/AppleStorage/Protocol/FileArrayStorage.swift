@@ -7,6 +7,7 @@
 
 import Foundation
 import SabyConcurrency
+import SabySafe
 
 // MARK: FileArrayStorage
 public final class FileArrayStorage<Item> where
@@ -56,28 +57,37 @@ extension FileArrayStorage: ArrayStorage {
         cachedItems = Atomic(cachedItems.capture.filter { $0.key != value.key })
     }
     
-    public func get(key: Item.Key) -> Item? {
-        cachedItems.capture.first { $0.key == key }
-    }
-    
-    public func get(limit: GetLimit) -> [Item] {
-        let capturedItems = cachedItems.capture
-        switch limit {
-        case .unlimited:
-            return capturedItems
-        case .count(let limit):
-            let min = Int(min(UInt(capturedItems.count), limit))
-            return Array(capturedItems[0 ..< min])
+    public func get(key: Item.Key) -> Promise<Item> {
+        let item = cachedItems.capture.first { $0.key == key }
+        return Promise {
+            try item ?? throwing()
         }
     }
     
-    public func save() throws {
-        locker.lock()
-        defer { locker.unlock() }
+    public func get(limit: GetLimit) -> Promise<[Item]> {
+        let capturedItems = cachedItems.capture
         
-        let data = try PropertyListEncoder().encode(self.cachedItems.capture)
-        guard let filePath = self.filePath else { throw URLError(.badURL) }
-        try data.write(to: filePath)
+        switch limit {
+        case .unlimited:
+            return Promise { capturedItems }
+        case .count(let limit):
+            let min = Int(min(UInt(capturedItems.count), limit))
+            return Promise { Array(capturedItems[0 ..< min]) }
+        }
+    }
+    
+    public func save() throws -> Promise<Void> {
+        locker.lock()
+        
+        return Promise {
+            let data = try PropertyListEncoder().encode(self.cachedItems.capture)
+            guard let filePath = self.filePath else { throw URLError(.badURL) }
+            try data.write(to: filePath)
+            
+            self.locker.unlock()
+            return
+        }
+        
     }
 }
 

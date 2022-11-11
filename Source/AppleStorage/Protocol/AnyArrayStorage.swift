@@ -41,17 +41,17 @@ public struct AnyArrayStorage<Value: KeyIdentifiable>: ArrayStorage {
     }
     
     @inline(__always) @inlinable
-    public func get(key: Value.Key) -> Value? {
+    public func get(key: Value.Key) -> Promise<Value> {
         arrayStorageBox.get(key: key)
     }
     
     @inline(__always) @inlinable
-    public func get(limit: GetLimit) -> [Value] {
+    public func get(limit: GetLimit) -> Promise<[Value]> {
         arrayStorageBox.get(limit: limit)
     }
     
     @inline(__always) @inlinable
-    public func save() throws {
+    public func save() throws -> Promise<Void> {
         try arrayStorageBox.save()
     }
 }
@@ -72,17 +72,17 @@ class AnyArrayStorageBoxBase<Value: KeyIdentifiable>: ArrayStorage {
     }
     
     @inline(__always) @inlinable
-    func get(key: Value.Key) -> Value? {
+    func get(key: Value.Key) -> Promise<Value> {
         fatalError()
     }
     
     @inline(__always) @inlinable
-    func get(limit: GetLimit) -> [Value] {
+    func get(limit: GetLimit) -> Promise<[Value]> {
         fatalError()
     }
     
     @inline(__always) @inlinable
-    func save() throws {
+    func save() throws -> Promise<Void> {
         fatalError()
     }
 }
@@ -112,17 +112,17 @@ final class AnyArrayStorageBox<
     }
     
     @inline(__always) @inlinable
-    override func get(key: Value.Key) -> Value? {
+    override func get(key: Value.Key) -> Promise<Value> {
         arrayStorage.get(key: key)
     }
     
     @inline(__always) @inlinable
-    override func get(limit: GetLimit) -> [Value] {
+    override func get(limit: GetLimit) -> Promise<[Value]> {
         arrayStorage.get(limit: limit)
     }
     
     @inline(__always) @inlinable
-    override func save() throws {
+    override func save() throws -> Promise<Void> {
         try arrayStorage.save()
     }
 }

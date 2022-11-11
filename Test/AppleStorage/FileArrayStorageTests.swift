@@ -49,13 +49,24 @@ final class FileArrayStorageTests: XCTestCase {
     func testPush() {
         defer { FileArrayStorageTests.clear() }
         
+        let expectation = self.expectation(description: "testPush")
+        expectation.expectedFulfillmentCount = 2
+        
         let storage = FileArrayStorageTests.storage
         let testItems = TestItemGroup()
         
         testItems.pushItems.forEach(storage.push)
         try? storage.save()
-        XCTAssertEqual(storage.get(limit: .unlimited).count, testItems.pushCount)
-        XCTAssertEqual(storage.get(limit: .count(UInt.max)).count, testItems.pushCount)
+        
+        storage.get(limit: .unlimited).then {
+            XCTAssertEqual($0.count, testItems.pushCount)
+            expectation.fulfill()
+        }
+        
+        storage.get(limit: .count(UInt.max)).then {
+            XCTAssertEqual($0.count, testItems.pushCount)
+            expectation.fulfill()
+        }
     }
     
     func testForStress() {
@@ -68,15 +79,22 @@ final class FileArrayStorageTests: XCTestCase {
     func testRemove() {
         defer { FileArrayStorageTests.clear() }
         
+        let expectation = self.expectation(description: "testRemove")
+        expectation.expectedFulfillmentCount = 1
+        
         let storage = FileArrayStorageTests.storage
         let testItems = TestItemGroup()
         
         testItems.pushItems.forEach(storage.push)
         try? storage.save()
-        storage.get(limit: .unlimited)[0 ... testItems.removeCount - 1].forEach(storage.delete)
-        
-        try? storage.save()
-        let fetchedItems = storage.get(limit: .unlimited)
-        XCTAssertEqual(fetchedItems.count, testItems.pushCount - testItems.removeCount)
+        storage.get(limit: .unlimited).then {
+            $0[0 ... testItems.removeCount - 1].forEach(storage.delete)
+            
+            try? storage.save()
+            storage.get(limit: .unlimited).then { fetchedItems in
+                XCTAssertEqual(fetchedItems.count, testItems.pushCount - testItems.removeCount)
+                expectation.fulfill()
+            }
+        }
     }
 }
