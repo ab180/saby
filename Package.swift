@@ -139,7 +139,7 @@ package
             path: "Source/AppleObjectiveCReflection"),
         .testTarget(
             name: "SabyAppleStorageTest",
-            dependencies: ["SabyAppleStorage"],
+            dependencies: ["SabyAppleStorage", "SabySafe"],
             path: "Test/AppleStorage"),
         .testTarget(
             name: "SabyAppleLoggerTest",
