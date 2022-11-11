@@ -13,7 +13,7 @@ extension Logger {
         public var logLevel: LogLevel? = .debug
         
         /// Use `print` to show logs  instead of `OS_log` when set to `true`
-        public var usePrint: Bool = false
+        public let usePrint: Bool
         
         /// A variable used for displaying `subsystem` value in console
         public let subsystem: String
