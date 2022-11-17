@@ -56,23 +56,24 @@ final class FileArrayStorageTests: XCTestCase {
         let testItems = TestItemGroup()
         
         testItems.pushItems.forEach(storage.push)
-        try? storage.save()
-        
-        storage.get(limit: .unlimited).then {
-            XCTAssertEqual($0.count, testItems.pushCount)
-            expectation.fulfill()
+        storage.save().then {
+            storage.get(limit: .unlimited).then {
+                XCTAssertEqual($0.count, testItems.pushCount)
+                expectation.fulfill()
+            }
+            
+            storage.get(limit: .count(UInt.max)).then {
+                XCTAssertEqual($0.count, testItems.pushCount)
+                expectation.fulfill()
+            }
         }
         
-        storage.get(limit: .count(UInt.max)).then {
-            XCTAssertEqual($0.count, testItems.pushCount)
-            expectation.fulfill()
-        }
+        wait(for: [expectation], timeout: 5)
     }
     
     func testForStress() {
         for _ in 0 ... 1000 {
             testRemove()
-            CoreDataArrayStorageTests.clear()
         }
     }
     
@@ -86,15 +87,19 @@ final class FileArrayStorageTests: XCTestCase {
         let testItems = TestItemGroup()
         
         testItems.pushItems.forEach(storage.push)
-        try? storage.save()
-        storage.get(limit: .unlimited).then {
-            $0[0 ... testItems.removeCount - 1].forEach(storage.delete)
-            
-            try? storage.save()
-            storage.get(limit: .unlimited).then { fetchedItems in
-                XCTAssertEqual(fetchedItems.count, testItems.pushCount - testItems.removeCount)
-                expectation.fulfill()
+        storage.save().then {
+            storage.get(limit: .unlimited).then {
+                $0[0 ... testItems.removeCount - 1].forEach(storage.delete)
+                
+                storage.save().then {
+                    storage.get(limit: .unlimited).then { fetchedItems in
+                        XCTAssertEqual(fetchedItems.count, testItems.pushCount - testItems.removeCount)
+                        expectation.fulfill()
+                    }
+                }
             }
         }
+        
+        wait(for: [expectation], timeout: 5000)
     }
 }
