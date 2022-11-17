@@ -20,20 +20,25 @@ public final class FileArrayStorage<Item> where
     private let directoryName: String
     private lazy var cachedItems: Atomic<[Item]> = Atomic((try? getAll()) ?? [])
     
-    private var filePath: URL? {
+    private lazy var directoryURL: URL? = {
         let manager = FileManager.default
         let urls = manager.urls(for: .libraryDirectory, in: .userDomainMask)
         guard false == urls.isEmpty else { return nil }
         
         var result = urls[0].appendingPathComponent(directoryName)
-        if false == manager.fileExists(atPath: result.path) {
-            try? manager.createDirectory(at: result, withIntermediateDirectories: true)
-        }
         
-        result = result.appendingPathComponent(String(describing: Item.self))
         return result
-    }
+    }()
     
+    private lazy var fileURL: URL? = {
+        guard var directoryPath = directoryURL else { return nil }
+        return directoryPath.appendingPathComponent(String(describing: Item.self))
+    }()
+    
+    /// Default initializer.
+    ///
+    /// - Parameters:
+    /// - directoryName: Will saved to `SearchPathDirectory.libraryDirectory`/`directoryName` paths.
     public init(directoryName: String = "saby.storage") {
         self.directoryName = directoryName
     }
@@ -76,13 +81,32 @@ extension FileArrayStorage: ArrayStorage {
         }
     }
     
-    public func save() throws -> Promise<Void> {
-        locker.lock()
+    public func save() -> Promise<Void> {
         
         return Promise {
+            self.locker.lock()
+            
             let data = try PropertyListEncoder().encode(self.cachedItems.capture)
-            guard let filePath = self.filePath else { throw URLError(.badURL) }
-            try data.write(to: filePath)
+            guard let filePath = self.fileURL else {
+                self.locker.unlock()
+                throw URLError(.badURL)
+            }
+            
+            do {
+                if
+                    let directoryURL = self.directoryURL,
+                    false == FileManager.default.fileExists(atPath: directoryURL.path) {
+                    try FileManager.default.createDirectory(
+                        at: directoryURL, withIntermediateDirectories: true
+                    )
+                }
+                
+                try data.write(to: filePath)
+            } catch {
+                self.locker.unlock()
+                throw error
+            }
+            
             
             self.locker.unlock()
             return
@@ -94,7 +118,7 @@ extension FileArrayStorage: ArrayStorage {
 extension FileArrayStorage {
     private func getAll() throws -> [Item] {
         guard
-            let filePath = self.filePath
+            let filePath = self.fileURL
         else { throw URLError(.badURL) }
         
         do {

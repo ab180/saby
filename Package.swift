@@ -127,7 +127,7 @@ package
             path: "Source/AppleDataFetcher"),
         .target(
             name: "SabyAppleStorage",
-            dependencies: ["SabyConcurrency"],
+            dependencies: ["SabyConcurrency", "SabySafe"],
             path: "Source/AppleStorage"),
         .target(
             name: "SabyAppleLogger",
