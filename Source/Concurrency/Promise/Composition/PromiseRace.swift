@@ -9,7 +9,7 @@ import Foundation
 
 extension Promise {
     public static func race<Result>(
-        on queue: DispatchQueue = Setting.defaultQueue,
+        on queue: DispatchQueue = .global(),
         _ promises: [Promise<Result>]
     ) -> Promise<Result> where Value == Void
     {

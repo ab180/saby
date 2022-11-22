@@ -15,10 +15,6 @@ final class ContractTest: XCTestCase {
         if contract.subscribers.count != 0 {
             XCTFail("Initialized Contract's subscribers' count is not 0")
         }
-        
-        if contract.queue != Contract.Setting.defaultQueue {
-            XCTFail("Initialized Contract's queue is not default queue")
-        }
     }
     
     func test__resolve() {

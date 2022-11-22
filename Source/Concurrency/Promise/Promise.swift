@@ -14,7 +14,7 @@ public final class Promise<Value> {
     let queue: DispatchQueue
     var subscribers: [Subscriber]
     
-    init(queue: DispatchQueue = Promise<Void>.Setting.defaultQueue) {
+    init(queue: DispatchQueue = .global()) {
         self.lock = UnsafeMutablePointer.allocate(capacity: 1)
         lock.initialize(to: pthread_mutex_t())
         self.state = .pending
@@ -33,7 +33,7 @@ public final class Promise<Value> {
 }
 
 extension Promise {
-    public convenience init(on queue: DispatchQueue = Promise<Void>.Setting.defaultQueue,
+    public convenience init(on queue: DispatchQueue = .global(),
                             _ work: @escaping (_ resolve: @escaping (Value) -> Void,
                                                _ reject: @escaping (Error) -> Void) throws -> Void)
     {
@@ -48,7 +48,7 @@ extension Promise {
         }
     }
     
-    public convenience init(on queue: DispatchQueue = Promise<Void>.Setting.defaultQueue,
+    public convenience init(on queue: DispatchQueue = .global(),
                             _ block: @escaping () throws -> Value)
     {
         self.init(queue: queue)
@@ -63,7 +63,7 @@ extension Promise {
         }
     }
     
-    public convenience init(on queue: DispatchQueue = Promise<Void>.Setting.defaultQueue,
+    public convenience init(on queue: DispatchQueue = .global(),
                             _ block: @escaping () throws -> Promise<Value>)
     {
         self.init(queue: queue)
@@ -143,7 +143,7 @@ extension Promise {
 
 extension Promise {
     public static func pending(
-        on queue: DispatchQueue = Promise<Void>.Setting.defaultQueue
+        on queue: DispatchQueue = .global()
     ) -> (Promise<Value>, Promise<Value>.Resolve, Promise<Value>.Reject)
     {
         let promise = Promise(queue: queue)
@@ -151,8 +151,8 @@ extension Promise {
         return (promise, { promise.resolve($0) }, { promise.reject($0) })
     }
     
-    public static func resolved(on queue: DispatchQueue = Promise<Void>.Setting.defaultQueue,
-                               _ value: Value) -> Promise<Value>
+    public static func resolved(on queue: DispatchQueue = .global(),
+                                _ value: Value) -> Promise<Value>
     {
         let promise = Promise(queue: queue)
         promise.state = .resolved(value)
@@ -160,8 +160,8 @@ extension Promise {
         return promise
     }
     
-    public static func rejected(on queue: DispatchQueue = Promise<Void>.Setting.defaultQueue,
-                              _ error: Error) -> Promise<Value>
+    public static func rejected(on queue: DispatchQueue = .global(),
+                                _ error: Error) -> Promise<Value>
     {
         let promise = Promise(queue: queue)
         promise.state = .rejected(error)
@@ -192,12 +192,6 @@ extension Promise {
         case pending
         case resolved(_ value: Value)
         case rejected(_ error: Error)
-    }
-    
-    public enum Setting where Value == Void {
-        public static var defaultQueue: DispatchQueue {
-            .global(qos: .default)
-        }
     }
     
     public enum InternalError: LocalizedError, CustomStringConvertible {

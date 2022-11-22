@@ -9,7 +9,7 @@ import Foundation
 
 extension Promise {    
     public static func all<Value0>(
-        on queue: DispatchQueue = Setting.defaultQueue,
+        on queue: DispatchQueue = .global(),
         _ promises: [Promise<Value0>]
     ) -> Promise<[Value0]> where Value == Void
     {
@@ -45,7 +45,7 @@ extension Promise {
     }
     
     public static func all<Value0, Value1>(
-        on queue: DispatchQueue = Setting.defaultQueue,
+        on queue: DispatchQueue = .global(),
         _ promise0: Promise<Value0>,
         _ promise1: Promise<Value1>
     ) -> Promise<(Value0, Value1)> where Value == Void
@@ -81,7 +81,7 @@ extension Promise {
     }
     
     public static func all<Value0, Value1, Value2>(
-        on queue: DispatchQueue = Setting.defaultQueue,
+        on queue: DispatchQueue = .global(),
         _ promise0: Promise<Value0>,
         _ promise1: Promise<Value1>,
         _ promise2: Promise<Value2>
@@ -125,7 +125,7 @@ extension Promise {
     }
     
     public static func all<Value0, Value1, Value2, Value3>(
-        on queue: DispatchQueue = Setting.defaultQueue,
+        on queue: DispatchQueue = .global(),
         _ promise0: Promise<Value0>,
         _ promise1: Promise<Value1>,
         _ promise2: Promise<Value2>,
@@ -177,7 +177,7 @@ extension Promise {
     }
     
     public static func all<Value0, Value1, Value2, Value3, Value4>(
-        on queue: DispatchQueue = Setting.defaultQueue,
+        on queue: DispatchQueue = .global(),
         _ promise0: Promise<Value0>,
         _ promise1: Promise<Value1>,
         _ promise2: Promise<Value2>,

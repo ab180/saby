@@ -13,7 +13,7 @@ public final class Contract<Value> {
     let queue: DispatchQueue
     var subscribers: [Subscriber]
     
-    init(queue: DispatchQueue = Contract<Void>.Setting.defaultQueue) {
+    init(queue: DispatchQueue = .global()) {
         self.lock = UnsafeMutablePointer.allocate(capacity: 1)
         lock.initialize(to: pthread_mutex_t())
         
@@ -52,7 +52,7 @@ extension Contract {
 
 extension Contract {
     public static func create(
-        on queue: DispatchQueue = Promise<Void>.Setting.defaultQueue
+        on queue: DispatchQueue = .global()
     ) -> (Contract<Value>, (Value) -> Void, (Error) -> Void)
     {
         let contract = Contract(queue: queue)
@@ -60,7 +60,7 @@ extension Contract {
         return (contract, { contract.resolve($0) }, { contract.reject($0) })
     }
     
-    public convenience init(on queue: DispatchQueue = Contract<Void>.Setting.defaultQueue) {
+    public convenience init(on queue: DispatchQueue = .global()) {
         self.init(queue: queue)
     }
 }
@@ -92,12 +92,6 @@ extension Contract {
             self.init(promiseAtomic: Atomic(Promise<Void>.resolved(on: queue, ())),
                       onResolved: onResolved,
                       onRejected: onRejected)
-        }
-    }
-    
-    public enum Setting where Value == Void {
-        public static var defaultQueue: DispatchQueue {
-            .global(qos: .default)
         }
     }
 }

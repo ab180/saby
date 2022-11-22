@@ -9,7 +9,7 @@ import Foundation
 
 extension Contract {
     public static func merge<Value0>(
-        on queue: DispatchQueue = Setting.defaultQueue,
+        on queue: DispatchQueue = .global(),
         _ contracts: [Contract<Value0>]
     ) -> Contract<Value0> where Value == Void
     {
@@ -28,7 +28,7 @@ extension Contract {
     }
     
     public static func merge<Value0, Value1>(
-        on queue: DispatchQueue = Setting.defaultQueue,
+        on queue: DispatchQueue = .global(),
         _ contract0: Contract<Value0>,
         _ contract1: Contract<Value1>
     ) -> Contract<MergedValue2<Value0, Value1>> where Value == Void
@@ -52,7 +52,7 @@ extension Contract {
     }
     
     public static func merge<Value0, Value1, Value2>(
-        on queue: DispatchQueue = Setting.defaultQueue,
+        on queue: DispatchQueue = .global(),
         _ contract0: Contract<Value0>,
         _ contract1: Contract<Value1>,
         _ contract2: Contract<Value2>
@@ -83,7 +83,7 @@ extension Contract {
     }
     
     public static func merge<Value0, Value1, Value2, Value3>(
-        on queue: DispatchQueue = Setting.defaultQueue,
+        on queue: DispatchQueue = .global(),
         _ contract0: Contract<Value0>,
         _ contract1: Contract<Value1>,
         _ contract2: Contract<Value2>,
@@ -121,7 +121,7 @@ extension Contract {
     }
     
     public static func merge<Value0, Value1, Value2, Value3, Value4>(
-        on queue: DispatchQueue = Setting.defaultQueue,
+        on queue: DispatchQueue = .global(),
         _ contract0: Contract<Value0>,
         _ contract1: Contract<Value1>,
         _ contract2: Contract<Value2>,
