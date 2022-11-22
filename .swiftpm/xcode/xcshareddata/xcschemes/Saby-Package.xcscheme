@@ -196,20 +196,6 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "SabyAppleLogger"
-               BuildableName = "SabyAppleLogger"
-               BlueprintName = "SabyAppleLogger"
-               ReferencedContainer = "container:">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
                BlueprintIdentifier = "SabyAppleDataFetcher"
                BuildableName = "SabyAppleDataFetcher"
                BlueprintName = "SabyAppleDataFetcher"
@@ -241,6 +227,34 @@
                BlueprintIdentifier = "SabyESCArchitecture"
                BuildableName = "SabyESCArchitecture"
                BlueprintName = "SabyESCArchitecture"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SabyAppleStorage"
+               BuildableName = "SabyAppleStorage"
+               BlueprintName = "SabyAppleStorage"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SabyAppleLogger"
+               BuildableName = "SabyAppleLogger"
+               BlueprintName = "SabyAppleLogger"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>

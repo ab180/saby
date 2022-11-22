@@ -14,7 +14,7 @@ protocol LogService {
 
 struct OSLogService: LogService {
     public func log(_ message: StaticString, log: OSLog, type: OSLogType, _ args: CVarArg) {
-        if #available(iOS 12.0, *) {
+        if #available(iOS 12.0, macOS 10.14, tvOS 12.0, watchOS 5.0, *) {
             os_log(type, message, args)
         } else {
             os_log(message, log: log, type: type, args)
