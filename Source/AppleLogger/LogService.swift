@@ -7,21 +7,32 @@
 
 import OSLog
 
-protocol LogService {
-    func log(_ message: StaticString, log: OSLog, type: OSLogType, _ args: CVarArg)
-    func printLog(type: LogLevel, _ message: String)
+public protocol LogService {
+    func log(level: LogLevel, _ message: String)
 }
 
-struct OSLogService: LogService {
-    public func log(_ message: StaticString, log: OSLog, type: OSLogType, _ args: CVarArg) {
-        if #available(iOS 12.0, macOS 10.14, tvOS 12.0, watchOS 5.0, *) {
+public struct OSLogService: LogService {
+    let osLog: OSLog
+    
+    public func log(level: LogLevel, _ message: String) {
+        self.sendLog("%s", log: self.osLog, type: level.osLogType, message)
+    }
+    
+    private func sendLog(_ message: StaticString, log: OSLog, type: OSLogType, _ args: CVarArg) {
+        if #available(iOS 12.0, *) {
             os_log(type, message, args)
         } else {
             os_log(message, log: log, type: type, args)
         }
     }
-    
-    public func printLog(type: LogLevel, _ message: String) {
-        print("[AirBridge : \(type.name)] \(message)")
+
+    init(_ osLog: OSLog) {
+        self.osLog = osLog
+    }
+}
+
+public struct PrintLogService: LogService {
+    public func log(level: LogLevel, _ message: String) {
+        print("[AirBridge : \(level.name)] \(message)")
     }
 }
