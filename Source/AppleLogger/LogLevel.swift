@@ -43,7 +43,19 @@ public enum LogLevel: Comparable, CaseIterable {
         }
     }
     
-    func isHigherOrEqual(to level: LogLevel) -> Bool {
+    func isLoggable(with loggerLevel: LogLevel?) -> Bool {
+        guard let loggerLevel = loggerLevel else {
+            return false
+        }
+        
+        if self.isHigherOrEqual(to: loggerLevel) {
+            return true
+        } else {
+            return false
+        }
+    }
+    
+    private func isHigherOrEqual(to level: LogLevel) -> Bool {
         return self >= level
     }
 }
