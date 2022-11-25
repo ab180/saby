@@ -8,10 +8,13 @@
 import Foundation
 
 extension Promise where Value == Void {
-    public static func delay(_ interval: DispatchTimeInterval) -> Promise<Void> {
-        let (promise, resolve, _) = Promise.pending()
+    public static func delay(
+        on queue: DispatchQueue = .global(),
+        _ interval: DispatchTimeInterval
+    ) -> Promise<Void> {
+        let (promise, resolve, _) = Promise.pending(on: queue)
         
-        promise.queue.asyncAfter(deadline: .now() + interval) {
+        queue.asyncAfter(deadline: .now() + interval) {
             resolve(())
         }
         
@@ -21,8 +24,13 @@ extension Promise where Value == Void {
 
 extension Promise {
     @discardableResult
-    public func delay(_ interval: DispatchTimeInterval) -> Promise<Value> {
-        let promiseReturn = Promise<Value>(queue: queue)
+    public func delay(
+        on queue: DispatchQueue? = nil,
+        _ interval: DispatchTimeInterval
+    ) -> Promise<Value> {
+        let queue = queue ?? self.queue
+        
+        let promiseReturn = Promise<Value>(queue: self.queue)
         
         queue.asyncAfter(deadline: .now() + interval) {
             self.subscribe(subscriber: Subscriber(

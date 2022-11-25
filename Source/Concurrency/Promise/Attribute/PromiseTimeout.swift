@@ -8,10 +8,13 @@
 import Foundation
 
 extension Promise where Value == Void {
-    public static func timeout(_ interval: DispatchTimeInterval) -> Promise<Void> {
-        let (promise, _, reject) = Promise.pending()
+    public static func timeout(
+        on queue: DispatchQueue = .global(),
+        _ interval: DispatchTimeInterval
+    ) -> Promise<Void> {
+        let (promise, _, reject) = Promise.pending(on: queue)
         
-        promise.queue.asyncAfter(deadline: .now() + interval) {
+        queue.asyncAfter(deadline: .now() + interval) {
             reject(InternalError.timeout)
         }
         
@@ -21,7 +24,12 @@ extension Promise where Value == Void {
 
 extension Promise {
     @discardableResult
-    public func timeout(_ interval: DispatchTimeInterval) -> Promise<Value> {
+    public func timeout(
+        on queue: DispatchQueue? = nil,
+        _ interval: DispatchTimeInterval
+    ) -> Promise<Value> {
+        let queue = queue ?? self.queue
+        
         queue.asyncAfter(deadline: .now() + interval) {
             self.reject(InternalError.timeout)
         }
