@@ -8,14 +8,23 @@
 import Foundation
 
 extension Contract {
-    public func delay<AnyValue>(until promise: Promise<AnyValue>) -> Contract<Value> {
-        let contract = Contract<Value>(on: queue)
+    public func delay<AnyValue>(
+        on queue: DispatchQueue? = nil,
+        until promise: Promise<AnyValue>
+    ) -> Contract<Value> {
+        let queue = queue ?? self.queue
         
-        let promiseAtomic = Atomic(Promise<Void>(on: queue) { promise.toPromiseVoid() })
+        let contract = Contract<Value>(on: self.queue)
         
         subscribe(subscriber: Subscriber(
-            promiseAtomic: promiseAtomic,
-            onResolved: { value in contract.resolve(value) },
+            on: queue,
+            onResolved: { value in
+                promise.subscribe(subscriber: Promise.Subscriber(
+                    on: queue,
+                    onResolved: { _ in contract.resolve(value) },
+                    onRejected: { contract.reject($0) }
+                ))
+            },
             onRejected: { error in contract.reject(error) }
         ))
         
