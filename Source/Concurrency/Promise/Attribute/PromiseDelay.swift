@@ -32,13 +32,15 @@ extension Promise {
         
         let promiseReturn = Promise<Value>(queue: self.queue)
         
-        queue.asyncAfter(deadline: .now() + interval) {
-            self.subscribe(subscriber: Subscriber(
-                on: self.queue,
-                onResolved: { promiseReturn.resolve($0) },
-                onRejected: { promiseReturn.reject($0) }
-            ))
-        }
+        self.subscribe(subscriber: Subscriber(
+            on: queue,
+            onResolved: { value in
+                queue.asyncAfter(deadline: .now() + interval) {
+                    promiseReturn.resolve(value)
+                }
+            },
+            onRejected: { promiseReturn.reject($0) }
+        ))
         
         return promiseReturn
     }
