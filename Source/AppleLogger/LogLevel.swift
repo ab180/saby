@@ -14,6 +14,7 @@ import OSLog
 public enum LogLevel: Comparable, CaseIterable {
     case debug
     case info
+    case warning
     case error
     case fault
     
@@ -23,6 +24,8 @@ public enum LogLevel: Comparable, CaseIterable {
             return "DEBUG"
         case .info:
             return "INFO"
+        case .warning:
+            return "WARNING"
         case .error:
             return "ERROR"
         case .fault:
@@ -35,6 +38,8 @@ public enum LogLevel: Comparable, CaseIterable {
         case .debug:
             return .default
         case .info:
+            return .info
+        case .warning:
             return .info
         case .error:
             return .error

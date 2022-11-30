@@ -31,12 +31,16 @@ extension PrintLogger: Logger {
         loggerSetting.logLevel = level
     }
     
+    public func debug(_ message: String) {
+        self.log(level: .debug, message)
+    }
+    
     public func info(_ message: String) {
         self.log(level: .info, message)
     }
     
-    public func debug(_ message: String) {
-        self.log(level: .debug, message)
+    public func warning(_ message: String) {
+        self.log(level: .warning, message)
     }
     
     public func error(_ message: String) {

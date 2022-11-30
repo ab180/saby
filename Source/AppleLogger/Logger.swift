@@ -13,8 +13,9 @@ public protocol Logger {
     func setLogLevel(to level: LogLevel)
     
     /// You can use each method to show logs
-    func info(_ message: String)
     func debug(_ message: String)
+    func info(_ message: String)
+    func warning(_ message: String)
     func error(_ message: String)
     func fault(_ message: String)
 }
