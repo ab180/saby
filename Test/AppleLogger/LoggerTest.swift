@@ -70,7 +70,18 @@ final class LoggerTest: XCTestCase {
     }
 }
 
-// MARK: - Internal mocks for test
+
+// MARK: - Mock factories
+fileprivate func mockLogger(expectation: XCTestExpectation? = nil,
+                            setting: LoggerSetting = defaultSetting) -> some SabyAppleLogger.Logger {
+    return MockLogger(expectation: expectation, setting: setting)
+}
+
+fileprivate var defaultSetting: LoggerSetting {
+    return LoggerSetting(subsystem: "", category: "")
+}
+
+// MARK: - Mocks for test
 fileprivate class MockLogService: LogService {
     let expectation: XCTestExpectation?
     
@@ -84,23 +95,40 @@ fileprivate class MockLogService: LogService {
     }
 }
 
-fileprivate class MockLogger: SabyAppleLogger.Logger {
+fileprivate class MockLogger: SabyAppleLogger.LoggerType {
     var loggerSetting: SabyAppleLogger.LoggerSetting
-    let logService: MockLogService
-    
+    var logService: MockLogService
+        
     init(expectation: XCTestExpectation?, setting: LoggerSetting) {
         self.loggerSetting = setting
         self.logService = MockLogService(expectation: expectation)
     }
 }
 
-fileprivate func mockLogger(expectation: XCTestExpectation? = nil,
-                            setting: LoggerSetting = defaultSetting) -> some SabyAppleLogger.Logger {
-    return MockLogger(expectation: expectation, setting: setting)
-}
-
-fileprivate var defaultSetting: LoggerSetting {
-    return LoggerSetting(subsystem: "", category: "")
+extension MockLogger: SabyAppleLogger.Logger {
+    public var setting: LoggerSetting {
+        return loggerSetting
+    }
+    
+    public func setLogLevel(to level: LogLevel) {
+        loggerSetting.logLevel = level
+    }
+    
+    public func info(_ message: String) {
+        self.log(level: .info, message)
+    }
+    
+    public func debug(_ message: String) {
+        self.log(level: .debug, message)
+    }
+    
+    public func error(_ message: String) {
+        self.log(level: .error, message)
+    }
+    
+    public func fault(_ message: String) {
+        self.log(level: .fault, message)
+    }
 }
 
 extension MockLogger {
