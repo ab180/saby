@@ -114,12 +114,16 @@ extension MockLogger: SabyAppleLogger.Logger {
         loggerSetting.logLevel = level
     }
     
+    public func debug(_ message: String) {
+        self.log(level: .debug, message)
+    }
+    
     public func info(_ message: String) {
         self.log(level: .info, message)
     }
     
-    public func debug(_ message: String) {
-        self.log(level: .debug, message)
+    public func warning(_ message: String) {
+        self.log(level: .warning, message)
     }
     
     public func error(_ message: String) {
@@ -135,6 +139,7 @@ extension MockLogger {
     func printAllLogs() {
         self.fault("TEST: FAULT LOG")
         self.error("TEST: ERROR LOG")
+        self.warning("TEST: WARNING LOG")
         self.info("TEST: INFO LOG")
         self.debug("TEST: DEFAULT LOG")
     }
