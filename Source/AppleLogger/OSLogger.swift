@@ -8,9 +8,9 @@
 import Foundation
 import OSLog
 
-public final class OSLogger: Logger {
-    public var loggerSetting: LoggerSetting
-    public var logService: OSLogService
+public final class OSLogger: LoggerType {
+    var loggerSetting: LoggerSetting
+    var logService: OSLogService
     
     public init(_ subsystem: String, category: String) {
         let setting = LoggerSetting(subsystem: subsystem, category: category)
@@ -24,5 +24,28 @@ public final class OSLogger: Logger {
     }
 }
 
-
-
+extension OSLogger: Logger {
+    public var setting: LoggerSetting {
+        return loggerSetting
+    }
+    
+    public func setLogLevel(to level: LogLevel) {
+        loggerSetting.logLevel = level
+    }
+    
+    public func info(_ message: String) {
+        self.log(level: .info, message)
+    }
+    
+    public func debug(_ message: String) {
+        self.log(level: .debug, message)
+    }
+    
+    public func error(_ message: String) {
+        self.log(level: .error, message)
+    }
+    
+    public func fault(_ message: String) {
+        self.log(level: .fault, message)
+    }
+}
