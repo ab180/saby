@@ -78,6 +78,7 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
         let objectKeyID = String(describing: Item.self)
 
         return create(objectPointer: objectPointer).then {
+            CoreDataContextManager.shared.locker.lock()
             if let arrayStorage = CoreDataContextManager.shared.storages[objectKeyID],
                let storage = arrayStorage as? CoreDataArrayStorage<Item> {
                 return storage
@@ -86,6 +87,8 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
             let storage = CoreDataArrayStorage<Item>(entityKeyName: entityKeyName, resource: $0)
             CoreDataContextManager.shared.storages[objectKeyID] = storage
             return storage
+        }.finally {
+            CoreDataContextManager.shared.locker.unlock()
         }
     }
     
