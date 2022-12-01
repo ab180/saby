@@ -51,8 +51,8 @@ public struct AnyArrayStorage<Value: KeyIdentifiable>: ArrayStorage {
     }
     
     @inline(__always) @inlinable
-    public func save() throws -> Promise<Void> {
-        try arrayStorageBox.save()
+    public func save() -> Promise<Void> {
+        arrayStorageBox.save()
     }
 }
 
@@ -82,7 +82,7 @@ class AnyArrayStorageBoxBase<Value: KeyIdentifiable>: ArrayStorage {
     }
     
     @inline(__always) @inlinable
-    func save() throws -> Promise<Void> {
+    func save() -> Promise<Void> {
         fatalError()
     }
 }
@@ -122,7 +122,7 @@ final class AnyArrayStorageBox<
     }
     
     @inline(__always) @inlinable
-    override func save() throws -> Promise<Void> {
+    override func save() -> Promise<Void> {
         try arrayStorage.save()
     }
 }
