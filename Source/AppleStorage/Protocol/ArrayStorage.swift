@@ -14,5 +14,5 @@ public protocol ArrayStorage {
     func delete(_ value: Value)
     func get(key: Value.Key) -> Promise<Value>
     func get(limit: GetLimit) -> Promise<[Value]>
-    func save() throws -> Promise<Void>
+    func save() -> Promise<Void>
 }
