@@ -63,13 +63,6 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
         self.resource = resource
         context = resource.container.newBackgroundContext()
         context.automaticallyMergesChangesFromParent = true
-        
-        NotificationCenter.default.addObserver(
-            forName: .NSManagedObjectContextDidSave,
-            object: nil,
-            queue: .main) { notification in
-                
-            }
     }
     
     /// Is substituted for initializer. because a ``loadPersistentStores`` in ``NSPersistentContext`` method is synchronize.
