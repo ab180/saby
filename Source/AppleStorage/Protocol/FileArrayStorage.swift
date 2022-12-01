@@ -74,10 +74,10 @@ extension FileArrayStorage: ArrayStorage {
         
         switch limit {
         case .unlimited:
-            return Promise { capturedItems }
+            return Promise.resolved(capturedItems)
         case .count(let limit):
             let min = Int(min(UInt(capturedItems.count), limit))
-            return Promise { Array(capturedItems[0 ..< min]) }
+            return Promise.resolved(Array(capturedItems[0 ..< min]))
         }
     }
     

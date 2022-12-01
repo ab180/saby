@@ -118,25 +118,6 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
             CoreDataContextManager.shared.locker.unlock()
         }
     }
-    
-    private class func loadContext(resource: CoreDataResource) -> Promise<CoreDataResource> {
-        return Promise<CoreDataResource> { resolve, reject in
-            
-            if let resource = CoreDataContextManager.shared.resource {
-                resolve(resource)
-                return
-            }
-            
-            resource.container.loadPersistentStores { _, error in
-                if let error = error {
-                    reject(error)
-                    return
-                }
-                
-                resolve(resource)
-            }
-        }
-    }
 }
 
 extension CoreDataArrayStorage: ArrayStorage {
@@ -199,6 +180,20 @@ extension CoreDataArrayStorage {
 }
 
 extension CoreDataArrayStorage {
+    private class func loadContext(resource: CoreDataResource) -> Promise<CoreDataResource> {
+        return Promise<CoreDataResource> { resolve, reject in
+            if let resource = CoreDataContextManager.shared.resource {
+                resolve(resource)
+            } else {
+                resource.container.loadPersistentStores().then { _ in
+                    resolve(resource)
+                }.catch {
+                    reject($0)
+                }
+            }
+        }
+    }
+    
     private class func fetchManagedObjectModel(_ from: CoreDataModelDescriptor) throws -> NSManagedObjectModel {
         guard
             let url = from.bundle.url(forResource: from.modelName, withExtension: "momd"),
@@ -266,9 +261,5 @@ fileprivate extension NSPersistentContainer {
                 reject(error)
             }
         }
-    }
-    
-    var toPromise: Promise<NSPersistentContainer> {
-        Promise { self }
     }
 }
