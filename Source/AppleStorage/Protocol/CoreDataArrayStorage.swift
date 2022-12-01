@@ -19,13 +19,13 @@ public enum CoreDataStorageError: Error {
     case badURL
 }
 
-public struct CoreDataFetchPointer {
+public struct CoreDataModelDescriptor {
     let bundle: Bundle
     let modelName: String
 }
 
 fileprivate struct CoreDataResource {
-    let rawObjectPointer: CoreDataFetchPointer
+    let objectDescriptor: CoreDataModelDescriptor
     let container: NSPersistentContainer
 }
 
@@ -74,7 +74,7 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
     ///   - objectPointer: Bundle Target with CoreData model Name to load.
     ///   - entityKeyName: Use the filtering key for fetching data. this parameter is key column name. referring to ``NSPredicate``
     /// - Returns: Async(Promise) result object a CoreDataArrayStorage. Plus, consider an **exception** while in create instance.
-    public class func create(objectPointer: CoreDataFetchPointer, entityKeyName: String) -> Promise<CoreDataArrayStorage> {
+    public class func create(objectPointer: CoreDataModelDescriptor, entityKeyName: String) -> Promise<CoreDataArrayStorage> {
         let objectKeyID = String(describing: Item.self)
 
         return create(objectPointer: objectPointer).then {
@@ -89,7 +89,7 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
         }
     }
     
-    private class func create(objectPointer: CoreDataFetchPointer) -> Promise<CoreDataResource> {
+    private class func create(objectPointer: CoreDataModelDescriptor) -> Promise<CoreDataResource> {
         Promise {
             CoreDataContextManager.shared.locker.lock()
             
@@ -103,7 +103,7 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
             )
             
             return CoreDataResource(
-                rawObjectPointer: objectPointer,
+                objectDescriptor: objectPointer,
                 container: container
             )
         }.then {
@@ -196,7 +196,7 @@ extension CoreDataArrayStorage {
 }
 
 extension CoreDataArrayStorage {
-    private class func fetchManagedObjectModel(_ from: CoreDataFetchPointer) throws -> NSManagedObjectModel {
+    private class func fetchManagedObjectModel(_ from: CoreDataModelDescriptor) throws -> NSManagedObjectModel {
         guard
             let url = from.bundle.url(forResource: from.modelName, withExtension: "momd"),
             FileManager.default.fileExists(atPath: url.path),
