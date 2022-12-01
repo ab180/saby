@@ -90,41 +90,47 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
     }
     
     private class func create(objectPointer: CoreDataFetchPointer) -> Promise<CoreDataResource> {
-        Promise(on: .main) { resolve, reject in
+        Promise {
             CoreDataContextManager.shared.locker.lock()
-
+            
             if let resource = CoreDataContextManager.shared.resource {
-                CoreDataContextManager.shared.locker.unlock()
+                return resource
+            }
+            
+            let container = try NSPersistentContainer(
+                name: objectPointer.modelName,
+                managedObjectModel: fetchManagedObjectModel(objectPointer)
+            )
+            
+            return CoreDataResource(
+                rawObjectPointer: objectPointer,
+                container: container
+            )
+        }.then {
+            return loadContext(resource: $0)
+        }.then {
+            CoreDataContextManager.shared.resource = $0
+            return $0
+        } .finally {
+            CoreDataContextManager.shared.locker.unlock()
+        }
+    }
+    
+    private class func loadContext(resource: CoreDataResource) -> Promise<CoreDataResource> {
+        return Promise<CoreDataResource> { resolve, reject in
+            
+            if let resource = CoreDataContextManager.shared.resource {
                 resolve(resource)
                 return
             }
-
-            // TODO: When occur a exception to locked 'Promise' method, not escpaped.
-            do {
-                let container = try NSPersistentContainer(
-                    name: objectPointer.modelName,
-                    managedObjectModel: fetchManagedObjectModel(objectPointer)
-                )
-                
-                container.loadPersistentStores { _, error in
-                    if let error = error {
-                        CoreDataContextManager.shared.locker.unlock()
-                        reject(error)
-                        return
-                    }
-                    
-                    let resource = CoreDataResource(
-                        rawObjectPointer: objectPointer,
-                        container: container
-                    )
-                    CoreDataContextManager.shared.resource = resource
-                    
-                    CoreDataContextManager.shared.locker.unlock()
-                    resolve(resource)
+            
+            resource.container.loadPersistentStores { _, error in
+                if let error = error {
+                    reject(error)
+                    return
                 }
-            } catch {
-                CoreDataContextManager.shared.locker.unlock()
-                reject(error)
+                
+                resolve(resource)
             }
         }
     }
@@ -260,6 +266,6 @@ fileprivate extension NSPersistentContainer {
     }
     
     var toPromise: Promise<NSPersistentContainer> {
-        Promise(on: .main) { self }
+        Promise { self }
     }
 }
