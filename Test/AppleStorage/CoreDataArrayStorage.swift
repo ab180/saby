@@ -10,7 +10,7 @@ import Foundation
 import CoreData
 @testable import SabyAppleStorage
 
-@objc(TestItem)
+@objc (TestItem)
 fileprivate class TestItem: CoreDataStorageDatable {
     @nonobjc class func fetchRequest() -> NSFetchRequest<TestItem> {
         NSFetchRequest<TestItem>(entityName: String(describing: self))
@@ -23,7 +23,7 @@ fileprivate class TestItem: CoreDataStorageDatable {
     }
 }
 
-@objc(SecondTestItem)
+@objc (SecondTestItem)
 fileprivate class SecondTestItem: CoreDataStorageDatable {
     @nonobjc class func fetchRequest() -> NSFetchRequest<SecondTestItem> {
         NSFetchRequest<SecondTestItem>(entityName: String(describing: self))
