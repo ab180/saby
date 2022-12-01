@@ -82,36 +82,28 @@ extension FileArrayStorage: ArrayStorage {
     }
     
     public func save() -> Promise<Void> {
-        
         return Promise {
             self.locker.lock()
             
             let data = try PropertyListEncoder().encode(self.cachedItems.capture)
             guard let filePath = self.fileURL else {
-                self.locker.unlock()
                 throw URLError(.badURL)
             }
             
-            do {
-                if
-                    let directoryURL = self.directoryURL,
-                    false == FileManager.default.fileExists(atPath: directoryURL.path) {
-                    try FileManager.default.createDirectory(
-                        at: directoryURL, withIntermediateDirectories: true
-                    )
-                }
+            if
+                let directoryURL = self.directoryURL,
+                false == FileManager.default.fileExists(atPath: directoryURL.path) {
                 
-                try data.write(to: filePath)
-            } catch {
-                self.locker.unlock()
-                throw error
+                try FileManager.default.createDirectory(
+                    at: directoryURL, withIntermediateDirectories: true
+                )
             }
             
-            
-            self.locker.unlock()
+            try data.write(to: filePath)
             return
+        }.finally {
+            self.locker.unlock()
         }
-        
     }
 }
 

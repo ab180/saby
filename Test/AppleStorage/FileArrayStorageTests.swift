@@ -6,6 +6,7 @@
 //
 
 import XCTest
+import SabyConcurrency
 @testable import SabyAppleStorage
 
 fileprivate struct DummyItem: Codable, KeyIdentifiable {
@@ -56,16 +57,20 @@ final class FileArrayStorageTests: XCTestCase {
         let testItems = TestItemGroup()
         
         testItems.pushItems.forEach(storage.push)
-        storage.save().then {
-            storage.get(limit: .unlimited).then {
-                XCTAssertEqual($0.count, testItems.pushCount)
-                expectation.fulfill()
-            }
-            
-            storage.get(limit: .count(UInt.max)).then {
-                XCTAssertEqual($0.count, testItems.pushCount)
-                expectation.fulfill()
-            }
+        
+        Promise {
+            storage.save()
+        }.then {
+            storage.get(limit: .unlimited)
+        }.then { // Fetching Unlimit Count
+            XCTAssertEqual($0.count, testItems.pushCount)
+            expectation.fulfill()
+            return
+        }.then { // Fetching Max Count (Over)
+            storage.get(limit: .count(UInt.max))
+        }.then {
+            XCTAssertEqual($0.count, testItems.pushCount)
+            expectation.fulfill()
         }
         
         wait(for: [expectation], timeout: 5)
@@ -87,17 +92,18 @@ final class FileArrayStorageTests: XCTestCase {
         let testItems = TestItemGroup()
         
         testItems.pushItems.forEach(storage.push)
-        storage.save().then {
-            storage.get(limit: .unlimited).then {
-                $0[0 ... testItems.removeCount - 1].forEach(storage.delete)
-                
-                storage.save().then {
-                    storage.get(limit: .unlimited).then { fetchedItems in
-                        XCTAssertEqual(fetchedItems.count, testItems.pushCount - testItems.removeCount)
-                        expectation.fulfill()
-                    }
-                }
-            }
+        Promise {
+            storage.save()
+        }.then {
+            storage.get(limit: .unlimited)
+        }.then {
+            $0[0 ... testItems.removeCount - 1].forEach(storage.delete)
+            return storage.save()
+        }.then {
+            storage.get(limit: .unlimited)
+        }.then { fetchedItems in
+            XCTAssertEqual(fetchedItems.count, testItems.pushCount - testItems.removeCount)
+            expectation.fulfill()
         }
         
         wait(for: [expectation], timeout: 5000)
