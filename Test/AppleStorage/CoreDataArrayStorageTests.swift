@@ -46,6 +46,7 @@ final class CoreDataArrayStorageTests: XCTestCase {
     fileprivate static let storage2 = CoreDataArrayStorage<SecondTestItem>.create(
         modelName: "Model", bundle: Bundle.module, entityKeyName: "key"
     )
+    
     fileprivate static let duplicateStorage = CoreDataArrayStorage<SecondTestItem>.create(
         modelName: "Model", bundle: Bundle.module, entityKeyName: "key"
     )
