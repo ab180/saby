@@ -87,7 +87,7 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
         
         let objectKeyID = String(describing: Item.self)
         
-        return from.then { container in
+        return from.then(on: .global()) { container in
             CoreDataContextManager.shared.locker.lock()
             if let arrayStorage = CoreDataContextManager.shared.storages[objectKeyID],
                let storage = arrayStorage as? CoreDataArrayStorage<Item> {
