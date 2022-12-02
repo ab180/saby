@@ -44,7 +44,7 @@ final class LoggerTest: XCTestCase {
             expectation.expectedFulfillmentCount = numberOfLogLevels - levelIndex
             expectation.assertForOverFulfill = true
 
-            let testLogger = mockLogger(expectation: expectation, setting: setting) as! MockLogger
+            let testLogger = mockLogger(expectation: expectation, setting: setting)
             // Only the logs higher than set level have to be executed.
             // In other words, output will be the logs excluding the logs below the given level.
             // Thus, the expected count of fulfilled log is set as below;
@@ -63,7 +63,7 @@ final class LoggerTest: XCTestCase {
         var setting = defaultSetting
         setting.logLevel = .none
 
-        let testLogger = mockLogger(expectation: expectation, setting: setting) as! MockLogger
+        let testLogger = mockLogger(expectation: expectation, setting: setting)
         testLogger.printAllLogs()
 
         wait(for: [expectation], timeout: 0.5)
@@ -73,7 +73,7 @@ final class LoggerTest: XCTestCase {
 
 // MARK: - Mock factories
 fileprivate func mockLogger(expectation: XCTestExpectation? = nil,
-                            setting: LoggerSetting = defaultSetting) -> some SabyAppleLogger.Logger {
+                            setting: LoggerSetting = defaultSetting) -> MockLogger {
     return MockLogger(expectation: expectation, setting: setting)
 }
 
@@ -106,10 +106,6 @@ fileprivate class MockLogger: SabyAppleLogger.LoggerType {
 }
 
 extension MockLogger: SabyAppleLogger.Logger {
-    public var setting: LoggerSetting {
-        return loggerSetting
-    }
-    
     public func setLogLevel(to level: LogLevel) {
         loggerSetting.logLevel = level
     }
@@ -136,6 +132,10 @@ extension MockLogger: SabyAppleLogger.Logger {
 }
 
 extension MockLogger {
+    var setting: SabyAppleLogger.LoggerSetting {
+        return self.loggerSetting
+    }
+        
     func printAllLogs() {
         self.fault("TEST: FAULT LOG")
         self.error("TEST: ERROR LOG")
