@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol LoggerType: AnyObject {
+protocol LoggerType {
     associatedtype T: LogService
     
     /// Implement the way you'd like to show logs according to the protocol `LogService`
