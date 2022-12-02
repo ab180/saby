@@ -24,15 +24,13 @@ public final class OSLogger: LoggerType {
     }
 }
 
-extension OSLogger: Logger {
+extension OSLogger {
     public var setting: LoggerSetting {
-        return loggerSetting
+        return self.loggerSetting
     }
-    
-    public func setLogLevel(to level: LogLevel) {
-        loggerSetting.logLevel = level
-    }
-    
+}
+
+extension OSLogger: Logger {    
     public func debug(_ message: String) {
         self.log(level: .debug, message)
     }

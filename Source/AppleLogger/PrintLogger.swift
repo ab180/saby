@@ -22,11 +22,13 @@ public final class PrintLogger: LoggerType {
     }
 }
 
-extension PrintLogger: Logger {
+extension PrintLogger {
     public var setting: LoggerSetting {
-        return loggerSetting
+        return self.loggerSetting
     }
-    
+}
+
+extension PrintLogger: Logger {
     public func setLogLevel(to level: LogLevel) {
         loggerSetting.logLevel = level
     }
