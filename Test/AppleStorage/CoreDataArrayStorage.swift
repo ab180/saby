@@ -39,13 +39,13 @@ fileprivate class SecondTestItem: CoreDataStorageDatable {
 final class CoreDataArrayStorageTests: XCTestCase {
 
     fileprivate static let storage = CoreDataArrayStorage<TestItem>.create(
-        objectPointer: CoreDataModelDescriptor(bundle: Bundle.module, modelName: "Model"), entityKeyName: "key"
+        objectDescriptor: CoreDataModelDescriptor(bundle: Bundle.module, modelName: "Model"), entityKeyName: "key"
     )
     fileprivate static let storage2 = CoreDataArrayStorage<SecondTestItem>.create(
-        objectPointer: CoreDataModelDescriptor(bundle: Bundle.module, modelName: "Model"), entityKeyName: "key"
+        objectDescriptor: CoreDataModelDescriptor(bundle: Bundle.module, modelName: "Model"), entityKeyName: "key"
     )
     fileprivate static let duplicateStorage = CoreDataArrayStorage<SecondTestItem>.create(
-        objectPointer: CoreDataModelDescriptor(bundle: Bundle.module, modelName: "Model"), entityKeyName: "key"
+        objectDescriptor: CoreDataModelDescriptor(bundle: Bundle.module, modelName: "Model"), entityKeyName: "key"
     )
     
     class func clear() {
