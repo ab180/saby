@@ -18,6 +18,7 @@ public final class FileArrayStorage<Item> where
 {
     private let locker = Lock()
     private let directoryName: String
+    private let fileName: String
     private lazy var cachedItems: Atomic<[Item]> = Atomic((try? getAll()) ?? [])
     
     private lazy var directoryURL: URL? = {
@@ -32,15 +33,16 @@ public final class FileArrayStorage<Item> where
     
     private lazy var fileURL: URL? = {
         guard var directoryPath = directoryURL else { return nil }
-        return directoryPath.appendingPathComponent(String(describing: Item.self))
+        return directoryPath.appendingPathComponent(fileName)
     }()
     
     /// Default initializer.
     ///
     /// - Parameters:
     /// - directoryName: Will saved to `SearchPathDirectory.libraryDirectory`/`directoryName` paths.
-    public init(directoryName: String = "saby.storage") {
+    public init(directoryName: String, fileName: String) {
         self.directoryName = directoryName
+        self.fileName = fileName
     }
 }
 

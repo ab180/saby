@@ -16,7 +16,10 @@ fileprivate struct DummyItem: Codable, KeyIdentifiable {
 
 final class FileArrayStorageTests: XCTestCase {
     
-    fileprivate static let storage = FileArrayStorage<DummyItem>()
+    fileprivate static let storage = FileArrayStorage<DummyItem>(
+        directoryName: "saby.storage",
+        fileName: String(describing: DummyItem.self)
+    )
     
     class func clear() {
         storage.removeAll()
