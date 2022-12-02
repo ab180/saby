@@ -123,6 +123,6 @@ final class AnyArrayStorageBox<
     
     @inline(__always) @inlinable
     override func save() -> Promise<Void> {
-        try arrayStorage.save()
+        arrayStorage.save()
     }
 }
