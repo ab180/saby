@@ -19,16 +19,6 @@ public enum CoreDataStorageError: Error {
     case badURL
 }
 
-public struct CoreDataModelDescriptor {
-    let bundle: Bundle
-    let modelName: String
-}
-
-fileprivate struct CoreDataResource {
-    let objectDescriptor: CoreDataModelDescriptor
-    let container: NSPersistentContainer
-}
-
 fileprivate final class CoreDataContextManager {
     static var shared = CoreDataContextManager()
     
@@ -37,13 +27,13 @@ fileprivate final class CoreDataContextManager {
     let locker = Lock()
     
     var storages: [String: any ArrayStorage] = [:]
-    var resource: CoreDataResource?
+    var loadedContainer: NSPersistentContainer?
 }
 
 // MARK: - CoreDataArrayStorage
 /// ``CoreDataArrayStorage`` running on asynchronously.
 public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable {
-    private var resource: CoreDataResource
+    private var container: NSPersistentContainer
     private let entityKeyName: String
     
     /// When a user append extra action after async method, using to ``perform(_ block: @escaping () -> Void)``.
@@ -58,10 +48,10 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
     ///   - entityKeyName:Use the filtering key for fetching data. this same to ``create(objectDescriptor:entityKeyName:)``
     ///   ``entityKeyName`` parameters.
     ///   - resource:Used for making new context. (and not using this variable directly.)
-    private init(entityKeyName: String, resource: CoreDataResource) {
+    private init(entityKeyName: String, container: NSPersistentContainer) {
         self.entityKeyName = entityKeyName
-        self.resource = resource
-        context = resource.container.newBackgroundContext()
+        self.container = container
+        context = container.newBackgroundContext()
         context.automaticallyMergesChangesFromParent = true
     }
     
@@ -74,17 +64,32 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
     ///   - objectDescriptor: Bundle Target with CoreData model Name to load.
     ///   - entityKeyName: Use the filtering key for fetching data. this parameter is key column name. referring to ``NSPredicate``
     /// - Returns: Async(Promise) result object a CoreDataArrayStorage. Plus, consider an **exception** while in create instance.
-    public class func create(objectDescriptor: CoreDataModelDescriptor, entityKeyName: String) -> Promise<CoreDataArrayStorage> {
+    public static func create(modelName: String, bundle: Bundle, entityKeyName: String) -> Promise<CoreDataArrayStorage> {
+        return convertContainerToStorage(
+            entityKeyName: entityKeyName,
+            from: createContainer(modelName: modelName, bundle: bundle)
+        )
+    }
+    
+    public static func create(modelName: String, managedObjectModel: NSManagedObjectModel, entityKeyName: String) -> Promise<CoreDataArrayStorage> {
+        convertContainerToStorage(
+            entityKeyName: entityKeyName,
+            from: createContainer(modelName: modelName, managedObjectModel: managedObjectModel)
+        )
+    }
+    
+    private static func convertContainerToStorage(entityKeyName: String, from: Promise<NSPersistentContainer>) -> Promise<CoreDataArrayStorage> {
+        
         let objectKeyID = String(describing: Item.self)
-
-        return create(objectDescriptor: objectDescriptor).then {
+        
+        return from.then { container in
             CoreDataContextManager.shared.locker.lock()
             if let arrayStorage = CoreDataContextManager.shared.storages[objectKeyID],
                let storage = arrayStorage as? CoreDataArrayStorage<Item> {
                 return storage
             }
 
-            let storage = CoreDataArrayStorage<Item>(entityKeyName: entityKeyName, resource: $0)
+            let storage = CoreDataArrayStorage<Item>(entityKeyName: entityKeyName, container: container)
             CoreDataContextManager.shared.storages[objectKeyID] = storage
             return storage
         }.finally {
@@ -92,31 +97,40 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
         }
     }
     
-    private class func create(objectDescriptor: CoreDataModelDescriptor) -> Promise<CoreDataResource> {
-        Promise {
+    private static func createContainer(modelName: String) -> (NSManagedObjectModel) -> Promise<NSPersistentContainer> {
+        return { managedObjectModel in
             CoreDataContextManager.shared.locker.lock()
             
-            if let resource = CoreDataContextManager.shared.resource {
-                return resource
+            let targetContainer: NSPersistentContainer
+            if let container = CoreDataContextManager.shared.loadedContainer {
+                targetContainer = container
+            } else {
+                targetContainer = NSPersistentContainer(
+                    name: modelName,
+                    managedObjectModel: managedObjectModel
+                )
             }
             
-            let container = try NSPersistentContainer(
-                name: objectDescriptor.modelName,
-                managedObjectModel: fetchManagedObjectModel(objectDescriptor)
-            )
-            
-            return CoreDataResource(
-                objectDescriptor: objectDescriptor,
-                container: container
-            )
-        }.then {
-            return loadContext(resource: $0)
-        }.then {
-            CoreDataContextManager.shared.resource = $0
-            return $0
-        }.finally {
-            CoreDataContextManager.shared.locker.unlock()
+            return loadContext(container: targetContainer)
+                .then {
+                    CoreDataContextManager.shared.loadedContainer = $0
+                    return $0
+                }.finally {
+                    CoreDataContextManager.shared.locker.unlock()
+                }
         }
+    }
+    
+    private class func createContainer(modelName: String, bundle: Bundle) -> Promise<NSPersistentContainer> {
+        return Promise {
+            try fetchManagedObjectModel(modelName: modelName, bundle: bundle)
+        }.then { managedObjectModel in
+            createContainer(modelName: modelName)(managedObjectModel)
+        }
+    }
+    
+    private class func createContainer(modelName: String, managedObjectModel: NSManagedObjectModel) -> Promise<NSPersistentContainer> {
+        createContainer(modelName: modelName)(managedObjectModel)
     }
 }
 
@@ -180,13 +194,13 @@ extension CoreDataArrayStorage {
 }
 
 extension CoreDataArrayStorage {
-    private class func loadContext(resource: CoreDataResource) -> Promise<CoreDataResource> {
-        return Promise<CoreDataResource> { resolve, reject in
-            if let resource = CoreDataContextManager.shared.resource {
-                resolve(resource)
+    private class func loadContext(container: NSPersistentContainer) -> Promise<NSPersistentContainer> {
+        return Promise { resolve, reject in
+            if let container = CoreDataContextManager.shared.loadedContainer {
+                resolve(container)
             } else {
-                resource.container.loadPersistentStores().then { _ in
-                    resolve(resource)
+                container.loadPersistentStores().then { _ in
+                    resolve(container)
                 }.catch {
                     reject($0)
                 }
@@ -194,9 +208,9 @@ extension CoreDataArrayStorage {
         }
     }
     
-    private class func fetchManagedObjectModel(_ from: CoreDataModelDescriptor) throws -> NSManagedObjectModel {
+    private class func fetchManagedObjectModel(modelName: String, bundle: Bundle) throws -> NSManagedObjectModel {
         guard
-            let url = from.bundle.url(forResource: from.modelName, withExtension: "momd"),
+            let url = bundle.url(forResource: modelName, withExtension: "momd"),
             FileManager.default.fileExists(atPath: url.path),
             let managedObjectModel = NSManagedObjectModel(contentsOf: url)
         else {
