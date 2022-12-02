@@ -55,6 +55,11 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
         context.automaticallyMergesChangesFromParent = true
     }
     
+    deinit {
+        let objectKeyID = String(describing: Item.self)
+        CoreDataContextManager.shared.storages[objectKeyID] = nil
+    }
+    
     /// Is substituted for initializer. because a ``loadPersistentStores`` in ``NSPersistentContext`` method is synchronize.
     ///
     /// private class method ``create(objectDescriptor:entityKeyName:)`` return type is ``Promise<CoreDataResource>``.
