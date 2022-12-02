@@ -8,6 +8,7 @@
 import XCTest
 import Foundation
 import CoreData
+import SabyConcurrency
 @testable import SabyAppleStorage
 
 @objc (TestItem)
@@ -39,13 +40,14 @@ fileprivate class SecondTestItem: CoreDataStorageDatable {
 final class CoreDataArrayStorageTests: XCTestCase {
 
     fileprivate static let storage = CoreDataArrayStorage<TestItem>.create(
-        objectDescriptor: CoreDataModelDescriptor(bundle: Bundle.module, modelName: "Model"), entityKeyName: "key"
+        modelName: "Model", bundle: Bundle.module, entityKeyName: "key"
     )
+    
     fileprivate static let storage2 = CoreDataArrayStorage<SecondTestItem>.create(
-        objectDescriptor: CoreDataModelDescriptor(bundle: Bundle.module, modelName: "Model"), entityKeyName: "key"
+        modelName: "Model", bundle: Bundle.module, entityKeyName: "key"
     )
     fileprivate static let duplicateStorage = CoreDataArrayStorage<SecondTestItem>.create(
-        objectDescriptor: CoreDataModelDescriptor(bundle: Bundle.module, modelName: "Model"), entityKeyName: "key"
+        modelName: "Model", bundle: Bundle.module, entityKeyName: "key"
     )
     
     class func clear() {
