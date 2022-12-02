@@ -14,6 +14,7 @@ import OSLog
 public enum LogLevel: Comparable, CaseIterable {
     case debug
     case info
+    case warning
     case error
     case fault
     
@@ -23,6 +24,8 @@ public enum LogLevel: Comparable, CaseIterable {
             return "DEBUG"
         case .info:
             return "INFO"
+        case .warning:
+            return "WARNING"
         case .error:
             return "ERROR"
         case .fault:
@@ -36,6 +39,8 @@ public enum LogLevel: Comparable, CaseIterable {
             return .default
         case .info:
             return .info
+        case .warning:
+            return .info
         case .error:
             return .error
         case .fault:
@@ -43,7 +48,19 @@ public enum LogLevel: Comparable, CaseIterable {
         }
     }
     
-    func isHigherOrEqual(to level: LogLevel) -> Bool {
+    func isLoggable(with loggerLevel: LogLevel?) -> Bool {
+        guard let loggerLevel = loggerLevel else {
+            return false
+        }
+        
+        if self.isHigherOrEqual(to: loggerLevel) {
+            return true
+        } else {
+            return false
+        }
+    }
+    
+    private func isHigherOrEqual(to level: LogLevel) -> Bool {
         return self >= level
     }
 }

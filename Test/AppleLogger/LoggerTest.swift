@@ -11,7 +11,7 @@ import OSLog
 
 final class LoggerTest: XCTestCase {
     func test__set_log_level() {
-        let logger = defaultLogger
+        let logger = mockLogger()
         XCTAssertNotEqual(logger.setting.logLevel, LogLevel.fault)
         
         logger.setLogLevel(to: .fault)
@@ -19,9 +19,9 @@ final class LoggerTest: XCTestCase {
     }
     
     func test__instantiate_setting() {
-        let logger = defaultLogger
+        let logger = mockLogger()
         let configBeforeChange = logger.setting
-        
+
         var configAfterChange = defaultSetting
         configAfterChange.logLevel = .none
 
@@ -29,111 +29,118 @@ final class LoggerTest: XCTestCase {
         XCTAssertNotNil(configAfterChange.osLog)
         XCTAssertNotEqual(configBeforeChange.logLevel, configAfterChange.logLevel)
     }
-    
-    func test__use_print_option() {
-        let printerExp = XCTestExpectation(description: "Should use print, not log")
-        
-        let printerSetting = Logger.Setting(subsystem: "", category: "", usePrint: true)
-        
-        let testPrinter = Logger(setting: printerSetting)
-        testPrinter.logService = MockPrintService(expectation: printerExp, showLogs: false)
-        
-        // XCTFail will be triggered if `log` is called in this case.
-        printAllLogs(testPrinter)
 
-        wait(for: [printerExp], timeout: 0.5)
-    }
-    
     func test__should_not_show_lower_level_logs() {
         let allLogLevels = LogLevel.allCases
         let numberOfLogLevels = allLogLevels.count
-                
+
         for levelIndex in allLogLevels.indices {
             let level = allLogLevels[levelIndex]
-            
-            var loggerConfiguration = defaultSetting
-            loggerConfiguration.logLevel = level
-            
-            let testLogger = Logger(setting: loggerConfiguration)
-            
-            let expectation = XCTestExpectation(description: "Shouldn't show lower level logs")
 
+            var setting = defaultSetting
+            setting.logLevel = level
+
+            let expectation = XCTestExpectation(description: "Shouldn't show lower level logs")
+            expectation.expectedFulfillmentCount = numberOfLogLevels - levelIndex
+            expectation.assertForOverFulfill = true
+
+            let testLogger = mockLogger(expectation: expectation, setting: setting)
             // Only the logs higher than set level have to be executed.
             // In other words, output will be the logs excluding the logs below the given level.
             // Thus, the expected count of fulfilled log is set as below;
             // Total number of all log levels(numberOfLogLevels) - Current log level(levelIndex)
             // which can be said as the number of remaining log levels.
-            expectation.expectedFulfillmentCount = numberOfLogLevels - levelIndex
+            testLogger.printAllLogs()
             
-            testLogger.logService = MockLogService(expectation: expectation, showLogs: true)
-
-            printAllLogs(testLogger)
             wait(for: [expectation], timeout: 0.5)
         }
     }
-    
+
     func test__should_not_show_any_logs_when_level_is_none() {
         let expectation = XCTestExpectation(description: "Should not show any logs")
-        expectation.isInverted = true
-        
-        var configuration = defaultSetting
-        configuration.logLevel = .none
-        
-        let testLogger = Logger(setting: configuration)
-        testLogger.logService = MockLogService(expectation: expectation, showLogs: true)
-        
-        printAllLogs(testLogger)
+        expectation.isInverted = true // means expectation shouldn't be fulfilled
+
+        var setting = defaultSetting
+        setting.logLevel = .none
+
+        let testLogger = mockLogger(expectation: expectation, setting: setting)
+        testLogger.printAllLogs()
+
         wait(for: [expectation], timeout: 0.5)
     }
 }
 
-fileprivate var defaultLogger: SabyAppleLogger.Logger {
-    Logger("", category: "")
+
+// MARK: - Mock factories
+fileprivate func mockLogger(expectation: XCTestExpectation? = nil,
+                            setting: LoggerSetting = defaultSetting) -> MockLogger {
+    return MockLogger(expectation: expectation, setting: setting)
 }
 
-fileprivate var defaultSetting: SabyAppleLogger.Logger.Setting {
-    Logger.Setting(subsystem: "", category: "")
+fileprivate var defaultSetting: LoggerSetting {
+    return LoggerSetting(subsystem: "", category: "")
 }
 
-fileprivate struct MockLogService: LogService {
-    let expectation: XCTestExpectation
-    var showLogs: Bool
+// MARK: - Mocks for test
+fileprivate class MockLogService: LogService {
+    let expectation: XCTestExpectation?
     
-    func log(_ message: StaticString, log: OSLog, type: OSLogType, _ args: CVarArg) {
-        if showLogs {
-            print(args)
-        }
+    func log(level: SabyAppleLogger.LogLevel, _ message: String) {
+        print(level.name, message)
+        expectation?.fulfill()
+    }
+    
+    init(expectation: XCTestExpectation?) {
+        self.expectation = expectation
+    }
+}
+
+fileprivate class MockLogger: SabyAppleLogger.LoggerType {
+    var loggerSetting: SabyAppleLogger.LoggerSetting
+    var logService: MockLogService
         
-        expectation.fulfill()
-    }
-    
-    public func printLog(type: LogLevel, _ message: String) {
-        XCTFail("Test aborted because print method called")
-        return
+    init(expectation: XCTestExpectation?, setting: LoggerSetting) {
+        self.loggerSetting = setting
+        self.logService = MockLogService(expectation: expectation)
     }
 }
 
-fileprivate struct MockPrintService: LogService {
-    let expectation: XCTestExpectation
-    var showLogs: Bool
-    
-    func log(_ message: StaticString, log: OSLog, type: OSLogType, _ args: CVarArg) {
-        XCTFail("Test aborted because log method called")
-        return
+extension MockLogger: SabyAppleLogger.Logger {
+    public func setLogLevel(to level: LogLevel) {
+        loggerSetting.logLevel = level
     }
     
-    public func printLog(type: LogLevel, _ message: String) {
-        if showLogs {
-            print(message)
-        }
+    public func debug(_ message: String) {
+        self.log(level: .debug, message)
+    }
+    
+    public func info(_ message: String) {
+        self.log(level: .info, message)
+    }
+    
+    public func warning(_ message: String) {
+        self.log(level: .warning, message)
+    }
+    
+    public func error(_ message: String) {
+        self.log(level: .error, message)
+    }
+    
+    public func fault(_ message: String) {
+        self.log(level: .fault, message)
+    }
+}
+
+extension MockLogger {
+    var setting: SabyAppleLogger.LoggerSetting {
+        return self.loggerSetting
+    }
         
-        expectation.fulfill()
+    func printAllLogs() {
+        self.fault("TEST: FAULT LOG")
+        self.error("TEST: ERROR LOG")
+        self.warning("TEST: WARNING LOG")
+        self.info("TEST: INFO LOG")
+        self.debug("TEST: DEFAULT LOG")
     }
-}
-
-fileprivate func printAllLogs(_ logger: SabyAppleLogger.Logger) {
-    logger.fault("TEST: FAULT LOG")
-    logger.error("TEST: ERROR LOG")
-    logger.info("TEST: INFO LOG")
-    logger.debug("TEST: DEFAULT LOG")
 }
