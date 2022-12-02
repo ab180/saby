@@ -55,7 +55,7 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
     /// Initializer. make a new context though the container in resource(``CoreDataResource``) parameters.
     ///
     /// - Parameters:
-    ///   - entityKeyName:Use the filtering key for fetching data. this same to ``create(objectPointer:entityKeyName:)``
+    ///   - entityKeyName:Use the filtering key for fetching data. this same to ``create(objectDescriptor:entityKeyName:)``
     ///   ``entityKeyName`` parameters.
     ///   - resource:Used for making new context. (and not using this variable directly.)
     private init(entityKeyName: String, resource: CoreDataResource) {
@@ -67,17 +67,17 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
     
     /// Is substituted for initializer. because a ``loadPersistentStores`` in ``NSPersistentContext`` method is synchronize.
     ///
-    /// private class method ``create(objectPointer:entityKeyName:)`` return type is ``Promise<CoreDataResource>``.
+    /// private class method ``create(objectDescriptor:entityKeyName:)`` return type is ``Promise<CoreDataResource>``.
     /// and Convert to Promise<CoreDataArrayStorage>.
     ///
     /// - Parameters:
-    ///   - objectPointer: Bundle Target with CoreData model Name to load.
+    ///   - objectDescriptor: Bundle Target with CoreData model Name to load.
     ///   - entityKeyName: Use the filtering key for fetching data. this parameter is key column name. referring to ``NSPredicate``
     /// - Returns: Async(Promise) result object a CoreDataArrayStorage. Plus, consider an **exception** while in create instance.
-    public class func create(objectPointer: CoreDataModelDescriptor, entityKeyName: String) -> Promise<CoreDataArrayStorage> {
+    public class func create(objectDescriptor: CoreDataModelDescriptor, entityKeyName: String) -> Promise<CoreDataArrayStorage> {
         let objectKeyID = String(describing: Item.self)
 
-        return create(objectPointer: objectPointer).then {
+        return create(objectDescriptor: objectDescriptor).then {
             CoreDataContextManager.shared.locker.lock()
             if let arrayStorage = CoreDataContextManager.shared.storages[objectKeyID],
                let storage = arrayStorage as? CoreDataArrayStorage<Item> {
@@ -92,7 +92,7 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
         }
     }
     
-    private class func create(objectPointer: CoreDataModelDescriptor) -> Promise<CoreDataResource> {
+    private class func create(objectDescriptor: CoreDataModelDescriptor) -> Promise<CoreDataResource> {
         Promise {
             CoreDataContextManager.shared.locker.lock()
             
@@ -101,12 +101,12 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
             }
             
             let container = try NSPersistentContainer(
-                name: objectPointer.modelName,
-                managedObjectModel: fetchManagedObjectModel(objectPointer)
+                name: objectDescriptor.modelName,
+                managedObjectModel: fetchManagedObjectModel(objectDescriptor)
             )
             
             return CoreDataResource(
-                objectDescriptor: objectPointer,
+                objectDescriptor: objectDescriptor,
                 container: container
             )
         }.then {
@@ -114,7 +114,7 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
         }.then {
             CoreDataContextManager.shared.resource = $0
             return $0
-        } .finally {
+        }.finally {
             CoreDataContextManager.shared.locker.unlock()
         }
     }
