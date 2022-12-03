@@ -1,0 +1,14 @@
+name: test
+
+on:
+  push:
+    branches: main
+  pull_request:
+    branches: main
+
+jobs:
+  test-unit:
+    runs-on: macos-12
+    steps:
+    - uses: actions/checkout@v2
+    - run: swift test --parallel
