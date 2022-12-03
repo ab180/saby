@@ -80,7 +80,7 @@ extension Contract {
                 }
             }
             self.onRejected = { error in
-                promiseAtomic.use { promise in
+                promiseAtomic.mutate { promise in
                     promise.then { onRejected(error) }
                 }
             }
