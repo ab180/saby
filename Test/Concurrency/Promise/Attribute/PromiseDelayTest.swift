@@ -38,22 +38,18 @@ final class PromiseDelayTest: XCTestCase {
     func test__delay_short() {
         let promise = Promise.race([
             Promise.delay(.milliseconds(100)).then { 10 },
-            Promise { resolve, reject in
-                DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(10)) {
-                    resolve(20)
-                }
-            }.delay(.milliseconds(50))
+            Promise {
+                20
+            }.delay(.milliseconds(10))
         ])
         
         PromiseTest.expect(promise: promise, state: .resolved(20), timeout: .seconds(1))
     }
     func test__delay_long() {
         let promise = Promise.race([
-            Promise.delay(.milliseconds(50)).then { 10 },
-            Promise { resolve, reject in
-                DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(10)) {
-                    resolve(20)
-                }
+            Promise.delay(.milliseconds(10)).then { 10 },
+            Promise {
+                20
             }.delay(.milliseconds(100))
         ])
         
