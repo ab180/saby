@@ -42,12 +42,14 @@ extension DataClient {
         let (promise, resolve, reject) = Promise<Data?>.pending()
         
         var request = URLRequest(url: url)
+        optionBlock(&request)
+
+        request.url = url
         request.httpMethod = method.rawValue
         header.forEach { (key, value) in
             request.setValue(value, forHTTPHeaderField: key)
         }
         request.httpBody = body
-        optionBlock(&request)
         
         session.dataTask(with: request) { data, response, error in
             if let error = error {
