@@ -26,6 +26,15 @@ public struct MockFunction<Argument, Result> {
         self.init(type) { _ in result }
     }
     
+    public init(
+        _ type: ((Argument) -> Result).Type
+    )
+    where
+        Result == Void
+    {
+        self.init(type) { _ in }
+    }
+    
     public mutating func callAsFunction(_ argument: Argument) -> Result {
         let result = implementation(argument)
         calls.append(Call(argument: argument, result: result))
