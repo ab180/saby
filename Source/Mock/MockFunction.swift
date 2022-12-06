@@ -12,22 +12,22 @@ public struct MockFunction<Argument, Result> {
     public var calls: [Call]
     
     public init(
-        _ original: @escaping (Argument) -> Result,
-        _ implementation: @escaping (Argument) -> Result
+        _ original: (Argument) -> Result,
+        implementation: @escaping (Argument) -> Result
     ) {
         self.implementation = implementation
         self.calls = []
     }
     
     public init(
-        _ original: @escaping (Argument) -> Result,
-        _ result: Result
+        _ original: (Argument) -> Result,
+        result: Result
     ) {
         self.init(original) { _ in result }
     }
     
     public init(
-        _ original: @escaping (Argument) -> Result
+        _ original: (Argument) -> Result
     )
     where
         Result == Void
