@@ -85,27 +85,43 @@ extension MockFunction {
     
     public func isCalled(
         at: Int? = nil,
-        argument: Argument? = nil,
-        result: Result? = nil
+        argument: Argument,
+        result: Result
     ) -> Bool
     where
         Argument: Equatable,
         Result: Equatable
     {
-        let argument = { () -> ((Argument) -> Bool)? in
-            guard let argument else { return nil }
-            return { $0 == argument }
-        }()
-        
-        let result = { () -> ((Result) -> Bool)? in
-            guard let result else { return nil }
-            return { $0 == result }
-        }()
-        
-        return isCalled(
+        isCalled(
             at: at,
-            argument: argument,
-            result: result
+            argument: { $0 == argument },
+            result: { $0 == result }
+        )
+    }
+    
+    public func isCalled(
+        at: Int? = nil,
+        argument: Argument
+    ) -> Bool
+    where
+        Argument: Equatable
+    {
+        isCalled(
+            at: at,
+            argument: { $0 == argument }
+        )
+    }
+    
+    public func isCalled(
+        at: Int? = nil,
+        result: Result
+    ) -> Bool
+    where
+        Result: Equatable
+    {
+        isCalled(
+            at: at,
+            result: { $0 == result }
         )
     }
 }
