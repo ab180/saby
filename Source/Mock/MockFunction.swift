@@ -12,7 +12,7 @@ public struct MockFunction<Argument, Result> {
     public var calls: [Call]
     
     public init(
-        _ type: ((Argument) -> Result).Type,
+        _ original: @escaping (Argument) -> Result,
         _ implementation: @escaping (Argument) -> Result
     ) {
         self.implementation = implementation
@@ -20,19 +20,19 @@ public struct MockFunction<Argument, Result> {
     }
     
     public init(
-        _ type: ((Argument) -> Result).Type,
+        _ original: @escaping (Argument) -> Result,
         _ result: Result
     ) {
-        self.init(type) { _ in result }
+        self.init(original) { _ in result }
     }
     
     public init(
-        _ type: ((Argument) -> Result).Type
+        _ original: @escaping (Argument) -> Result
     )
     where
         Result == Void
     {
-        self.init(type) { _ in }
+        self.init(original) { _ in }
     }
     
     public mutating func callAsFunction(_ argument: Argument) -> Result {
