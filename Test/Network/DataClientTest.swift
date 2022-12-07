@@ -45,7 +45,7 @@ final class DataClientTest: XCTestCase {
         
         let response = client.request(URL(string: "https://mock.api.ab180.co/request")!)
         
-        Expect.promise(response, state: .resolved(Data()), timeout: .seconds(1))
+        Expect.promise(response, state: .resolved(Data()), timeout: .seconds(2))
     }
     
     func test__request_reponse_code_not_2XX() {
@@ -64,7 +64,7 @@ final class DataClientTest: XCTestCase {
         
         let response = client.request(URL(string: "https://mock.api.ab180.co/request")!)
         
-        Expect.promise(response, state: .rejected(DataClient.InternalError.responseCodeNot2XX), timeout: .seconds(1))
+        Expect.promise(response, state: .rejected(DataClient.InternalError.responseCodeNot2XX), timeout: .seconds(2))
     }
     
     func test__request_error() {
@@ -82,6 +82,6 @@ final class DataClientTest: XCTestCase {
         
         let response = client.request(URL(string: "https://mock.api.ab180.co/request")!)
         
-        Expect.promise(response, state: .rejected(Expect.SampleError.one), timeout: .seconds(1))
+        Expect.promise(response, state: .rejected(Expect.SampleError.one), timeout: .seconds(2))
     }
 }
