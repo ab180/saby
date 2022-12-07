@@ -13,12 +13,12 @@ final class PromiseRaceTest: XCTestCase {
         let promise =
         Promise.race([
             Promise { resolve, reject in
-                DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
+                DispatchQueue.global().asyncAfter(deadline: .now() + 0.01) {
                     resolve(10)
                 }
             },
             Promise { resolve, reject in
-                DispatchQueue.global().asyncAfter(deadline: .now() + 0.2) {
+                DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
                     resolve(20)
                 }
             }
@@ -31,12 +31,12 @@ final class PromiseRaceTest: XCTestCase {
         let promise =
         Promise.race([
             Promise<Int> { resolve, reject in
-                DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
+                DispatchQueue.global().asyncAfter(deadline: .now() + 0.01) {
                     reject(PromiseTest.Error.one)
                 }
             },
             Promise { resolve, reject in
-                DispatchQueue.global().asyncAfter(deadline: .now() + 0.2) {
+                DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
                     resolve(20)
                 }
             }
