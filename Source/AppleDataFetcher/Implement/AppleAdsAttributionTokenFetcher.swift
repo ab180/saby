@@ -31,26 +31,31 @@ public final class AppleAdsAttributionTokenFetcher: Fetcher {
 }
 
 private final class ClassAAAttribution {
-    private let AAAttributionClass: NSObject.Class
-    private let attributionTokenWithErrorMethod: NSObject.ClassMethod
+    private let classAAAttribution: NSObject.Class
+    private let methodAttributionTokenWithError: NSObject.ClassMethod
     
     init?() {
         guard
-            let AAAttributionClass = NSObject.Class(name: "AAAttribution"),
-            let attributionTokenWithErrorMethod = AAAttributionClass.method(name: "attributionTokenWithError:")
+            let classAAAttribution
+                = NSObject.Class(name: "AAAttribution"),
+            let methodAttributionTokenWithError
+                = classAAAttribution.method(name: "attributionTokenWithError:")
         else {
             return nil
         }
         
-        self.AAAttributionClass = AAAttributionClass
-        self.attributionTokenWithErrorMethod = attributionTokenWithErrorMethod
+        self.classAAAttribution = classAAAttribution
+        self.methodAttributionTokenWithError = methodAttributionTokenWithError
     }
     
     func attributionToken() throws -> String {
         let error = UnsafeMutablePointer<NSError?>.allocate(capacity: 1)
         defer { error.deallocate() }
         
-        let result = AAAttributionClass.call(attributionTokenWithErrorMethod, with: OpaquePointer(error))
+        let result = classAAAttribution.call(
+            methodAttributionTokenWithError,
+            with: OpaquePointer(error)
+        )
         if let error = error.pointee {
             throw error
         }

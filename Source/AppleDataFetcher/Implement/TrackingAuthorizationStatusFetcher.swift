@@ -38,23 +38,25 @@ public enum TrackingAuthorizationStatus: UInt {
 }
 
 private final class ClassATTrackingManager {
-    private let ATTrackingManagerClass: NSObject.Class
-    private let trackingAuthorizationStatusMethod: NSObject.ClassMethod
+    private let classATTrackingManager: NSObject.Class
+    private let methodTrackingAuthorizationStatus: NSObject.ClassMethod
     
     init?() {
         guard
-            let ATTrackingManagerClass = NSObject.Class(name: "ATTrackingManager"),
-            let trackingAuthorizationStatusMethod = ATTrackingManagerClass.method(name: "trackingAuthorizationStatus:")
+            let classATTrackingManager
+                = NSObject.Class(name: "ATTrackingManager"),
+            let methodTrackingAuthorizationStatus
+                = classATTrackingManager.method(name: "trackingAuthorizationStatus:")
         else {
             return nil
         }
         
-        self.ATTrackingManagerClass = ATTrackingManagerClass
-        self.trackingAuthorizationStatusMethod = trackingAuthorizationStatusMethod
+        self.classATTrackingManager = classATTrackingManager
+        self.methodTrackingAuthorizationStatus = methodTrackingAuthorizationStatus
     }
     
     func trackingAuthorizationStatus() throws -> TrackingAuthorizationStatus {
-        let result = ATTrackingManagerClass.call(trackingAuthorizationStatusMethod)
+        let result = classATTrackingManager.call(methodTrackingAuthorizationStatus)
         guard
             let result = result as? UInt,
             let result = TrackingAuthorizationStatus(rawValue: result)

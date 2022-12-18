@@ -44,8 +44,8 @@ public struct IdentifierForAdvertiser {
 }
 
 private final class ClassASIdentifierManager {
-    private let ASIdentifierManagerClass: NSObject.Class
-    private let sharedManagerMethod: NSObject.ClassMethod
+    private let classASIdentifierManager: NSObject.Class
+    private let methodSharedManager: NSObject.ClassMethod
     
     init?() {
         guard
@@ -55,12 +55,12 @@ private final class ClassASIdentifierManager {
             return nil
         }
         
-        self.ASIdentifierManagerClass = ASIdentifierManager
-        self.sharedManagerMethod = sharedManager
+        self.classASIdentifierManager = ASIdentifierManager
+        self.methodSharedManager = sharedManager
     }
     
     func shared() -> InstanceASIdentifierManager? {
-        let result = ASIdentifierManagerClass.call(sharedManagerMethod)
+        let result = classASIdentifierManager.call(methodSharedManager)
         guard let result = InstanceASIdentifierManager(object: result) else {
             return nil
         }
@@ -70,27 +70,34 @@ private final class ClassASIdentifierManager {
 }
 
 private final class InstanceASIdentifierManager {
-    private let instance: NSObject.Instance
-    private let advertisingIdentifierMethod: NSObject.InstanceMethod
-    private let advertisingTrackingEnabledMethod: NSObject.InstanceMethod
+    private let instanceASIdentifierManager: NSObject.Instance
+    private let methodAdvertisingIdentifier: NSObject.InstanceMethod
+    private let methodAdvertisingTrackingEnabled: NSObject.InstanceMethod
     
     init?(object: Any?) {
         guard
-            let ADClient = NSObject.Class(name: "ADClient"),
-            let instance = ADClient.instance(object: object),
-            let advertisingIdentifier = instance.method(name: "advertisingIdentifier"),
-            let advertisingTrackingEnabledMethod = instance.method(name: "advertisingTrackingEnabledMethod")
+            let classASIdentifierManager
+                = NSObject.Class(name: "ASIdentifierManager"),
+            let instanceASIdentifierManager
+                = classASIdentifierManager.instance(object: object),
+            let methodAdvertisingIdentifier
+                = instanceASIdentifierManager.method(name: "advertisingIdentifier"),
+            let methodAdvertisingTrackingEnabled
+                = instanceASIdentifierManager.method(name: "advertisingTrackingEnabledMethod")
         else {
             return nil
         }
         
-        self.instance = instance
-        self.advertisingIdentifierMethod = advertisingIdentifier
-        self.advertisingTrackingEnabledMethod = advertisingTrackingEnabledMethod
+        self.instanceASIdentifierManager = instanceASIdentifierManager
+        self.methodAdvertisingIdentifier = methodAdvertisingIdentifier
+        self.methodAdvertisingTrackingEnabled = methodAdvertisingTrackingEnabled
     }
     
     func advertisingIdentifier() throws -> String {
-        guard let result = instance.call(advertisingIdentifierMethod) as? UUID else {
+        guard
+            let result
+                = instanceASIdentifierManager.call(methodAdvertisingIdentifier) as? UUID
+        else {
             throw InternalError.advertisingIdentifierIsNotUUID
         }
         
@@ -98,7 +105,10 @@ private final class InstanceASIdentifierManager {
     }
     
     func advertisingTrackingEnabled() throws -> Bool {
-        guard let enabled = instance.call(advertisingTrackingEnabledMethod) as? Bool else {
+        guard
+            let enabled
+                = instanceASIdentifierManager.call(methodAdvertisingTrackingEnabled) as? Bool
+        else {
             throw InternalError.advertisingTrackingEnabledIsNotBool
         }
         

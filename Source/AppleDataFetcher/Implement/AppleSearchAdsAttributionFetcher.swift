@@ -54,23 +54,23 @@ extension AppleSearchAdsAttributionFetcher {
 }
 
 private final class ClassADClient {
-    private let ADClientClass: NSObject.Class
-    private let sharedClientMethod: NSObject.ClassMethod
+    private let classADClient: NSObject.Class
+    private let methodSharedClient: NSObject.ClassMethod
     
     init?() {
         guard
-            let ADClientClass = NSObject.Class(name: "ADClient"),
-            let sharedClientMethod = ADClientClass.method(name: "sharedClient")
+            let classADClient = NSObject.Class(name: "ADClient"),
+            let methodSharedClient = classADClient.method(name: "sharedClient")
         else {
             return nil
         }
         
-        self.ADClientClass = ADClientClass
-        self.sharedClientMethod = sharedClientMethod
+        self.classADClient = classADClient
+        self.methodSharedClient = methodSharedClient
     }
     
     func shared() -> InstanceADClient? {
-        let result = ADClientClass.call(sharedClientMethod)
+        let result = classADClient.call(methodSharedClient)
         guard let result = InstanceADClient(object: result) else {
             return nil
         }
@@ -80,28 +80,37 @@ private final class ClassADClient {
 }
 
 private final class InstanceADClient {
-    private let instance: NSObject.Instance
-    private let requestAttributionDetailsWithBlockMethod: NSObject.InstanceMethod
+    private let instanceADClient: NSObject.Instance
+    private let methodRequestAttributionDetailsWithBlock: NSObject.InstanceMethod
     
     init?(object: Any?) {
         guard
-            let ADClientClass = NSObject.Class(name: "ADClient"),
-            let instance = ADClientClass.instance(object: object),
-            let requestAttributionDetailsWithBlockMethod = instance.method(name: "requestAttributionDetailsWithBlock:")
+            let classADClient
+                = NSObject.Class(name: "ADClient"),
+            let instanceADClient
+                = classADClient.instance(object: object),
+            let methodRequestAttributionDetailsWithBlock
+                = instanceASIdentifierManager.method(name: "requestAttributionDetailsWithBlock:")
         else {
             return nil
         }
         
-        self.instance = instance
-        self.requestAttributionDetailsWithBlockMethod = requestAttributionDetailsWithBlockMethod
+        self.instanceADClient = instanceADClient
+        self.methodRequestAttributionDetailsWithBlock = methodRequestAttributionDetailsWithBlock
     }
     
     func requestAttributionDetailsWithBlock(
         handler: @escaping ([String: NSObject]?, Error?) -> Void
     ) {
-        let handler: @convention(block) ([String: NSObject]?, Error?) -> Void = handler
+        let handler: @convention(block) (
+            [String: NSObject]?,
+            Error?
+        ) -> Void = handler
         
-        instance.call(requestAttributionDetailsWithBlockMethod, with: handler)
+        instanceADClient.call(
+            methodRequestAttributionDetailsWithBlock,
+            with: handler
+        )
     }
 }
 
