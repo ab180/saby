@@ -90,7 +90,7 @@ private final class InstanceADClient {
             let instanceADClient
                 = classADClient.instance(object: object),
             let methodRequestAttributionDetailsWithBlock
-                = instanceASIdentifierManager.method(name: "requestAttributionDetailsWithBlock:")
+                = instanceADClient.method(name: "requestAttributionDetailsWithBlock:")
         else {
             return nil
         }
