@@ -17,6 +17,54 @@ extension Expect {
 }
 
 extension Expect {
+    public static func contract<Value>(
+        _ actual: Contract<Value>,
+        state: ContractState<(Value) -> Bool>,
+        timeout: DispatchTimeInterval,
+        block: () -> Void,
+        file: StaticString = #file,
+        line: UInt = #line
+    ) {
+        let end = DispatchSemaphore(value: 0)
+        let message = Message.unexpected(value: state)
+        
+        switch state {
+        case .resolved(let expect):
+            let token = OnceToken()
+            actual.then(
+                once(token: token) { value -> Void in
+                    XCTAssert(expect(value), message, file: file, line: line)
+                    end.signal()
+                }
+            )
+            .catch(
+                once(token: token) { error -> Void in
+                    XCTFail(message, file: file, line: line)
+                    end.signal()
+                }
+            )
+        case .rejected(let expect):
+            let token = OnceToken()
+            actual.then(
+                once(token: token) { value -> Void in
+                    XCTFail(message, file: file, line: line)
+                    end.signal()
+                }
+            )
+            .catch(
+                once(token: token) { error -> Void in
+                    XCTAssertEqual(error.localizedDescription, expect.localizedDescription, file: file, line: line)
+                    end.signal()
+                }
+            )
+        }
+        
+        block()
+        Expect.semaphore(end, timeout: timeout, file: file, line: line)
+    }
+}
+
+extension Expect {
     public static func contract<Value: Equatable>(
         _ actual: Contract<Value>,
         state: ContractState<Value>,
