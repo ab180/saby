@@ -44,12 +44,12 @@ public struct IdentifierForAdvertiser {
 }
 
 private final class ClassASIdentifierManager {
-    private let classASIdentifierManager: NSObject.Class
-    private let methodSharedManager: NSObject.ClassMethod
+    private let classASIdentifierManager: NSObjectClass
+    private let methodSharedManager: NSObjectClassMethod
     
     init?() {
         guard
-            let ASIdentifierManager = NSObject.Class(name: "ASIdentifierManager"),
+            let ASIdentifierManager = NSObjectClass(name: "ASIdentifierManager"),
             let sharedManager = ASIdentifierManager.method(name: "sharedManager")
         else {
             return nil
@@ -70,14 +70,14 @@ private final class ClassASIdentifierManager {
 }
 
 private final class InstanceASIdentifierManager {
-    private let instanceASIdentifierManager: NSObject.Instance
-    private let methodAdvertisingIdentifier: NSObject.InstanceMethod
-    private let methodAdvertisingTrackingEnabled: NSObject.InstanceMethod
+    private let instanceASIdentifierManager: NSObjectInstance
+    private let methodAdvertisingIdentifier: NSObjectInstanceMethod
+    private let methodAdvertisingTrackingEnabled: NSObjectInstanceMethod
     
     init?(object: Any?) {
         guard
             let classASIdentifierManager
-                = NSObject.Class(name: "ASIdentifierManager"),
+                = NSObjectClass(name: "ASIdentifierManager"),
             let instanceASIdentifierManager
                 = classASIdentifierManager.instance(object: object),
             let methodAdvertisingIdentifier

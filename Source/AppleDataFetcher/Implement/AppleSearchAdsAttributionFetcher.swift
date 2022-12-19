@@ -54,12 +54,12 @@ extension AppleSearchAdsAttributionFetcher {
 }
 
 private final class ClassADClient {
-    private let classADClient: NSObject.Class
-    private let methodSharedClient: NSObject.ClassMethod
+    private let classADClient: NSObjectClass
+    private let methodSharedClient: NSObjectClassMethod
     
     init?() {
         guard
-            let classADClient = NSObject.Class(name: "ADClient"),
+            let classADClient = NSObjectClass(name: "ADClient"),
             let methodSharedClient = classADClient.method(name: "sharedClient")
         else {
             return nil
@@ -80,13 +80,13 @@ private final class ClassADClient {
 }
 
 private final class InstanceADClient {
-    private let instanceADClient: NSObject.Instance
-    private let methodRequestAttributionDetailsWithBlock: NSObject.InstanceMethod
+    private let instanceADClient: NSObjectInstance
+    private let methodRequestAttributionDetailsWithBlock: NSObjectInstanceMethod
     
     init?(object: Any?) {
         guard
             let classADClient
-                = NSObject.Class(name: "ADClient"),
+                = NSObjectClass(name: "ADClient"),
             let instanceADClient
                 = classADClient.instance(object: object),
             let methodRequestAttributionDetailsWithBlock

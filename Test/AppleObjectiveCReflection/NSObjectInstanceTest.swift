@@ -10,7 +10,7 @@ import XCTest
 
 final class NSObjectInstanceTest: XCTestCase {
     func test__init_instance() {
-        let NSDictionary = NSObject.Class(name: "NSDictionary")!
+        let NSDictionary = NSObjectClass(name: "NSDictionary")!
         let dictionaryWithValuesForKeys = NSDictionary.method(name: "dictionaryWithObjects:forKeys:")!
         let instance = NSDictionary.instance(
             object: NSDictionary.call(dictionaryWithValuesForKeys, with: ["1"], with: ["a"])

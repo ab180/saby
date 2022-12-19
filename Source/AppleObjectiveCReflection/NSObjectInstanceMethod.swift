@@ -7,33 +7,31 @@
 
 import Foundation
 
-extension NSObject.Instance {
-    public func method(name: String) -> NSObject.InstanceMethod? {
-        NSObject.InstanceMethod(object: object, name: name)
+extension NSObjectInstance {
+    public func method(name: String) -> NSObjectInstanceMethod? {
+        NSObjectInstanceMethod(object: object, name: name)
     }
 }
 
-extension NSObject {
-    public final class InstanceMethod {
-        let object: NSObject
-        let selector: Selector
-        let method: Method
+public final class NSObjectInstanceMethod {
+    let object: NSObject
+    let selector: Selector
+    let method: Method
+    
+    fileprivate init?(object: NSObject, name: String) {
+        let selector = NSSelectorFromString(name)
+        guard let method = class_getInstanceMethod(type(of: object), selector) else { return nil }
         
-        fileprivate init?(object: NSObject, name: String) {
-            let selector = NSSelectorFromString(name)
-            guard let method = class_getInstanceMethod(type(of: object), selector) else { return nil }
-            
-            self.object = object
-            self.selector = selector
-            self.method = method
-        }
+        self.object = object
+        self.selector = selector
+        self.method = method
     }
 }
 
-extension NSObject.Instance {
+extension NSObjectInstance {
     @discardableResult
     public func call(
-        _ instanceMethod: NSObject.InstanceMethod
+        _ instanceMethod: NSObjectInstanceMethod
     ) -> Any? {
         guard object == instanceMethod.object else { return nil }
         
@@ -46,7 +44,7 @@ extension NSObject.Instance {
     
     @discardableResult
     public func call(
-        _ instanceMethod: NSObject.InstanceMethod,
+        _ instanceMethod: NSObjectInstanceMethod,
         with argument0: Any?
     ) -> Any? {
         guard object == instanceMethod.object else { return nil }
@@ -60,7 +58,7 @@ extension NSObject.Instance {
     
     @discardableResult
     public func call(
-        _ instanceMethod: NSObject.InstanceMethod,
+        _ instanceMethod: NSObjectInstanceMethod,
         with argument0: Any?,
         with argument1: Any?
     ) -> Any? {
@@ -75,7 +73,7 @@ extension NSObject.Instance {
     
     @discardableResult
     public func call(
-        _ instanceMethod: NSObject.InstanceMethod,
+        _ instanceMethod: NSObjectInstanceMethod,
         with argument0: Any?,
         with argument1: Any?,
         with argument2: Any?
@@ -91,7 +89,7 @@ extension NSObject.Instance {
     
     @discardableResult
     public func call(
-        _ instanceMethod: NSObject.InstanceMethod,
+        _ instanceMethod: NSObjectInstanceMethod,
         with argument0: Any?,
         with argument1: Any?,
         with argument2: Any?,
@@ -108,7 +106,7 @@ extension NSObject.Instance {
     
     @discardableResult
     public func call(
-        _ instanceMethod: NSObject.InstanceMethod,
+        _ instanceMethod: NSObjectInstanceMethod,
         with argument0: Any?,
         with argument1: Any?,
         with argument2: Any?,

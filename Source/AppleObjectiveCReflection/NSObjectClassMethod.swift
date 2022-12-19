@@ -7,33 +7,31 @@
 
 import Foundation
 
-extension NSObject.Class {
-    public func method(name: String) -> NSObject.ClassMethod? {
-        NSObject.ClassMethod(anyClass: anyClass, name: name)
+extension NSObjectClass {
+    public func method(name: String) -> NSObjectClassMethod? {
+        NSObjectClassMethod(anyClass: anyClass, name: name)
     }
 }
 
-extension NSObject {
-    public final class ClassMethod {
-        let anyClass: AnyClass
-        let selector: Selector
-        let method: Method
+public final class NSObjectClassMethod {
+    let anyClass: AnyClass
+    let selector: Selector
+    let method: Method
+    
+    fileprivate init?(anyClass: AnyClass, name: String) {
+        let selector = NSSelectorFromString(name)
+        guard let method = class_getClassMethod(anyClass, selector) else { return nil }
         
-        fileprivate init?(anyClass: AnyClass, name: String) {
-            let selector = NSSelectorFromString(name)
-            guard let method = class_getClassMethod(anyClass, selector) else { return nil }
-            
-            self.anyClass = anyClass
-            self.selector = selector
-            self.method = method
-        }
+        self.anyClass = anyClass
+        self.selector = selector
+        self.method = method
     }
 }
 
-extension NSObject.Class {
+extension NSObjectClass {
     @discardableResult
     public func call(
-        _ classMethod: NSObject.ClassMethod
+        _ classMethod: NSObjectClassMethod
     ) -> Any? {
         guard anyClass == classMethod.anyClass else { return nil }
         
@@ -46,7 +44,7 @@ extension NSObject.Class {
     
     @discardableResult
     public func call(
-        _ classMethod: NSObject.ClassMethod,
+        _ classMethod: NSObjectClassMethod,
         with argument0: Any?
     ) -> Any? {
         guard anyClass == classMethod.anyClass else { return nil }
@@ -60,7 +58,7 @@ extension NSObject.Class {
     
     @discardableResult
     public func call(
-        _ classMethod: NSObject.ClassMethod,
+        _ classMethod: NSObjectClassMethod,
         with argument0: Any?,
         with argument1: Any?
     ) -> Any? {
@@ -75,7 +73,7 @@ extension NSObject.Class {
     
     @discardableResult
     public func call(
-        _ classMethod: NSObject.ClassMethod,
+        _ classMethod: NSObjectClassMethod,
         with argument0: Any?,
         with argument1: Any?,
         with argument2: Any?
@@ -91,7 +89,7 @@ extension NSObject.Class {
     
     @discardableResult
     public func call(
-        _ classMethod: NSObject.ClassMethod,
+        _ classMethod: NSObjectClassMethod,
         with argument0: Any?,
         with argument1: Any?,
         with argument2: Any?,
@@ -108,7 +106,7 @@ extension NSObject.Class {
     
     @discardableResult
     public func call(
-        _ classMethod: NSObject.ClassMethod,
+        _ classMethod: NSObjectClassMethod,
         with argument0: Any?,
         with argument1: Any?,
         with argument2: Any?,

@@ -10,9 +10,9 @@ import XCTest
 
 final class NSObjectClassTest: XCTestCase {
     func test__init() {
-        XCTAssertNotNil(NSObject.Class(name: "NSDictionary"))
-        XCTAssertNotNil(NSObject.Class(name: "NSArray"))
-        XCTAssertNil(NSObject.Class(name: "1234567890"))
-        XCTAssertNil(NSObject.Class(name: ""))
+        XCTAssertNotNil(NSObjectClass(name: "NSDictionary"))
+        XCTAssertNotNil(NSObjectClass(name: "NSArray"))
+        XCTAssertNil(NSObjectClass(name: "1234567890"))
+        XCTAssertNil(NSObjectClass(name: ""))
     }
 }

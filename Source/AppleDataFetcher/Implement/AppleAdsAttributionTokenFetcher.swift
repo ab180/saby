@@ -31,13 +31,13 @@ public final class AppleAdsAttributionTokenFetcher: Fetcher {
 }
 
 private final class ClassAAAttribution {
-    private let classAAAttribution: NSObject.Class
-    private let methodAttributionTokenWithError: NSObject.ClassMethod
+    private let classAAAttribution: NSObjectClass
+    private let methodAttributionTokenWithError: NSObjectClassMethod
     
     init?() {
         guard
             let classAAAttribution
-                = NSObject.Class(name: "AAAttribution"),
+                = NSObjectClass(name: "AAAttribution"),
             let methodAttributionTokenWithError
                 = classAAAttribution.method(name: "attributionTokenWithError:")
         else {

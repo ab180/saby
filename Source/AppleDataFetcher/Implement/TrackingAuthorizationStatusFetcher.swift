@@ -38,13 +38,13 @@ public enum TrackingAuthorizationStatus: UInt {
 }
 
 private final class ClassATTrackingManager {
-    private let classATTrackingManager: NSObject.Class
-    private let methodTrackingAuthorizationStatus: NSObject.ClassMethod
+    private let classATTrackingManager: NSObjectClass
+    private let methodTrackingAuthorizationStatus: NSObjectClassMethod
     
     init?() {
         guard
             let classATTrackingManager
-                = NSObject.Class(name: "ATTrackingManager"),
+                = NSObjectClass(name: "ATTrackingManager"),
             let methodTrackingAuthorizationStatus
                 = classATTrackingManager.method(name: "trackingAuthorizationStatus:")
         else {

@@ -10,7 +10,7 @@ import XCTest
 
 final class NSObjectClassMethodTest: XCTestCase {
     func test__init_class_method() {
-        let NSDictionary = NSObject.Class(name: "NSDictionary")!
+        let NSDictionary = NSObjectClass(name: "NSDictionary")!
         
         XCTAssertNotNil(NSDictionary.method(name: "dictionaryWithObjects:forKeys:"))
         XCTAssertNil(NSDictionary.method(name: "1234567890"))
@@ -18,7 +18,7 @@ final class NSObjectClassMethodTest: XCTestCase {
     }
     
     func test__call() {
-        let NSDictionary = NSObject.Class(name: "NSDictionary")!
+        let NSDictionary = NSObjectClass(name: "NSDictionary")!
         let dictionaryWithValuesForKeys = NSDictionary.method(name: "dictionaryWithObjects:forKeys:")!
         
         let dictionary = NSDictionary.call(

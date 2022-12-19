@@ -10,7 +10,7 @@ import XCTest
 
 final class NSObjectInstanceMethodTest: XCTestCase {
     func test__init_class_method() {
-        let NSDictionary = NSObject.Class(name: "NSDictionary")!
+        let NSDictionary = NSObjectClass(name: "NSDictionary")!
         let dictionaryWithValuesForKeys = NSDictionary.method(name: "dictionaryWithObjects:forKeys:")!
         let instance = NSDictionary.instance(
             object: NSDictionary.call(dictionaryWithValuesForKeys, with: ["1"], with: ["a"])
@@ -22,7 +22,7 @@ final class NSObjectInstanceMethodTest: XCTestCase {
     }
     
     func test__call() {
-        let NSDictionary = NSObject.Class(name: "NSDictionary")!
+        let NSDictionary = NSObjectClass(name: "NSDictionary")!
         let dictionaryWithValuesForKeys = NSDictionary.method(name: "dictionaryWithObjects:forKeys:")!
         let instance = NSDictionary.instance(
             object: NSDictionary.call(dictionaryWithValuesForKeys, with: ["1"], with: ["a"])

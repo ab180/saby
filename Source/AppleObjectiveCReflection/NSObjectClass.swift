@@ -7,14 +7,12 @@
 
 import Foundation
 
-extension NSObject {
-    public final class Class {
-        let anyClass: AnyClass
+public final class NSObjectClass {
+    let anyClass: AnyClass
+    
+    public init?(name: String) {
+        guard let anyClass = NSClassFromString(name) else { return nil }
         
-        public init?(name: String) {
-            guard let anyClass = NSClassFromString(name) else { return nil }
-            
-            self.anyClass = anyClass
-        }
+        self.anyClass = anyClass
     }
 }
