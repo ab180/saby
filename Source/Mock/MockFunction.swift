@@ -12,21 +12,22 @@ public struct MockFunction<Argument, Result> {
     public var calls: [MockFunctionCall<Argument, Result>]
     
     public init(
-        _ original: (Argument) -> Result
-            = { _ in fatalError() },
-        implementation: @escaping (Argument) -> Result
-            = { _ in
-                if Result.self is Void.Type { return () as! Result }
-                fatalError("no implementation")
-            }
+        _ original: (Argument) -> Result = { _ in
+            fatalError()
+        },
+        implementation: @escaping (Argument) -> Result = { _ in
+            if Result.self is Void.Type { return () as! Result }
+            fatalError("no implementation")
+        }
     ) {
         self.implementation = implementation
         self.calls = []
     }
     
     public init(
-        _ original: (Argument) -> Result
-            = { _ in fatalError() },
+        _ original: (Argument) -> Result = { _ in
+            fatalError()
+        },
         result: Result
     ) {
         self.init(original) { _ in result }

@@ -36,10 +36,12 @@ private final class ClassAAAttribution {
     
     init?() {
         guard
-            let classAAAttribution
-                = NSObjectClass(name: "AAAttribution"),
-            let methodAttributionTokenWithError
-                = classAAAttribution.method(name: "attributionTokenWithError:")
+            let classAAAttribution = (
+                NSObjectClass(name: "AAAttribution")
+            ),
+            let methodAttributionTokenWithError = (
+                classAAAttribution.method(name: "attributionTokenWithError:")
+            )
         else {
             return nil
         }

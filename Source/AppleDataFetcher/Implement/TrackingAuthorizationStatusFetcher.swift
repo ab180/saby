@@ -43,10 +43,12 @@ private final class ClassATTrackingManager {
     
     init?() {
         guard
-            let classATTrackingManager
-                = NSObjectClass(name: "ATTrackingManager"),
-            let methodTrackingAuthorizationStatus
-                = classATTrackingManager.method(name: "trackingAuthorizationStatus:")
+            let classATTrackingManager = (
+                NSObjectClass(name: "ATTrackingManager")
+            ),
+            let methodTrackingAuthorizationStatus = (
+                classATTrackingManager.method(name: "trackingAuthorizationStatus:")
+            )
         else {
             return nil
         }

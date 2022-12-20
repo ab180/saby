@@ -76,14 +76,18 @@ private final class InstanceASIdentifierManager {
     
     init?(object: Any?) {
         guard
-            let classASIdentifierManager
-                = NSObjectClass(name: "ASIdentifierManager"),
-            let instanceASIdentifierManager
-                = classASIdentifierManager.instance(object: object),
-            let methodAdvertisingIdentifier
-                = instanceASIdentifierManager.method(name: "advertisingIdentifier"),
-            let methodAdvertisingTrackingEnabled
-                = instanceASIdentifierManager.method(name: "advertisingTrackingEnabledMethod")
+            let classASIdentifierManager = (
+                NSObjectClass(name: "ASIdentifierManager")
+            ),
+            let instanceASIdentifierManager = (
+                classASIdentifierManager.instance(object: object)
+            ),
+            let methodAdvertisingIdentifier = (
+                instanceASIdentifierManager.method(name: "advertisingIdentifier")
+            ),
+            let methodAdvertisingTrackingEnabled = (
+                instanceASIdentifierManager.method(name: "advertisingTrackingEnabledMethod")
+            )
         else {
             return nil
         }
@@ -95,8 +99,9 @@ private final class InstanceASIdentifierManager {
     
     func advertisingIdentifier() throws -> String {
         guard
-            let result
-                = instanceASIdentifierManager.call(methodAdvertisingIdentifier) as? UUID
+            let result = (
+                instanceASIdentifierManager.call(methodAdvertisingIdentifier) as? UUID
+            )
         else {
             throw InternalError.advertisingIdentifierIsNotUUID
         }
@@ -106,8 +111,9 @@ private final class InstanceASIdentifierManager {
     
     func advertisingTrackingEnabled() throws -> Bool {
         guard
-            let enabled
-                = instanceASIdentifierManager.call(methodAdvertisingTrackingEnabled) as? Bool
+            let enabled = (
+                instanceASIdentifierManager.call(methodAdvertisingTrackingEnabled) as? Bool
+            )
         else {
             throw InternalError.advertisingTrackingEnabledIsNotBool
         }

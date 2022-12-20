@@ -85,12 +85,15 @@ private final class InstanceADClient {
     
     init?(object: Any?) {
         guard
-            let classADClient
-                = NSObjectClass(name: "ADClient"),
-            let instanceADClient
-                = classADClient.instance(object: object),
-            let methodRequestAttributionDetailsWithBlock
-                = instanceADClient.method(name: "requestAttributionDetailsWithBlock:")
+            let classADClient = (
+                NSObjectClass(name: "ADClient")
+            ),
+            let instanceADClient = (
+                classADClient.instance(object: object)
+            ),
+            let methodRequestAttributionDetailsWithBlock = (
+                instanceADClient.method(name: "requestAttributionDetailsWithBlock:")
+            )
         else {
             return nil
         }
