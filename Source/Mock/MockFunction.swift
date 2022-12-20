@@ -14,7 +14,10 @@ public struct MockFunction<Argument, Result> {
     public init(
         _ original: (Argument) -> Result,
         implementation: @escaping (Argument) -> Result
-            = { _ in fatalError("no implementation") }
+            = { _ in
+                if Result.self is Void.Type { return () as! Result }
+                fatalError("no implementation")
+            }
     ) {
         self.implementation = implementation
         self.calls = []
@@ -25,16 +28,6 @@ public struct MockFunction<Argument, Result> {
         result: Result
     ) {
         self.init(original) { _ in result }
-    }
-    
-    public init(
-        _ original: (Argument) -> Result
-            = { _ in }
-    )
-    where
-        Result == Void
-    {
-        self.init(original) { _ in }
     }
     
     public mutating func callAsFunction(_ argument: Argument) -> Result {
