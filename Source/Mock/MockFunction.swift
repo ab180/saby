@@ -14,6 +14,7 @@ public struct MockFunction<Argument, Result> {
     public init(
         _ original: (Argument) -> Result,
         implementation: @escaping (Argument) -> Result
+            = { _ in fatalError("no implementation") }
     ) {
         self.implementation = implementation
         self.calls = []
@@ -28,6 +29,7 @@ public struct MockFunction<Argument, Result> {
     
     public init(
         _ original: (Argument) -> Result
+            = { _ in }
     )
     where
         Result == Void
