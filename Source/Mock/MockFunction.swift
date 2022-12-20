@@ -12,7 +12,8 @@ public struct MockFunction<Argument, Result> {
     public var calls: [Call]
     
     public init(
-        _ original: (Argument) -> Result,
+        _ original: (Argument) -> Result
+            = { _ in fatalError() },
         implementation: @escaping (Argument) -> Result
             = { _ in
                 if Result.self is Void.Type { return () as! Result }
@@ -24,7 +25,8 @@ public struct MockFunction<Argument, Result> {
     }
     
     public init(
-        _ original: (Argument) -> Result,
+        _ original: (Argument) -> Result
+            = { _ in fatalError() },
         result: Result
     ) {
         self.init(original) { _ in result }
