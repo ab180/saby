@@ -9,7 +9,7 @@ import Foundation
 
 public struct MockFunction<Argument, Result> {
     public var implementation: (Argument) -> Result
-    public var calls: [Call]
+    public var calls: [MockFunctionCall<Argument, Result>]
     
     public init(
         _ original: (Argument) -> Result
@@ -34,17 +34,15 @@ public struct MockFunction<Argument, Result> {
     
     public mutating func callAsFunction(_ argument: Argument) -> Result {
         let result = implementation(argument)
-        calls.append(Call(argument: argument, result: result))
+        calls.append(MockFunctionCall(argument: argument, result: result))
         
         return result
     }
 }
 
-extension MockFunction {
-    public struct Call {
-        let argument: Argument
-        let result: Result
-    }
+public struct MockFunctionCall<Argument, Result> {
+    public let argument: Argument
+    public let result: Result
 }
 
 extension MockFunction {
@@ -53,7 +51,9 @@ extension MockFunction {
         argument: ((Argument) -> Bool)? = nil,
         result: ((Result) -> Bool)? = nil
     ) -> Bool {
-        let isMatch = { (call: Call) -> Bool in
+        let isMatch = { (
+            call: MockFunctionCall<Argument, Result>
+        ) -> Bool in
             if let argument, !argument(call.argument) {
                 return false
             }
