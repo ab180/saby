@@ -9,9 +9,10 @@ import Foundation
 
 extension Promise {
     @discardableResult
-    public func then<Result>(on queue: DispatchQueue? = nil,
-                             _ block: @escaping (Value) throws -> Result) -> Promise<Result>
-    {
+    public func then<Result>(
+        on queue: DispatchQueue? = nil,
+        _ block: @escaping (Value) throws -> Result
+    ) -> Promise<Result> {
         let queue = queue ?? self.queue
         
         let promiseReturn = Promise<Result>(queue: self.queue)
@@ -33,9 +34,10 @@ extension Promise {
     }
     
     @discardableResult
-    public func then<Result>(on queue: DispatchQueue? = nil,
-                             _ block: @escaping (Value) throws -> Promise<Result>) -> Promise<Result>
-    {
+    public func then<Result>(
+        on queue: DispatchQueue? = nil,
+        _ block: @escaping (Value) throws -> Promise<Result>
+    ) -> Promise<Result> {
         let queue = queue ?? self.queue
         
         let promiseReturn = Promise<Result>(queue: self.queue)

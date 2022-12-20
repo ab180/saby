@@ -14,10 +14,11 @@ final class ContractFilterTest: XCTestCase {
 
         let contract = contract0.filter { $0 % 2 == 0 }
         
-        ContractTest.expect(contract: contract,
-                            state: .resolved(2),
-                            timeout: .seconds(1))
-        {
+        ContractTest.expect(
+            contract: contract,
+            state: .resolved(2),
+            timeout: .seconds(1)
+        ) {
             contract0.resolve(1)
             contract0.resolve(2)
         }
@@ -28,10 +29,11 @@ final class ContractFilterTest: XCTestCase {
 
         let contract = contract0.filter { URL(string: $0) }
         
-        ContractTest.expect(contract: contract,
-                            state: .resolved(URL(string: "https://a.example")!),
-                            timeout: .seconds(1))
-        {
+        ContractTest.expect(
+            contract: contract,
+            state: .resolved(URL(string: "https://a.example")!),
+            timeout: .seconds(1)
+        ) {
             contract0.resolve("%")
             contract0.resolve("https://a.example")
         }

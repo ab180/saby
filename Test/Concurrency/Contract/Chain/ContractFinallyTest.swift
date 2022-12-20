@@ -14,17 +14,19 @@ final class ContractFinallyTest: XCTestCase {
 
         let contract = contract0.finally {}
         
-        ContractTest.expect(contract: contract,
-                            state: .resolved(10),
-                            timeout: .seconds(1))
-        {
+        ContractTest.expect(
+            contract: contract,
+            state: .resolved(10),
+            timeout: .seconds(1)
+        ) {
             contract0.resolve(10)
         }
         
-        ContractTest.expect(contract: contract,
-                            state: .rejected(ContractTest.SampleError.one),
-                            timeout: .seconds(1))
-        {
+        ContractTest.expect(
+            contract: contract,
+            state: .rejected(ContractTest.SampleError.one),
+            timeout: .seconds(1)
+        ) {
             contract0.reject(ContractTest.SampleError.one)
         }
     }

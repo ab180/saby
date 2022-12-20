@@ -53,8 +53,11 @@ extension Contract {
 extension Contract {
     public static func create(
         on queue: DispatchQueue = .global()
-    ) -> (Contract<Value>, (Value) -> Void, (Error) -> Void)
-    {
+    ) -> (
+        Contract<Value>,
+        (Value) -> Void,
+        (Error) -> Void
+    ) {
         let contract = Contract(queue: queue)
         
         return (contract, { contract.resolve($0) }, { contract.reject($0) })
@@ -70,10 +73,11 @@ extension Contract {
         let onResolved: (Value) -> Void
         let onRejected: (Error) -> Void
         
-        init(promiseAtomic: Atomic<Promise<Void>>,
-             onResolved: @escaping (Value) -> Void,
-             onRejected: @escaping (Error) -> Void)
-        {
+        init(
+            promiseAtomic: Atomic<Promise<Void>>,
+            onResolved: @escaping (Value) -> Void,
+            onRejected: @escaping (Error) -> Void
+        ) {
             self.onResolved = { value in
                 promiseAtomic.mutate { promise in
                     promise.then { onResolved(value) }
@@ -86,12 +90,16 @@ extension Contract {
             }
         }
         
-        init(on queue: DispatchQueue,
-             onResolved: @escaping (Value) -> Void,
-             onRejected: @escaping (Error) -> Void) {
-            self.init(promiseAtomic: Atomic(Promise<Void>.resolved(on: queue, ())),
-                      onResolved: onResolved,
-                      onRejected: onRejected)
+        init(
+            on queue: DispatchQueue,
+            onResolved: @escaping (Value) -> Void,
+            onRejected: @escaping (Error) -> Void
+        ) {
+            self.init(
+                promiseAtomic: Atomic(Promise<Void>.resolved(on: queue, ())),
+                onResolved: onResolved,
+                onRejected: onRejected
+            )
         }
     }
 }

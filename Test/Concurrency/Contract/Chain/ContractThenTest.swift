@@ -16,17 +16,19 @@ final class ContractThenTest: XCTestCase {
             value + 1
         }
         
-        ContractTest.expect(contract: contract,
-                            state: .resolved(11),
-                            timeout: .seconds(1))
-        {
+        ContractTest.expect(
+            contract: contract,
+            state: .resolved(11),
+            timeout: .seconds(1)
+        ) {
             contract0.resolve(10)
         }
         
-        ContractTest.expect(contract: contract,
-                            state: .resolved(21),
-                            timeout: .seconds(1))
-        {
+        ContractTest.expect(
+            contract: contract,
+            state: .resolved(21),
+            timeout: .seconds(1)
+        ) {
             contract0.resolve(20)
         }
     }
@@ -38,17 +40,19 @@ final class ContractThenTest: XCTestCase {
             Promise.resolved(value + 1)
         }
         
-        ContractTest.expect(contract: contract,
-                            state: .resolved(11),
-                            timeout: .seconds(1))
-        {
+        ContractTest.expect(
+            contract: contract,
+            state: .resolved(11),
+            timeout: .seconds(1)
+        ) {
             contract0.resolve(10)
         }
         
-        ContractTest.expect(contract: contract,
-                            state: .resolved(21),
-                            timeout: .seconds(1))
-        {
+        ContractTest.expect(
+            contract: contract,
+            state: .resolved(21),
+            timeout: .seconds(1)
+        ) {
             contract0.resolve(20)
         }
     }

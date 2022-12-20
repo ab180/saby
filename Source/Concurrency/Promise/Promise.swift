@@ -33,10 +33,13 @@ public final class Promise<Value> {
 }
 
 extension Promise {
-    public convenience init(on queue: DispatchQueue = .global(),
-                            _ work: @escaping (_ resolve: @escaping (Value) -> Void,
-                                               _ reject: @escaping (Error) -> Void) throws -> Void)
-    {
+    public convenience init(
+        on queue: DispatchQueue = .global(),
+        _ work: @escaping (
+            _ resolve: @escaping (Value) -> Void,
+            _ reject: @escaping (Error) -> Void
+        ) throws -> Void
+    ) {
         self.init(queue: queue)
 
         queue.async {
@@ -48,9 +51,10 @@ extension Promise {
         }
     }
     
-    public convenience init(on queue: DispatchQueue = .global(),
-                            _ block: @escaping () throws -> Value)
-    {
+    public convenience init(
+        on queue: DispatchQueue = .global(),
+        _ block: @escaping () throws -> Value
+    ) {
         self.init(queue: queue)
 
         queue.async {
@@ -63,9 +67,10 @@ extension Promise {
         }
     }
     
-    public convenience init(on queue: DispatchQueue = .global(),
-                            _ block: @escaping () throws -> Promise<Value>)
-    {
+    public convenience init(
+        on queue: DispatchQueue = .global(),
+        _ block: @escaping () throws -> Promise<Value>
+    ) {
         self.init(queue: queue)
         
         queue.async {
@@ -144,25 +149,30 @@ extension Promise {
 extension Promise {
     public static func pending(
         on queue: DispatchQueue = .global()
-    ) -> (Promise<Value>, Promise<Value>.Resolve, Promise<Value>.Reject)
-    {
+    ) -> (
+        Promise<Value>,
+        Promise<Value>.Resolve,
+        Promise<Value>.Reject
+    ) {
         let promise = Promise(queue: queue)
         
         return (promise, { promise.resolve($0) }, { promise.reject($0) })
     }
     
-    public static func resolved(on queue: DispatchQueue = .global(),
-                                _ value: Value) -> Promise<Value>
-    {
+    public static func resolved(
+        on queue: DispatchQueue = .global(),
+        _ value: Value
+    ) -> Promise<Value> {
         let promise = Promise(queue: queue)
         promise.state = .resolved(value)
         
         return promise
     }
     
-    public static func rejected(on queue: DispatchQueue = .global(),
-                                _ error: Error) -> Promise<Value>
-    {
+    public static func rejected(
+        on queue: DispatchQueue = .global(),
+        _ error: Error
+    ) -> Promise<Value> {
         let promise = Promise(queue: queue)
         promise.state = .rejected(error)
         

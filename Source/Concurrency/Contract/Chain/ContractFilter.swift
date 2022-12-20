@@ -8,9 +8,10 @@
 import Foundation
 
 extension Contract {
-    public func filter(on queue: DispatchQueue? = nil,
-                       _ block: @escaping (Value) -> Bool) -> Contract<Value>
-    {
+    public func filter(
+        on queue: DispatchQueue? = nil,
+        _ block: @escaping (Value) -> Bool
+    ) -> Contract<Value> {
         let queue = queue ?? self.queue
         
         let contract = Contract<Value>(on: queue)
@@ -26,9 +27,10 @@ extension Contract {
         return contract
     }
     
-    public func filter<Result>(on queue: DispatchQueue? = nil,
-                               _ block: @escaping (Value) -> Result?) -> Contract<Result>
-    {
+    public func filter<Result>(
+        on queue: DispatchQueue? = nil,
+        _ block: @escaping (Value) -> Result?
+    ) -> Contract<Result> {
         let queue = queue ?? self.queue
         
         let contract = Contract<Result>(on: queue)
@@ -45,9 +47,10 @@ extension Contract {
         return contract
     }
     
-    public func filter<Result>(on queue: DispatchQueue? = nil,
-                               _ block: @escaping (Value) -> Promise<Result?>) -> Contract<Result>
-    {
+    public func filter<Result>(
+        on queue: DispatchQueue? = nil,
+        _ block: @escaping (Value) -> Promise<Result?>
+    ) -> Contract<Result> {
         let queue = queue ?? self.queue
         
         let contract = Contract<Result>(on: queue)
@@ -70,9 +73,10 @@ extension Contract {
         return contract
     }
     
-    public func filter<Result>(on queue: DispatchQueue? = nil,
-                               _ block: @escaping (Value) -> Promise<Result>?) -> Contract<Result>
-    {
+    public func filter<Result>(
+        on queue: DispatchQueue? = nil,
+        _ block: @escaping (Value) -> Promise<Result>?
+    ) -> Contract<Result> {
         let queue = queue ?? self.queue
         
         let contract = Contract<Result>(on: queue)

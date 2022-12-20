@@ -19,10 +19,11 @@ final class ContractDelayTest: XCTestCase {
         
         promise0.resolve(())
         
-        ContractTest.expect(contract: contract,
-                            state: .resolved(11),
-                            timeout: .seconds(1))
-        {
+        ContractTest.expect(
+            contract: contract,
+            state: .resolved(11),
+            timeout: .seconds(1)
+        ) {
             contract0.resolve(10)
         }
     }

@@ -20,10 +20,11 @@ final class ContractTest: XCTestCase {
     func test__resolve() {
         let contract = Contract<Int>()
         
-        ContractTest.expect(contract: contract,
-                            state: .resolved(10),
-                            timeout: .seconds(1))
-        {
+        ContractTest.expect(
+            contract: contract,
+            state: .resolved(10),
+            timeout: .seconds(1)
+        ) {
             contract.resolve(10)
         }
     }
@@ -31,10 +32,11 @@ final class ContractTest: XCTestCase {
     func test__reject() {
         let contract = Contract<Int>()
         
-        ContractTest.expect(contract: contract,
-                            state: .rejected(SampleError.one),
-                            timeout: .seconds(1))
-        {
+        ContractTest.expect(
+            contract: contract,
+            state: .rejected(SampleError.one),
+            timeout: .seconds(1)
+        ) {
             contract.reject(SampleError.one)
         }
     }
@@ -42,10 +44,11 @@ final class ContractTest: XCTestCase {
     func test__create() {
         let (contract, _, reject) = Contract<Int>.create()
         
-        ContractTest.expect(contract: contract,
-                            state: .rejected(SampleError.one),
-                            timeout: .seconds(1))
-        {
+        ContractTest.expect(
+            contract: contract,
+            state: .rejected(SampleError.one),
+            timeout: .seconds(1)
+        ) {
             reject(SampleError.one)
         }
     }

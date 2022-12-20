@@ -9,9 +9,10 @@ import Foundation
 
 extension Contract {
     @discardableResult
-    public func then<Result>(on queue: DispatchQueue? = nil,
-                             _ block: @escaping (Value) throws -> Result) -> Contract<Result>
-    {
+    public func then<Result>(
+        on queue: DispatchQueue? = nil,
+        _ block: @escaping (Value) throws -> Result
+    ) -> Contract<Result> {
         let queue = queue ?? self.queue
         
         let contract = Contract<Result>(on: self.queue)
@@ -34,9 +35,10 @@ extension Contract {
     }
     
     @discardableResult
-    public func then<Result>(on queue: DispatchQueue? = nil,
-                             _ block: @escaping (Value) throws -> Promise<Result>) -> Contract<Result>
-    {
+    public func then<Result>(
+        on queue: DispatchQueue? = nil,
+        _ block: @escaping (Value) throws -> Promise<Result>
+    ) -> Contract<Result> {
         let queue = queue ?? self.queue
         
         let contract = Contract<Result>(on: self.queue)

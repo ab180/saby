@@ -9,9 +9,10 @@ import Foundation
 
 extension Contract {
     @discardableResult
-    public func finally(on queue: DispatchQueue? = nil,
-                        _ block: @escaping () -> Void) -> Contract<Value>
-    {
+    public func finally(
+        on queue: DispatchQueue? = nil,
+        _ block: @escaping () -> Void
+    ) -> Contract<Value> {
         let queue = queue ?? self.queue
         
         let contract = Contract<Value>(on: self.queue)

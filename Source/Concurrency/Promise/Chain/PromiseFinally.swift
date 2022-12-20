@@ -9,9 +9,10 @@ import Foundation
 
 extension Promise {
     @discardableResult
-    public func finally(on queue: DispatchQueue? = nil,
-                        _ block: @escaping () -> Void) -> Promise<Value>
-    {
+    public func finally(
+        on queue: DispatchQueue? = nil,
+        _ block: @escaping () -> Void
+    ) -> Promise<Value> {
         let queue = queue ?? self.queue
         
         let promiseReturn = Promise<Value>(queue: self.queue)
