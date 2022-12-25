@@ -17,11 +17,11 @@ extension Promise {
         
         let promiseReturn = Promise<Value>(queue: self.queue)
         
-        subscribe(subscriber: Subscriber(
+        subscribe(
             on: queue,
             onResolved: { block(); promiseReturn.resolve($0) },
             onRejected: { block(); promiseReturn.reject($0) }
-        ))
+        )
         
         return promiseReturn
     }

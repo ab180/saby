@@ -48,11 +48,11 @@ extension Contract {
             onResolved: { value in contract.resolve(value) },
             onRejected: { error in
                 do {
-                    try block(error).subscribe(subscriber: Promise.Subscriber(
+                    try block(error).subscribe(
                         on: queue,
                         onResolved: { contract.resolve($0) },
                         onRejected: { contract.reject($0) }
-                    ))
+                    )
                 }
                 catch let error {
                     contract.reject(error)

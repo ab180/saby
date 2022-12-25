@@ -16,11 +16,11 @@ extension Promise {
         let promiseReturn = Promise<Result>(queue: queue)
         
         for promise in promises {
-            promise.subscribe(subscriber: Promise<Result>.Subscriber(
+            promise.subscribe(
                 on: queue,
                 onResolved: { promiseReturn.resolve($0) },
                 onRejected: { promiseReturn.reject($0) }
-            ))
+            )
         }
         
         return promiseReturn

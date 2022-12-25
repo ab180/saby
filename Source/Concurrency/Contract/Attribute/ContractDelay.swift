@@ -19,11 +19,11 @@ extension Contract {
         subscribe(subscriber: Subscriber(
             on: queue,
             onResolved: { value in
-                promise.subscribe(subscriber: Promise.Subscriber(
+                promise.subscribe(
                     on: queue,
                     onResolved: { _ in contract.resolve(value) },
                     onRejected: { contract.reject($0) }
-                ))
+                )
             },
             onRejected: { error in contract.reject(error) }
         ))

@@ -9,6 +9,31 @@ import Foundation
 
 extension Promise {
     @discardableResult
+    public func then(
+        on queue: DispatchQueue? = nil,
+        _ block: @escaping (Value) throws -> Void
+    ) -> Promise<Void> {
+        let queue = queue ?? self.queue
+        
+        let promiseReturn = Promise<Void>(queue: self.queue)
+        
+        subscribe(
+            on: queue,
+            onResolved: {
+                do {
+                    try block($0)
+                    promiseReturn.resolve(())
+                } catch let error {
+                    promiseReturn.reject(error)
+                }
+            },
+            onRejected: { promiseReturn.reject($0) }
+        )
+        
+        return promiseReturn
+    }
+    
+    @discardableResult
     public func then<Result>(
         on queue: DispatchQueue? = nil,
         _ block: @escaping (Value) throws -> Result
@@ -17,7 +42,7 @@ extension Promise {
         
         let promiseReturn = Promise<Result>(queue: self.queue)
         
-        subscribe(subscriber: Subscriber(
+        subscribe(
             on: queue,
             onResolved: {
                 do {
@@ -28,7 +53,7 @@ extension Promise {
                 }
             },
             onRejected: { promiseReturn.reject($0) }
-        ))
+        )
         
         return promiseReturn
     }
@@ -42,21 +67,21 @@ extension Promise {
         
         let promiseReturn = Promise<Result>(queue: self.queue)
         
-        subscribe(subscriber: Subscriber(
+        subscribe(
             on: queue,
             onResolved: {
                 do {
-                    try block($0).subscribe(subscriber: Promise<Result>.Subscriber(
+                    try block($0).subscribe(
                         on: queue,
                         onResolved: { promiseReturn.resolve($0) },
                         onRejected: { promiseReturn.reject($0) }
-                    ))
+                    )
                 } catch let error {
                     promiseReturn.reject(error)
                 }
             },
             onRejected: { promiseReturn.reject($0) }
-        ))
+        )
         
         return promiseReturn
     }

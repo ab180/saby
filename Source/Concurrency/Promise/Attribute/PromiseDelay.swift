@@ -32,7 +32,7 @@ extension Promise {
         
         let promiseReturn = Promise<Value>(queue: self.queue)
         
-        self.subscribe(subscriber: Subscriber(
+        self.subscribe(
             on: queue,
             onResolved: { value in
                 queue.asyncAfter(deadline: .now() + interval) {
@@ -40,7 +40,7 @@ extension Promise {
                 }
             },
             onRejected: { promiseReturn.reject($0) }
-        ))
+        )
         
         return promiseReturn
     }

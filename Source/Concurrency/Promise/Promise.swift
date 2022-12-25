@@ -12,7 +12,7 @@ public final class Promise<Value> {
     var state: State
     
     let queue: DispatchQueue
-    var subscribers: [Subscriber]
+    let group: DispatchGroup
     
     init(queue: DispatchQueue = .global()) {
         self.lock = UnsafeMutablePointer.allocate(capacity: 1)
@@ -20,7 +20,9 @@ public final class Promise<Value> {
         self.state = .pending
         
         self.queue = queue
-        self.subscribers = []
+        self.group = DispatchGroup()
+        
+        group.enter()
         
         pthread_mutex_init(lock, nil)
     }
@@ -76,11 +78,11 @@ extension Promise {
         queue.async {
             do {
                 let promise = try block()
-                promise.subscribe(subscriber: Subscriber(
+                promise.subscribe(
                     on: queue,
                     onResolved: { self.resolve($0) },
                     onRejected: { self.reject($0) }
-                ))
+                )
             } catch let error {
                 self.reject(error)
             }
@@ -94,8 +96,7 @@ extension Promise {
         
         if case .pending = state {
             state = .resolved(value)
-            subscribers.forEach { $0.onResolved(value) }
-            subscribers = []
+            group.leave()
         }
         
         pthread_mutex_unlock(lock)
@@ -106,26 +107,31 @@ extension Promise {
         
         if case .pending = state {
             state = .rejected(error)
-            subscribers.forEach { $0.onRejected(error) }
-            subscribers = []
+            group.leave()
         }
         
         pthread_mutex_unlock(lock)
     }
     
-    func subscribe(subscriber: Subscriber) {
-        pthread_mutex_lock(lock)
-        
-        switch state {
-        case .pending:
-            subscribers.append(subscriber)
-        case .resolved(let value):
-            subscriber.onResolved(value)
-        case .rejected(let error):
-            subscriber.onRejected(error)
+    func subscribe(
+        on queue: DispatchQueue,
+        onResolved: @escaping (Value) -> Void,
+        onRejected: @escaping (Error) -> Void
+    ) {
+        group.notify(queue: queue) {
+            pthread_mutex_lock(self.lock)
+            let state = self.state
+            pthread_mutex_unlock(self.lock)
+            
+            switch state {
+            case .resolved(let value):
+                onResolved(value)
+            case .rejected(let error):
+                onRejected(error)
+            case .pending:
+                onRejected(InternalError.notifiedWhenPending)
+            }
         }
-
-        pthread_mutex_unlock(lock)
     }
 }
 
@@ -165,6 +171,7 @@ extension Promise {
     ) -> Promise<Value> {
         let promise = Promise(queue: queue)
         promise.state = .resolved(value)
+        promise.group.leave()
         
         return promise
     }
@@ -175,51 +182,23 @@ extension Promise {
     ) -> Promise<Value> {
         let promise = Promise(queue: queue)
         promise.state = .rejected(error)
+        promise.group.leave()
         
         return promise
     }
 }
 
 extension Promise {
-    struct Subscriber {
-        let onResolved: (Value) -> Void
-        let onRejected: (Error) -> Void
-        
-        init(on queue: DispatchQueue,
-             onResolved: @escaping (Value) -> Void,
-             onRejected: @escaping (Error) -> Void)
-        {
-            self.onResolved = { value in
-                queue.async { onResolved(value) }
-            }
-            self.onRejected = { error in
-                queue.async { onRejected(error) }
-            }
-        }
-    }
-    
     enum State {
         case pending
         case resolved(_ value: Value)
         case rejected(_ error: Error)
     }
     
-    public enum InternalError: LocalizedError, CustomStringConvertible {
+    public enum InternalError: Error {
         case timeout
         case resultOfAllHasWrongType
-        
-        public var errorDescription: String {
-            switch self {
-            case .timeout:
-                return "Promise exceed timeout"
-            case .resultOfAllHasWrongType:
-                return "Result of Promise all operation has wrong type"
-            }
-        }
-        
-        public var description: String {
-            self.errorDescription
-        }
+        case notifiedWhenPending
     }
 }
 

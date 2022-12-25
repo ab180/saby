@@ -58,14 +58,14 @@ extension Contract {
         subscribe(subscriber: Subscriber(
             on: queue,
             onResolved: { value in
-                block(value).subscribe(subscriber: Promise.Subscriber(
+                block(value).subscribe(
                     on: queue,
                     onResolved: { result in
                         guard let result else { return }
                         contract.resolve(result)
                     },
                     onRejected: { contract.reject($0) }
-                ))
+                )
             },
             onRejected: { error in contract.reject(error) }
         ))
@@ -85,11 +85,11 @@ extension Contract {
             on: queue,
             onResolved: { value in
                 guard let valuePromise = block(value) else { return }
-                valuePromise.subscribe(subscriber: Promise.Subscriber(
+                valuePromise.subscribe(
                     on: queue,
                     onResolved: { contract.resolve($0) },
                     onRejected: { contract.reject($0) }
-                ))
+                )
             },
             onRejected: { error in contract.reject(error) }
         ))

@@ -18,11 +18,11 @@ extension Promise {
         
         promises.forEach { promise in
             group.enter()
-            promise.subscribe(subscriber: Promise<Value0>.Subscriber(
+            promise.subscribe(
                 on: promise.queue,
                 onResolved: { _ in group.leave() },
                 onRejected: { promiseReturn.reject($0); group.leave() }
-            ))
+            )
         }
         
         group.notify(queue: queue) {
@@ -54,17 +54,17 @@ extension Promise {
         let group = DispatchGroup()
         
         group.enter()
-        promise0.subscribe(subscriber: Promise<Value0>.Subscriber(
+        promise0.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() }
-        ))
+        )
         group.enter()
-        promise1.subscribe(subscriber: Promise<Value1>.Subscriber(
+        promise1.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() }
-        ))
+        )
         
         group.notify(queue: queue) {
             guard case .resolved(let value0) = promise0.state,
@@ -91,23 +91,23 @@ extension Promise {
         let group = DispatchGroup()
 
         group.enter()
-        promise0.subscribe(subscriber: Promise<Value0>.Subscriber(
+        promise0.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() }
-        ))
+        )
         group.enter()
-        promise1.subscribe(subscriber: Promise<Value1>.Subscriber(
+        promise1.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() }
-        ))
+        )
         group.enter()
-        promise2.subscribe(subscriber: Promise<Value2>.Subscriber(
+        promise2.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() }
-        ))
+        )
         
         group.notify(queue: queue) {
             guard case .resolved(let value0) = promise0.state,
@@ -136,29 +136,29 @@ extension Promise {
         let group = DispatchGroup()
 
         group.enter()
-        promise0.subscribe(subscriber: Promise<Value0>.Subscriber(
+        promise0.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() }
-        ))
+        )
         group.enter()
-        promise1.subscribe(subscriber: Promise<Value1>.Subscriber(
+        promise1.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() }
-        ))
+        )
         group.enter()
-        promise2.subscribe(subscriber: Promise<Value2>.Subscriber(
+        promise2.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() }
-        ))
+        )
         group.enter()
-        promise3.subscribe(subscriber: Promise<Value3>.Subscriber(
+        promise3.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() }
-        ))
+        )
         
         group.notify(queue: queue) {
             guard case .resolved(let value0) = promise0.state,
@@ -189,35 +189,35 @@ extension Promise {
         let group = DispatchGroup()
 
         group.enter()
-        promise0.subscribe(subscriber: Promise<Value0>.Subscriber(
+        promise0.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() }
-        ))
+        )
         group.enter()
-        promise1.subscribe(subscriber: Promise<Value1>.Subscriber(
+        promise1.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() }
-        ))
+        )
         group.enter()
-        promise2.subscribe(subscriber: Promise<Value2>.Subscriber(
+        promise2.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() }
-        ))
+        )
         group.enter()
-        promise3.subscribe(subscriber: Promise<Value3>.Subscriber(
+        promise3.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() }
-        ))
+        )
         group.enter()
-        promise4.subscribe(subscriber: Promise<Value4>.Subscriber(
+        promise4.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() }
-        ))
+        )
         
         group.notify(queue: queue) {
             guard case .resolved(let value0) = promise0.state,

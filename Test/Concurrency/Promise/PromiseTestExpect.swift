@@ -32,7 +32,7 @@ extension PromiseTest {
         
         switch state {
         case .resolved(let expect):
-            promise.subscribe(subscriber: Promise<Value>.Subscriber(
+            promise.subscribe(
                 on: promise.queue,
                 onResolved: { value in
                     XCTAssert(expect(value), message, file: file, line: line)
@@ -42,9 +42,9 @@ extension PromiseTest {
                     XCTFail(message, file: file, line: line)
                     end.signal()
                 }
-            ))
+            )
         case .rejected(let expect):
-            promise.subscribe(subscriber: Promise<Value>.Subscriber(
+            promise.subscribe(
                 on: promise.queue,
                 onResolved: { value in
                     XCTFail(message, file: file, line: line)
@@ -54,7 +54,7 @@ extension PromiseTest {
                     XCTAssertEqual(error.localizedDescription, expect.localizedDescription, file: file, line: line)
                     end.signal()
                 }
-            ))
+            )
         case .pending:
             if case .pending = promise.state {} else {
                 XCTFail(message, file: file, line: line)
@@ -77,7 +77,7 @@ extension PromiseTest {
         
         switch state {
         case .resolved(let expect):
-            promise.subscribe(subscriber: Promise<Value>.Subscriber(
+            promise.subscribe(
                 on: promise.queue,
                 onResolved: { value in
                     XCTAssertEqual(value, expect, message, file: file, line: line)
@@ -87,9 +87,9 @@ extension PromiseTest {
                     XCTFail(message, file: file, line: line)
                     end.signal()
                 }
-            ))
+            )
         case .rejected(let expect):
-            promise.subscribe(subscriber: Promise<Value>.Subscriber(
+            promise.subscribe(
                 on: promise.queue,
                 onResolved: { value in
                     XCTFail(message, file: file, line: line)
@@ -99,7 +99,7 @@ extension PromiseTest {
                     XCTAssertEqual(error.localizedDescription, expect.localizedDescription, file: file, line: line)
                     end.signal()
                 }
-            ))
+            )
         case .pending:
             if case .pending = promise.state {} else {
                 XCTFail(message, file: file, line: line)
@@ -122,7 +122,7 @@ extension PromiseTest {
         
         switch state {
         case .resolved(_):
-            promise.subscribe(subscriber: Promise<Void>.Subscriber(
+            promise.subscribe(
                 on: promise.queue,
                 onResolved: { value in
                     end.signal()
@@ -131,9 +131,9 @@ extension PromiseTest {
                     XCTFail(message, file: file, line: line)
                     end.signal()
                 }
-            ))
+            )
         case .rejected(let expect):
-            promise.subscribe(subscriber: Promise<Void>.Subscriber(
+            promise.subscribe(
                 on: promise.queue,
                 onResolved: { value in
                     XCTFail(message, file: file, line: line)
@@ -143,7 +143,7 @@ extension PromiseTest {
                     XCTAssertEqual(error.localizedDescription, expect.localizedDescription, file: file, line: line)
                     end.signal()
                 }
-            ))
+            )
         case .pending:
             if case .pending = promise.state {} else {
                 XCTFail(message, file: file, line: line)
