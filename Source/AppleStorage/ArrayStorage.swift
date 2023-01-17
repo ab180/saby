@@ -7,7 +7,7 @@
 
 import SabyConcurrency
 
-public protocol ArrayStorage {
+public protocol ArrayStorage<Value> {
     associatedtype Value: KeyIdentifiable
     
     func push(_ value: Value)
