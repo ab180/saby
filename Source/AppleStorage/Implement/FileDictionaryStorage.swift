@@ -87,11 +87,11 @@ extension FileDictionaryStorage: DictionaryStorage {
             
             let data = try PropertyListEncoder().encode(self.cachedItems.capture)
             guard let filePath = self.fileURL else { throw URLError(.badURL) }
-
+            
             if
                 let directoryURL = self.directoryURL,
-                false == FileManager.default.fileExists(atPath: directoryURL.path) {
-                
+                false == FileManager.default.fileExists(atPath: directoryURL.path)
+            {    
                 try FileManager.default.createDirectory(
                     at: directoryURL, withIntermediateDirectories: true
                 )
