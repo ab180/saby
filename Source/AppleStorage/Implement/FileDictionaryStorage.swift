@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SabySafe
 import SabyConcurrency
 
 public final class FileDictionaryStorage<Key, Value>
@@ -75,8 +76,9 @@ extension FileDictionaryStorage: DictionaryStorage {
         }
     }
     
-    public func get(key: Key) -> Value? {
-        return cachedItems.capture[key]
+    public func get(key: Key) -> Promise<Value> {
+        guard let result = cachedItems.capture[key] else { return .rejected(ThrowingError.defaultError) }
+        return .resolved(result)
     }
     
     public func save() -> Promise<Void> {
@@ -101,7 +103,9 @@ extension FileDictionaryStorage: DictionaryStorage {
             self.locker.unlock()
         }
     }
-    
+}
+
+extension FileDictionaryStorage {
     private func fetchFromFiles() -> [Key: Value] {
         guard
             let directoryURL = self.directoryURL,
