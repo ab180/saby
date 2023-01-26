@@ -15,7 +15,7 @@ where Key: Hashable & Codable, Value: Codable
     private let locker = Lock()
     private let directoryName: String
     private let fileName: String
-    private lazy var cachedItems: Atomic<[Key: Value]> = Atomic(fetchFromFiles())
+    private lazy var cachedItems: Atomic<[Key: Value]> = Atomic(fetchFromFile())
     private lazy var directoryURL: URL? = {
         let manager = FileManager.default
         let urls = manager.urls(for: .libraryDirectory, in: .userDomainMask)
@@ -55,9 +55,6 @@ extension FileDictionaryStorage: DictionaryStorage {
     }
     
     public func set(key: Key, value: Value) {
-        locker.lock()
-        defer { locker.unlock() }
-        
         cachedItems.mutate({
             var mutable = $0
             mutable[key] = value
@@ -66,9 +63,6 @@ extension FileDictionaryStorage: DictionaryStorage {
     }
     
     public func delete(key: Key) {
-        locker.lock()
-        defer { locker.unlock() }
-        
         cachedItems.mutate {
             var mutable = $0
             mutable.removeValue(forKey: key)
@@ -83,30 +77,30 @@ extension FileDictionaryStorage: DictionaryStorage {
     
     public func save() -> Promise<Void> {
         return Promise {
-            self.locker.lock()
-            
             let data = try PropertyListEncoder().encode(self.cachedItems.capture)
             guard let filePath = self.fileURL else { throw URLError(.badURL) }
+            
+            self.locker.lock()
             
             if
                 let directoryURL = self.directoryURL,
                 false == FileManager.default.fileExists(atPath: directoryURL.path)
-            {    
+            {
                 try FileManager.default.createDirectory(
                     at: directoryURL, withIntermediateDirectories: true
                 )
             }
             
             try data.write(to: filePath)
-            return
-        }.finally {
             self.locker.unlock()
+            
+            return
         }
     }
 }
 
 extension FileDictionaryStorage {
-    private func fetchFromFiles() -> [Key: Value] {
+    private func fetchFromFile() -> [Key: Value] {
         guard
             let directoryURL = self.directoryURL,
             let filePath = self.fileURL,
@@ -118,17 +112,5 @@ extension FileDictionaryStorage {
         else { return [:] }
         
         return dictionary
-    }
-    
-    func removeAll() {
-        let manager = FileManager.default
-        let urls = manager.urls(for: .libraryDirectory, in: .userDomainMask)
-        guard false == urls.isEmpty else { return }
-        
-        let result = urls[0].appendingPathComponent(directoryName)
-        try? manager.removeItem(at: result)
-        
-        let fetchedItems = fetchFromFiles()
-        cachedItems = Atomic(fetchedItems)
     }
 }
