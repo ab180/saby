@@ -80,8 +80,6 @@ extension FileDictionaryStorage: DictionaryStorage {
             let data = try PropertyListEncoder().encode(self.cachedItems.capture)
             guard let filePath = self.fileURL else { throw URLError(.badURL) }
             
-            self.locker.lock()
-            
             if
                 let directoryURL = self.directoryURL,
                 false == FileManager.default.fileExists(atPath: directoryURL.path)
@@ -92,8 +90,6 @@ extension FileDictionaryStorage: DictionaryStorage {
             }
             
             try data.write(to: filePath)
-            self.locker.unlock()
-            
             return
         }
     }

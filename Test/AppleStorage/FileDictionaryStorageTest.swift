@@ -118,4 +118,33 @@ final class FileDictionaryStorageTest: XCTestCase {
         
         wait(for: [expectation], timeout: 5)
     }
+    
+    func testSave() throws {
+        defer { FileDictionaryStorageTest.clear() }
+        
+        let expectation = expectation(description: "testSave")
+        expectation.expectedFulfillmentCount = 1
+        
+        let setPromise: () -> Promise = {
+            Promise {
+                let key = UUID().uuidString
+                let value = DummyItem(key: UUID())
+                FileDictionaryStorageTest.storage.set(key: key, value: value)
+            }
+        }
+        
+        Promise.resolved(())
+            .then { FileDictionaryStorageTest.storage.save() }
+            .then { setPromise() }
+            .then { FileDictionaryStorageTest.storage.save() }
+            .then { setPromise() }
+            .then { FileDictionaryStorageTest.storage.save() }
+            .then { setPromise() }
+            .then { FileDictionaryStorageTest.storage.save() }
+            .then { setPromise() }
+            .then { XCTAssertEqual(FileDictionaryStorageTest.storage.keys.count, 4)}
+            .then { expectation.fulfill() }
+        
+        wait(for: [expectation], timeout: 5)
+    }
 }
