@@ -9,7 +9,7 @@ import XCTest
 import SabyConcurrency
 @testable import SabyAppleStorage
 
-let directoryName = "saby.storage"
+let directoryName = "saby.dictionary.storage"
 
 extension FileDictionaryStorage {
     func removeAll() {
