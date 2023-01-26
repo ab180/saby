@@ -14,7 +14,7 @@ fileprivate struct DummyItem: Codable, KeyIdentifiable {
     var key: UUID
 }
 
-final class FileArrayStorageTests: XCTestCase {
+final class FileArrayStorageTest: XCTestCase {
     
     fileprivate static let storage = FileArrayStorage<DummyItem>(
         directoryName: "saby.storage",
@@ -51,12 +51,12 @@ final class FileArrayStorageTests: XCTestCase {
     }
     
     func testPush() {
-        defer { FileArrayStorageTests.clear() }
+        defer { FileArrayStorageTest.clear() }
         
         let expectation = self.expectation(description: "testPush")
         expectation.expectedFulfillmentCount = 2
         
-        let storage = FileArrayStorageTests.storage
+        let storage = FileArrayStorageTest.storage
         let testItems = TestItemGroup()
         
         testItems.pushItems.forEach(storage.push)
@@ -86,12 +86,12 @@ final class FileArrayStorageTests: XCTestCase {
     }
     
     func testRemove() {
-        defer { FileArrayStorageTests.clear() }
+        defer { FileArrayStorageTest.clear() }
         
         let expectation = self.expectation(description: "testRemove")
         expectation.expectedFulfillmentCount = 1
         
-        let storage = FileArrayStorageTests.storage
+        let storage = FileArrayStorageTest.storage
         let testItems = TestItemGroup()
         
         testItems.pushItems.forEach(storage.push)
