@@ -56,4 +56,23 @@ final class ContractThenTest: XCTestCase {
             contract0.resolve(20)
         }
     }
+    
+    func test__then_return_contract_value() {
+        var contract = Contract<Int>()
+        let nestedContract = Contract<Int>()
+        
+        /// `then` in this case should return `Int`,
+        /// not `Contract<Int>`
+        contract = contract.then { _ -> Contract<Int> in
+            nestedContract
+        }
+        
+        ContractTest.expect(
+            contract: contract,
+            state: .resolved(13),
+            timeout: .seconds(1))
+        {
+            contract.resolve(13)
+        }
+    }
 }
