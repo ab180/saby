@@ -94,8 +94,8 @@ extension FileArrayStorage: ArrayStorage {
             
             if
                 let directoryURL = self.directoryURL,
-                false == FileManager.default.fileExists(atPath: directoryURL.path) {
-                
+                false == FileManager.default.fileExists(atPath: directoryURL.path)
+            {    
                 try FileManager.default.createDirectory(
                     at: directoryURL, withIntermediateDirectories: true
                 )
