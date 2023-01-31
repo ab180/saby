@@ -77,8 +77,12 @@ extension FileDictionaryStorage: DictionaryStorage {
     
     public func save() -> Promise<Void> {
         return Promise {
+            defer { self.locker.unlock() }
+            
             let data = try PropertyListEncoder().encode(self.cachedItems.capture)
             guard let filePath = self.fileURL else { throw URLError(.badURL) }
+            
+            self.locker.lock()
             
             if
                 let directoryURL = self.directoryURL,
