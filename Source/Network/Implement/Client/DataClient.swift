@@ -51,7 +51,7 @@ extension DataClient {
         }
         request.httpBody = body
         
-        session.dataTask(with: request) { data, response, error in
+        let task = session.dataTask(with: request) { data, response, error in
             if let error = error {
                 pending.reject(error)
                 return
@@ -66,7 +66,11 @@ extension DataClient {
             }
 
             pending.resolve(data)
-        }.resume()
+        }
+        pending.onCancel {
+            task.cancel()
+        }
+        task.resume()
         
         return pending.promise
     }
