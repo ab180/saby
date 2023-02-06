@@ -28,7 +28,8 @@ extension Promise {
                 } catch let error {
                     promiseReturn.reject(error)
                 }
-            }
+            },
+            onCanceled: { promiseReturn.cancel() }
         )
         
         return promiseReturn
@@ -53,7 +54,8 @@ extension Promise {
                 } catch let error {
                     promiseReturn.reject(error)
                 }
-            }
+            },
+            onCanceled: { promiseReturn.cancel() }
         )
         
         return promiseReturn
@@ -73,15 +75,22 @@ extension Promise {
             onResolved: { promiseReturn.resolve($0) },
             onRejected: {
                 do {
-                    try block($0).subscribe(
+                    let promise = try block($0)
+                    promise.subscribe(
                         on: queue,
                         onResolved: { promiseReturn.resolve($0) },
-                        onRejected: { promiseReturn.reject($0) }
+                        onRejected: { promiseReturn.reject($0) },
+                        onCanceled: { promiseReturn.cancel() }
+                    )
+                    self.subscribe(
+                        on: queue,
+                        onCanceled: { promise.cancel() }
                     )
                 } catch let error {
                     promiseReturn.reject(error)
                 }
-            }
+            },
+            onCanceled: { promiseReturn.cancel() }
         )
         
         return promiseReturn

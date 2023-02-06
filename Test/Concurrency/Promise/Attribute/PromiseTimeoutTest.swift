@@ -30,6 +30,6 @@ final class PromiseTimeoutTest: XCTestCase {
             }
         }.timeout(.milliseconds(50))
         
-        PromiseTest.expect(promise: promise, state: .rejected(Promise<Int>.InternalError.timeout), timeout: .seconds(1))
+        PromiseTest.expect(promise: promise, state: .rejected(PromiseError.timeout), timeout: .seconds(1))
     }
 }

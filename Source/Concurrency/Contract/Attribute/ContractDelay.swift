@@ -14,19 +14,21 @@ extension Contract {
     ) -> Contract<Value> {
         let queue = queue ?? self.queue
         
-        let contract = Contract<Value>(on: self.queue)
+        let contract = Contract<Value>(queue: self.queue)
         
-        subscribe(subscriber: Subscriber(
+        subscribe(
             on: queue,
             onResolved: { value in
                 promise.subscribe(
                     on: queue,
                     onResolved: { _ in contract.resolve(value) },
-                    onRejected: { contract.reject($0) }
+                    onRejected: { _ in contract.cancel() },
+                    onCanceled: { contract.cancel() }
                 )
             },
-            onRejected: { error in contract.reject(error) }
-        ))
+            onRejected: { error in contract.reject(error) },
+            onCanceled: { contract.cancel() }
+        )
         
         return contract
     }

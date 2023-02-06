@@ -19,15 +19,17 @@ extension PromiseTest {
         case pending
         case resolved(_ value: Value)
         case rejected(_ error: Swift.Error)
+        case canceled
     }
     
     static func expect<Value>(promise: Promise<Value>,
                               state: PromiseTest.State<(Value) -> Bool>,
                               timeout: DispatchTimeInterval,
-                              message: String = "Promise is not expected state",
                               file: StaticString = #file,
                               line: UInt = #line)
     {
+        let message = "Promise is not expected state \(state)"
+        
         let end = DispatchSemaphore(value: 0)
         
         switch state {
@@ -41,6 +43,10 @@ extension PromiseTest {
                 onRejected: { error in
                     XCTFail(message, file: file, line: line)
                     end.signal()
+                },
+                onCanceled: {
+                    XCTFail(message, file: file, line: line)
+                    end.signal()
                 }
             )
         case .rejected(let expect):
@@ -53,6 +59,10 @@ extension PromiseTest {
                 onRejected: { error in
                     XCTAssertEqual(error.localizedDescription, expect.localizedDescription, file: file, line: line)
                     end.signal()
+                },
+                onCanceled: {
+                    XCTFail(message, file: file, line: line)
+                    end.signal()
                 }
             )
         case .pending:
@@ -61,6 +71,13 @@ extension PromiseTest {
             }
             
             end.signal()
+        case .canceled:
+            promise.subscribe(
+                on: promise.queue,
+                onCanceled: {
+                    end.signal()
+                }
+            )
         }
         
         PromiseTest.expect(semaphore: end, timeout: timeout, file: file, line: line)
@@ -69,10 +86,11 @@ extension PromiseTest {
     static func expect<Value: Equatable>(promise: Promise<Value>,
                                          state: PromiseTest.State<Value>,
                                          timeout: DispatchTimeInterval,
-                                         message: String = "Promise is not expected state",
                                          file: StaticString = #file,
                                          line: UInt = #line)
     {
+        let message = "Promise is not expected state \(state)"
+        
         let end = DispatchSemaphore(value: 0)
         
         switch state {
@@ -84,7 +102,19 @@ extension PromiseTest {
                     end.signal()
                 },
                 onRejected: { error in
-                    XCTFail(message, file: file, line: line)
+                    XCTFail(
+                        "Promise is rejected",
+                        file: file,
+                        line: line
+                    )
+                    end.signal()
+                },
+                onCanceled: {
+                    XCTFail(
+                        "Promise is canceled",
+                        file: file,
+                        line: line
+                    )
                     end.signal()
                 }
             )
@@ -92,11 +122,23 @@ extension PromiseTest {
             promise.subscribe(
                 on: promise.queue,
                 onResolved: { value in
-                    XCTFail(message, file: file, line: line)
+                    XCTFail(
+                        "Promise is resolved",
+                        file: file,
+                        line: line
+                    )
                     end.signal()
                 },
                 onRejected: { error in
                     XCTAssertEqual(error.localizedDescription, expect.localizedDescription, file: file, line: line)
+                    end.signal()
+                },
+                onCanceled: {
+                    XCTFail(
+                        "Promise is canceled",
+                        file: file,
+                        line: line
+                    )
                     end.signal()
                 }
             )
@@ -106,6 +148,13 @@ extension PromiseTest {
             }
             
             end.signal()
+        case .canceled:
+            promise.subscribe(
+                on: promise.queue,
+                onCanceled: {
+                    end.signal()
+                }
+            )
         }
         
         PromiseTest.expect(semaphore: end, timeout: timeout, file: file, line: line)
@@ -114,7 +163,6 @@ extension PromiseTest {
     static func expect(promise: Promise<Void>,
                        state: PromiseTest.State<Void>,
                        timeout: DispatchTimeInterval,
-                       message: String = "Promise is not expected state",
                        file: StaticString = #file,
                        line: UInt = #line)
     {
@@ -128,7 +176,19 @@ extension PromiseTest {
                     end.signal()
                 },
                 onRejected: { error in
-                    XCTFail(message, file: file, line: line)
+                    XCTFail(
+                        "Promise is rejected",
+                        file: file,
+                        line: line
+                    )
+                    end.signal()
+                },
+                onCanceled: {
+                    XCTFail(
+                        "Promise is canceled",
+                        file: file,
+                        line: line
+                    )
                     end.signal()
                 }
             )
@@ -136,20 +196,43 @@ extension PromiseTest {
             promise.subscribe(
                 on: promise.queue,
                 onResolved: { value in
-                    XCTFail(message, file: file, line: line)
+                    XCTFail(
+                        "Promise is resolved",
+                        file: file,
+                        line: line
+                    )
                     end.signal()
                 },
                 onRejected: { error in
                     XCTAssertEqual(error.localizedDescription, expect.localizedDescription, file: file, line: line)
                     end.signal()
+                },
+                onCanceled: {
+                    XCTFail(
+                        "Promise is canceld",
+                        file: file,
+                        line: line
+                    )
+                    end.signal()
                 }
             )
         case .pending:
             if case .pending = promise.state {} else {
-                XCTFail(message, file: file, line: line)
+                XCTFail(
+                    "Promise is pending",
+                    file: file,
+                    line: line
+                )
             }
             
             end.signal()
+        case .canceled:
+            promise.subscribe(
+                on: promise.queue,
+                onCanceled: {
+                    end.signal()
+                }
+            )
         }
         
         PromiseTest.expect(semaphore: end, timeout: timeout, file: file, line: line)

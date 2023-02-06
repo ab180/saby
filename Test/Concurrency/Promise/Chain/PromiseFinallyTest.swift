@@ -36,4 +36,23 @@ final class PromiseFinallyTest: XCTestCase {
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
         PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
     }
+    
+    func test__finally_cancel() {
+        let end = DispatchSemaphore(value: 0)
+        
+        let trigger = Promise<Void>.pending()
+        
+        let promise =
+        Promise<Int> { () -> Int in
+            throw PromiseTest.Error.one
+        }
+        .cancel(when: trigger.promise)
+        .finally {
+            trigger.resolve(())
+            end.signal()
+        }
+        
+        PromiseTest.expect(semaphore: end, timeout: .seconds(1))
+        PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
+    }
 }

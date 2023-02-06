@@ -41,15 +41,46 @@ final class ContractTest: XCTestCase {
         }
     }
     
-    func test__create() {
-        let (contract, _, reject) = Contract<Int>.create()
+    func test__executing_resolve() {
+        let executing = Contract<Int>.executing()
         
         ContractTest.expect(
-            contract: contract,
+            contract: executing.contract,
+            state: .resolved(10),
+            timeout: .seconds(1)
+        ) {
+            executing.resolve(10)
+        }
+    }
+    
+    func test__executing_reject() {
+        let executing = Contract<Int>.executing()
+        
+        ContractTest.expect(
+            contract: executing.contract,
             state: .rejected(SampleError.one),
             timeout: .seconds(1)
         ) {
-            reject(SampleError.one)
+            executing.reject(SampleError.one)
         }
+    }
+    
+    func test__executing_cancel() {
+        let expect = XCTestExpectation()
+        expect.expectedFulfillmentCount = 1
+        
+        let executing = Contract<Int>.executing()
+
+        ContractTest.expect(
+            contract: executing.contract.cancel(when: Promise<Void>.resolved(())),
+            state: .canceled,
+            timeout: .seconds(1)
+        ) {
+            executing.onCancel {
+                expect.fulfill()
+            }
+        }
+
+        XCTAssertEqual(XCTWaiter().wait(for: [expect], timeout: 1), .completed)
     }
 }

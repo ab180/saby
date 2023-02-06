@@ -12,13 +12,13 @@ extension Promise where Value == Void {
         on queue: DispatchQueue = .global(),
         _ interval: DispatchTimeInterval
     ) -> Promise<Void> {
-        let (promise, _, reject) = Promise.pending(on: queue)
+        let pending = Promise.pending(on: queue)
         
         queue.asyncAfter(deadline: .now() + interval) {
-            reject(InternalError.timeout)
+            pending.reject(PromiseError.timeout)
         }
         
-        return promise
+        return pending.promise
     }
 }
 
@@ -31,7 +31,7 @@ extension Promise {
         let queue = queue ?? self.queue
         
         queue.asyncAfter(deadline: .now() + interval) {
-            self.reject(InternalError.timeout)
+            self.reject(PromiseError.timeout)
         }
         
         return self

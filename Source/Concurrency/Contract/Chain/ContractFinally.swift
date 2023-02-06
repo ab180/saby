@@ -15,9 +15,9 @@ extension Contract {
     ) -> Contract<Value> {
         let queue = queue ?? self.queue
         
-        let contract = Contract<Value>(on: self.queue)
+        let contract = Contract<Value>(queue: self.queue)
         
-        subscribe(subscriber: Subscriber(
+        subscribe(
             on: queue,
             onResolved: { value -> Void in
                 block()
@@ -26,8 +26,9 @@ extension Contract {
             onRejected: { error -> Void in
                 block()
                 contract.reject(error)
-            }
-        ))
+            },
+            onCanceled: { contract.cancel() }
+        )
         
         return contract
     }

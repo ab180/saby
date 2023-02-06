@@ -15,9 +15,9 @@ extension Contract {
     ) -> Contract<Result> {
         let queue = queue ?? self.queue
         
-        let contract = Contract<Result>(on: self.queue)
+        let contract = Contract<Result>(queue: self.queue)
         
-        subscribe(subscriber: Subscriber(
+        subscribe(
             on: queue,
             onResolved: { value in
                 do {
@@ -28,8 +28,9 @@ extension Contract {
                     contract.reject(error)
                 }
             },
-            onRejected: { error in contract.reject(error) }
-        ))
+            onRejected: { error in contract.reject(error) },
+            onCanceled: { contract.cancel() }
+        )
         
         return contract
     }
@@ -41,24 +42,31 @@ extension Contract {
     ) -> Contract<Result> {
         let queue = queue ?? self.queue
         
-        let contract = Contract<Result>(on: self.queue)
+        let contract = Contract<Result>(queue: self.queue)
         
-        subscribe(subscriber: Subscriber(
+        subscribe(
             on: queue,
             onResolved: { value in
                 do {
-                    try block(value).subscribe(
+                    let promise = try block(value)
+                    promise.subscribe(
                         on: queue,
                         onResolved: { contract.resolve($0) },
-                        onRejected: { contract.reject($0) }
+                        onRejected: { contract.reject($0) },
+                        onCanceled: { contract.cancel() }
+                    )
+                    self.subscribe(
+                        on: queue,
+                        onCanceled: { promise.cancel() }
                     )
                 }
                 catch let error {
                     contract.reject(error)
                 }
             },
-            onRejected: { error in contract.reject(error) }
-        ))
+            onRejected: { error in contract.reject(error) },
+            onCanceled: { contract.cancel() }
+        )
         
         return contract
     }

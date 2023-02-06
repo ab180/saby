@@ -44,4 +44,20 @@ final class PromiseRaceTest: XCTestCase {
         
         PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
     }
+    
+    func test__race_2_cancel_1() {
+        let trigger = Promise<Void>.resolved(())
+        
+        let promise =
+        Promise.race([
+            Promise<Int>().cancel(when: trigger),
+            Promise { resolve, reject in
+                DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
+                    resolve(20)
+                }
+            }
+        ])
+        
+        PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
+    }
 }

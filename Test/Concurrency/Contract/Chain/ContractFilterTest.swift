@@ -38,4 +38,43 @@ final class ContractFilterTest: XCTestCase {
             contract0.resolve("https://a.example")
         }
     }
+    
+    func test__filter_promise() {
+        let contract0 = Contract<String>()
+
+        let contract = contract0.filter { Promise.resolved(URL(string: $0)) }
+        
+        ContractTest.expect(
+            contract: contract,
+            state: .resolved(URL(string: "https://a.example")!),
+            timeout: .seconds(1)
+        ) {
+            contract0.resolve("%")
+            contract0.resolve("https://a.example")
+        }
+    }
+    
+    func test__filter_promise_cancel() {
+        let end = DispatchSemaphore(value: 0)
+        let trigger = Promise<Void>.pending()
+        let filterPromise = Promise<Int>.pending().promise
+        
+        let contract0 = Contract<String>()
+
+        let contract = contract0.cancel(when: trigger.promise).filter { _ in
+            trigger.resolve(())
+            end.signal()
+            return filterPromise
+        }
+        
+        ContractTest.expect(
+            contract: contract,
+            state: .canceled,
+            timeout: .seconds(1)
+        ) {
+            contract0.resolve("10")
+        }
+        PromiseTest.expect(semaphore: end, timeout: .seconds(1))
+        PromiseTest.expect(promise: filterPromise, state: .canceled, timeout: .seconds(1))
+    }
 }

@@ -13,15 +13,15 @@ extension Contract {
         _ contracts: [Contract<Value0>]
     ) -> Contract<Value0> where Value == Void
     {
-        let contract = Contract<Value0>(on: queue)
-        let promiseAtomic = Atomic(Promise<Void>.resolved(on: queue, ()))
+        let contract = Contract<Value0>(queue: queue)
         
         contracts.forEach {
-            $0.subscribe(subscriber: Contract<Value0>.Subscriber(
-                promiseAtomic: promiseAtomic,
+            $0.subscribe(
+                on: queue,
                 onResolved: { value0 in contract.resolve(value0) },
-                onRejected: { error in contract.reject(error) }
-            ))
+                onRejected: { error in contract.reject(error) },
+                onCanceled: { contract.cancel() }
+            )
         }
         
         return contract
@@ -33,20 +33,21 @@ extension Contract {
         _ contract1: Contract<Value1>
     ) -> Contract<MergedValue2<Value0, Value1>> where Value == Void
     {
-        let contract = Contract<MergedValue2<Value0, Value1>>(on: queue)
-        let promiseAtomic = Atomic(Promise<Void>.resolved(on: queue, ()))
+        let contract = Contract<MergedValue2<Value0, Value1>>(queue: queue)
         
-        contract0.subscribe(subscriber: Contract<Value0>.Subscriber(
-            promiseAtomic: promiseAtomic,
+        contract0.subscribe(
+            on: queue,
             onResolved: { value0 in contract.resolve(.value0(value0)) },
-            onRejected: { error in contract.reject(error) }
-        ))
+            onRejected: { error in contract.reject(error) },
+            onCanceled: { contract.cancel() }
+        )
         
-        contract1.subscribe(subscriber: Contract<Value1>.Subscriber(
-            promiseAtomic: promiseAtomic,
+        contract1.subscribe(
+            on: queue,
             onResolved: { value1 in contract.resolve(.value1(value1)) },
-            onRejected: { error in contract.reject(error) }
-        ))
+            onRejected: { error in contract.reject(error) },
+            onCanceled: { contract.cancel() }
+        )
         
         return contract
     }
@@ -58,26 +59,28 @@ extension Contract {
         _ contract2: Contract<Value2>
     ) -> Contract<MergedValue3<Value0, Value1, Value2>> where Value == Void
     {
-        let contract = Contract<MergedValue3<Value0, Value1, Value2>>(on: queue)
-        let promiseAtomic = Atomic(Promise<Void>.resolved(on: queue, ()))
+        let contract = Contract<MergedValue3<Value0, Value1, Value2>>(queue: queue)
         
-        contract0.subscribe(subscriber: Contract<Value0>.Subscriber(
-            promiseAtomic: promiseAtomic,
+        contract0.subscribe(
+            on: queue,
             onResolved: { value0 in contract.resolve(.value0(value0)) },
-            onRejected: { error in contract.reject(error) }
-        ))
+            onRejected: { error in contract.reject(error) },
+            onCanceled: { contract.cancel() }
+        )
         
-        contract1.subscribe(subscriber: Contract<Value1>.Subscriber(
-            promiseAtomic: promiseAtomic,
+        contract1.subscribe(
+            on: queue,
             onResolved: { value1 in contract.resolve(.value1(value1)) },
-            onRejected: { error in contract.reject(error) }
-        ))
+            onRejected: { error in contract.reject(error) },
+            onCanceled: { contract.cancel() }
+        )
         
-        contract2.subscribe(subscriber: Contract<Value2>.Subscriber(
-            promiseAtomic: promiseAtomic,
+        contract2.subscribe(
+            on: queue,
             onResolved: { value2 in contract.resolve(.value2(value2)) },
-            onRejected: { error in contract.reject(error) }
-        ))
+            onRejected: { error in contract.reject(error) },
+            onCanceled: { contract.cancel() }
+        )
         
         return contract
     }
@@ -90,32 +93,35 @@ extension Contract {
         _ contract3: Contract<Value3>
     ) -> Contract<MergedValue4<Value0, Value1, Value2, Value3>> where Value == Void
     {
-        let contract = Contract<MergedValue4<Value0, Value1, Value2, Value3>>(on: queue)
-        let promiseAtomic = Atomic(Promise<Void>.resolved(on: queue, ()))
+        let contract = Contract<MergedValue4<Value0, Value1, Value2, Value3>>(queue: queue)
         
-        contract0.subscribe(subscriber: Contract<Value0>.Subscriber(
-            promiseAtomic: promiseAtomic,
+        contract0.subscribe(
+            on: queue,
             onResolved: { value0 in contract.resolve(.value0(value0)) },
-            onRejected: { error in contract.reject(error) }
-        ))
+            onRejected: { error in contract.reject(error) },
+            onCanceled: { contract.cancel() }
+        )
         
-        contract1.subscribe(subscriber: Contract<Value1>.Subscriber(
-            promiseAtomic: promiseAtomic,
+        contract1.subscribe(
+            on: queue,
             onResolved: { value1 in contract.resolve(.value1(value1)) },
-            onRejected: { error in contract.reject(error) }
-        ))
+            onRejected: { error in contract.reject(error) },
+            onCanceled: { contract.cancel() }
+        )
         
-        contract2.subscribe(subscriber: Contract<Value2>.Subscriber(
-            promiseAtomic: promiseAtomic,
+        contract2.subscribe(
+            on: queue,
             onResolved: { value2 in contract.resolve(.value2(value2)) },
-            onRejected: { error in contract.reject(error) }
-        ))
+            onRejected: { error in contract.reject(error) },
+            onCanceled: { contract.cancel() }
+        )
         
-        contract3.subscribe(subscriber: Contract<Value3>.Subscriber(
-            promiseAtomic: promiseAtomic,
+        contract3.subscribe(
+            on: queue,
             onResolved: { value3 in contract.resolve(.value3(value3)) },
-            onRejected: { error in contract.reject(error) }
-        ))
+            onRejected: { error in contract.reject(error) },
+            onCanceled: { contract.cancel() }
+        )
         
         return contract
     }
@@ -129,38 +135,42 @@ extension Contract {
         _ contract4: Contract<Value4>
     ) -> Contract<MergedValue5<Value0, Value1, Value2, Value3, Value4>> where Value == Void
     {
-        let contract = Contract<MergedValue5<Value0, Value1, Value2, Value3, Value4>>(on: queue)
-        let promiseAtomic = Atomic(Promise<Void>.resolved(on: queue, ()))
+        let contract = Contract<MergedValue5<Value0, Value1, Value2, Value3, Value4>>(queue: queue)
         
-        contract0.subscribe(subscriber: Contract<Value0>.Subscriber(
-            promiseAtomic: promiseAtomic,
+        contract0.subscribe(
+            on: queue,
             onResolved: { value0 in contract.resolve(.value0(value0)) },
-            onRejected: { error in contract.reject(error) }
-        ))
+            onRejected: { error in contract.reject(error) },
+            onCanceled: { contract.cancel() }
+        )
         
-        contract1.subscribe(subscriber: Contract<Value1>.Subscriber(
-            promiseAtomic: promiseAtomic,
+        contract1.subscribe(
+            on: queue,
             onResolved: { value1 in contract.resolve(.value1(value1)) },
-            onRejected: { error in contract.reject(error) }
-        ))
+            onRejected: { error in contract.reject(error) },
+            onCanceled: { contract.cancel() }
+        )
         
-        contract2.subscribe(subscriber: Contract<Value2>.Subscriber(
-            promiseAtomic: promiseAtomic,
+        contract2.subscribe(
+            on: queue,
             onResolved: { value2 in contract.resolve(.value2(value2)) },
-            onRejected: { error in contract.reject(error) }
-        ))
+            onRejected: { error in contract.reject(error) },
+            onCanceled: { contract.cancel() }
+        )
         
-        contract3.subscribe(subscriber: Contract<Value3>.Subscriber(
-            promiseAtomic: promiseAtomic,
+        contract3.subscribe(
+            on: queue,
             onResolved: { value3 in contract.resolve(.value3(value3)) },
-            onRejected: { error in contract.reject(error) }
-        ))
+            onRejected: { error in contract.reject(error) },
+            onCanceled: { contract.cancel() }
+        )
         
-        contract4.subscribe(subscriber: Contract<Value4>.Subscriber(
-            promiseAtomic: promiseAtomic,
+        contract4.subscribe(
+            on: queue,
             onResolved: { value4 in contract.resolve(.value4(value4)) },
-            onRejected: { error in contract.reject(error) }
-        ))
+            onRejected: { error in contract.reject(error) },
+            onCanceled: { contract.cancel() }
+        )
         
         return contract
     }

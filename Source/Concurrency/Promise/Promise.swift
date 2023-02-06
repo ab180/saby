@@ -9,10 +9,11 @@ import Foundation
 
 public final class Promise<Value> {
     var lock: UnsafeMutablePointer<pthread_mutex_t>
-    var state: State
+    var state: PromiseState<Value>
     
     let queue: DispatchQueue
-    let group: DispatchGroup
+    let executeGroup: DispatchGroup
+    let cancelGroup: DispatchGroup
     
     init(queue: DispatchQueue = .global()) {
         self.lock = UnsafeMutablePointer.allocate(capacity: 1)
@@ -20,9 +21,11 @@ public final class Promise<Value> {
         self.state = .pending
         
         self.queue = queue
-        self.group = DispatchGroup()
+        self.executeGroup = DispatchGroup()
+        self.cancelGroup = DispatchGroup()
         
-        group.enter()
+        executeGroup.enter()
+        cancelGroup.enter()
         
         pthread_mutex_init(lock, nil)
     }
@@ -37,7 +40,7 @@ public final class Promise<Value> {
 extension Promise {
     public convenience init(
         on queue: DispatchQueue = .global(),
-        _ work: @escaping (
+        _ block: @escaping (
             _ resolve: @escaping (Value) -> Void,
             _ reject: @escaping (Error) -> Void
         ) throws -> Void
@@ -46,7 +49,30 @@ extension Promise {
 
         queue.async {
             do {
-                try work({ self.resolve($0) }, { self.reject($0) })
+                try block({ self.resolve($0) }, { self.reject($0) })
+            } catch let error {
+                self.reject(error)
+            }
+        }
+    }
+    
+    public convenience init(
+        on queue: DispatchQueue = .global(),
+        _ block: @escaping (
+            _ resolve: @escaping (Value) -> Void,
+            _ reject: @escaping (Error) -> Void,
+            _ onCancel: @escaping (@escaping () -> Void) -> Void
+        ) throws -> Void
+    ) {
+        self.init(queue: queue)
+
+        queue.async {
+            do {
+                try block(
+                    { self.resolve($0) },
+                    { self.reject($0) },
+                    { self.subscribe(on: queue, onCanceled: $0) }
+                )
             } catch let error {
                 self.reject(error)
             }
@@ -81,7 +107,8 @@ extension Promise {
                 promise.subscribe(
                     on: queue,
                     onResolved: { self.resolve($0) },
-                    onRejected: { self.reject($0) }
+                    onRejected: { self.reject($0) },
+                    onCanceled: { self.cancel() }
                 )
             } catch let error {
                 self.reject(error)
@@ -96,7 +123,7 @@ extension Promise {
         
         if case .pending = state {
             state = .resolved(value)
-            group.leave()
+            executeGroup.leave()
         }
         
         pthread_mutex_unlock(lock)
@@ -107,7 +134,18 @@ extension Promise {
         
         if case .pending = state {
             state = .rejected(error)
-            group.leave()
+            executeGroup.leave()
+        }
+        
+        pthread_mutex_unlock(lock)
+    }
+    
+    func cancel() {
+        pthread_mutex_lock(lock)
+        
+        if case .canceled = state {} else {
+            state = .canceled
+            cancelGroup.leave()
         }
         
         pthread_mutex_unlock(lock)
@@ -116,20 +154,43 @@ extension Promise {
     func subscribe(
         on queue: DispatchQueue,
         onResolved: @escaping (Value) -> Void,
-        onRejected: @escaping (Error) -> Void
+        onRejected: @escaping (Error) -> Void,
+        onCanceled: @escaping () -> Void
     ) {
-        group.notify(queue: queue) {
+        executeGroup.notify(queue: queue) {
             pthread_mutex_lock(self.lock)
             let state = self.state
             pthread_mutex_unlock(self.lock)
             
-            switch state {
-            case .resolved(let value):
+            if case .resolved(let value) = state {
                 onResolved(value)
-            case .rejected(let error):
+            }
+            else if case .rejected(let error) = state {
                 onRejected(error)
-            case .pending:
-                onRejected(InternalError.notifiedWhenPending)
+            }
+        }
+        cancelGroup.notify(queue: queue) {
+            pthread_mutex_lock(self.lock)
+            let state = self.state
+            pthread_mutex_unlock(self.lock)
+            
+            if case .canceled = state {
+                onCanceled()
+            }
+        }
+    }
+    
+    func subscribe(
+        on queue: DispatchQueue,
+        onCanceled: @escaping () -> Void
+    ) {
+        cancelGroup.notify(queue: queue) {
+            pthread_mutex_lock(self.lock)
+            let state = self.state
+            pthread_mutex_unlock(self.lock)
+            
+            if case .canceled = state {
+                onCanceled()
             }
         }
     }
@@ -150,19 +211,25 @@ extension Promise {
         guard case .rejected(_) = state else { return false }
         return true
     }
+    
+    public var isCanceled: Bool {
+        guard case .canceled = state else { return false }
+        return true
+    }
 }
 
 extension Promise {
     public static func pending(
         on queue: DispatchQueue = .global()
-    ) -> (
-        Promise<Value>,
-        Promise<Value>.Resolve,
-        Promise<Value>.Reject
-    ) {
+    ) -> PromisePending<Value> {
         let promise = Promise(queue: queue)
         
-        return (promise, { promise.resolve($0) }, { promise.reject($0) })
+        return PromisePending(
+            promise: promise,
+            resolve: { promise.resolve($0) },
+            reject: { promise.reject($0) },
+            onCancel: { promise.subscribe(on: queue, onCanceled: $0) }
+        )
     }
     
     public static func resolved(
@@ -171,7 +238,7 @@ extension Promise {
     ) -> Promise<Value> {
         let promise = Promise(queue: queue)
         promise.state = .resolved(value)
-        promise.group.leave()
+        promise.executeGroup.leave()
         
         return promise
     }
@@ -182,27 +249,37 @@ extension Promise {
     ) -> Promise<Value> {
         let promise = Promise(queue: queue)
         promise.state = .rejected(error)
-        promise.group.leave()
+        promise.executeGroup.leave()
+        
+        return promise
+    }
+    
+    public static func canceled(
+        on queue: DispatchQueue = .global()
+    ) -> Promise<Value> {
+        let promise = Promise(queue: queue)
+        promise.state = .canceled
+        promise.executeGroup.leave()
+        promise.cancelGroup.leave()
         
         return promise
     }
 }
 
-extension Promise {
-    enum State {
-        case pending
-        case resolved(_ value: Value)
-        case rejected(_ error: Error)
-    }
-    
-    public enum InternalError: Error {
-        case timeout
-        case resultOfAllHasWrongType
-        case notifiedWhenPending
-    }
+public struct PromisePending<Value> {
+    public let promise: Promise<Value>
+    public let resolve: (Value) -> Void
+    public let reject: (Error) -> Void
+    public let onCancel: (@escaping () -> Void) -> Void
 }
 
-extension Promise {
-    public typealias Resolve = (Value) -> Void
-    public typealias Reject = (Error) -> Void
+enum PromiseState<Value> {
+    case pending
+    case resolved(_ value: Value)
+    case rejected(_ error: Error)
+    case canceled
+}
+
+public enum PromiseError: Error {
+    case timeout
 }

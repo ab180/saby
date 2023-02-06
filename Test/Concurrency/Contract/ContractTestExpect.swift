@@ -18,6 +18,7 @@ extension ContractTest {
     enum State<Value> {
         case resolved(_ value: Value)
         case rejected(_ error: Swift.Error)
+        case canceled
     }
     
     enum Message<Value> {
@@ -39,7 +40,7 @@ extension ContractTest {
         switch state {
         case .resolved(let expect):
             let token = OnceToken()
-            contract.subscribe(subscriber: Contract<Value>.Subscriber(
+            contract.subscribe(
                 on: contract.queue,
                 onResolved: once(token: token) { value -> Void in
                     XCTAssertEqual(value, expect, message, file: file, line: line)
@@ -48,11 +49,15 @@ extension ContractTest {
                 onRejected: once(token: token) { error -> Void in
                     XCTFail(message, file: file, line: line)
                     end.signal()
+                },
+                onCanceled: once(token: token) {
+                    XCTFail(message, file: file, line: line)
+                    end.signal()
                 }
-            ))
+            )
         case .rejected(let expect):
             let token = OnceToken()
-            contract.subscribe(subscriber: Contract<Value>.Subscriber(
+            contract.subscribe(
                 on: contract.queue,
                 onResolved: once(token: token) { value -> Void in
                     XCTFail(message, file: file, line: line)
@@ -61,8 +66,20 @@ extension ContractTest {
                 onRejected: once(token: token) { error -> Void in
                     XCTAssertEqual(error.localizedDescription, expect.localizedDescription, file: file, line: line)
                     end.signal()
+                },
+                onCanceled: once(token: token) {
+                    XCTFail(message, file: file, line: line)
+                    end.signal()
                 }
-            ))
+            )
+        case .canceled:
+            let token = OnceToken()
+            contract.subscribe(
+                on: contract.queue,
+                onCanceled: once(token: token) {
+                    end.signal()
+                }
+            )
         }
         
         block()
@@ -85,6 +102,18 @@ extension ContractTest {
         enum State {
             case pending
             case called
+        }
+    }
+    
+    private static func once(
+        token: OnceToken = OnceToken(),
+        block: @escaping () -> Void
+    ) -> () -> Void {
+        return {
+            if case .pending = token.state {
+                token.state = .called
+                block()
+            }
         }
     }
     

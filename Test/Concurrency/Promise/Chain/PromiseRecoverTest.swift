@@ -35,4 +35,25 @@ final class PromiseRecoverTest: XCTestCase {
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
         PromiseTest.expect(promise: promise, state: .resolved(20), timeout: .seconds(1))
     }
+    
+    func test__recover_from_reject_return_promise_cancel() {
+        let end = DispatchSemaphore(value: 0)
+        let trigger = Promise<Void>.pending()
+        let recoverPromise = Promise<Void>.pending().promise
+        
+        let promise =
+        Promise { () -> Void in
+            throw PromiseTest.Error.one
+        }
+        .cancel(when: trigger.promise)
+        .recover { error in
+            trigger.resolve(())
+            end.signal()
+            return recoverPromise
+        }
+        
+        PromiseTest.expect(semaphore: end, timeout: .seconds(1))
+        PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
+        PromiseTest.expect(promise: recoverPromise, state: .canceled, timeout: .seconds(1))
+    }
 }

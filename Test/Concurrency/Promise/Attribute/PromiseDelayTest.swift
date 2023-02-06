@@ -45,6 +45,7 @@ final class PromiseDelayTest: XCTestCase {
         
         PromiseTest.expect(promise: promise, state: .resolved(20), timeout: .seconds(1))
     }
+
     func test__delay_long() {
         let promise = Promise.race([
             Promise.delay(.milliseconds(10)).then { 10 },
@@ -54,5 +55,25 @@ final class PromiseDelayTest: XCTestCase {
         ])
         
         PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
+    }
+    
+    func test__delay_cancel() {
+        let end = DispatchSemaphore(value: 0)
+        
+        let trigger = Promise<Void>.pending()
+        
+        let promise =
+        Promise {
+            20
+        }
+        .cancel(when: trigger.promise)
+        .delay(.milliseconds(100))
+        .then { _ in
+            trigger.resolve(())
+            end.signal()
+        }
+        
+        PromiseTest.expect(semaphore: end, timeout: .seconds(1))
+        PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
     }
 }

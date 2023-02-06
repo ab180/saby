@@ -21,7 +21,8 @@ extension Promise {
             promise.subscribe(
                 on: promise.queue,
                 onResolved: { _ in group.leave() },
-                onRejected: { promiseReturn.reject($0); group.leave() }
+                onRejected: { promiseReturn.reject($0); group.leave() },
+                onCanceled: { promiseReturn.cancel(); group.leave() }
             )
         }
         
@@ -34,7 +35,6 @@ extension Promise {
             }
 
             if values.count != promises.count {
-                promiseReturn.reject(InternalError.resultOfAllHasWrongType)
                 return
             }
             
@@ -57,20 +57,22 @@ extension Promise {
         promise0.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() }
+            onRejected: { promiseReturn.reject($0); group.leave() },
+            onCanceled: { promiseReturn.cancel(); group.leave() }
         )
         group.enter()
         promise1.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() }
+            onRejected: { promiseReturn.reject($0); group.leave() },
+            onCanceled: { promiseReturn.cancel(); group.leave() }
         )
         
         group.notify(queue: queue) {
-            guard case .resolved(let value0) = promise0.state,
-                  case .resolved(let value1) = promise1.state else
-            {
-                promiseReturn.reject(InternalError.resultOfAllHasWrongType)
+            guard
+                case .resolved(let value0) = promise0.state,
+                case .resolved(let value1) = promise1.state
+            else {
                 return
             }
             
@@ -94,27 +96,30 @@ extension Promise {
         promise0.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() }
+            onRejected: { promiseReturn.reject($0); group.leave() },
+            onCanceled: { promiseReturn.cancel(); group.leave() }
         )
         group.enter()
         promise1.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() }
+            onRejected: { promiseReturn.reject($0); group.leave() },
+            onCanceled: { promiseReturn.cancel(); group.leave() }
         )
         group.enter()
         promise2.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() }
+            onRejected: { promiseReturn.reject($0); group.leave() },
+            onCanceled: { promiseReturn.cancel(); group.leave() }
         )
         
         group.notify(queue: queue) {
-            guard case .resolved(let value0) = promise0.state,
-                  case .resolved(let value1) = promise1.state,
-                  case .resolved(let value2) = promise2.state else
-            {
-                promiseReturn.reject(InternalError.resultOfAllHasWrongType)
+            guard
+                case .resolved(let value0) = promise0.state,
+                case .resolved(let value1) = promise1.state,
+                case .resolved(let value2) = promise2.state
+            else {
                 return
             }
             
@@ -139,34 +144,38 @@ extension Promise {
         promise0.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() }
+            onRejected: { promiseReturn.reject($0); group.leave() },
+            onCanceled: { promiseReturn.cancel(); group.leave() }
         )
         group.enter()
         promise1.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() }
+            onRejected: { promiseReturn.reject($0); group.leave() },
+            onCanceled: { promiseReturn.cancel(); group.leave() }
         )
         group.enter()
         promise2.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() }
+            onRejected: { promiseReturn.reject($0); group.leave() },
+            onCanceled: { promiseReturn.cancel(); group.leave() }
         )
         group.enter()
         promise3.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() }
+            onRejected: { promiseReturn.reject($0); group.leave() },
+            onCanceled: { promiseReturn.cancel(); group.leave() }
         )
         
         group.notify(queue: queue) {
-            guard case .resolved(let value0) = promise0.state,
-                  case .resolved(let value1) = promise1.state,
-                  case .resolved(let value2) = promise2.state,
-                  case .resolved(let value3) = promise3.state else
-            {
-                promiseReturn.reject(InternalError.resultOfAllHasWrongType)
+            guard
+                case .resolved(let value0) = promise0.state,
+                case .resolved(let value1) = promise1.state,
+                case .resolved(let value2) = promise2.state,
+                case .resolved(let value3) = promise3.state
+            else {
                 return
             }
             
@@ -192,41 +201,46 @@ extension Promise {
         promise0.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() }
+            onRejected: { promiseReturn.reject($0); group.leave() },
+            onCanceled: { promiseReturn.cancel(); group.leave() }
         )
         group.enter()
         promise1.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() }
+            onRejected: { promiseReturn.reject($0); group.leave() },
+            onCanceled: { promiseReturn.cancel(); group.leave() }
         )
         group.enter()
         promise2.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() }
+            onRejected: { promiseReturn.reject($0); group.leave() },
+            onCanceled: { promiseReturn.cancel(); group.leave() }
         )
         group.enter()
         promise3.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() }
+            onRejected: { promiseReturn.reject($0); group.leave() },
+            onCanceled: { promiseReturn.cancel(); group.leave() }
         )
         group.enter()
         promise4.subscribe(
             on: queue,
             onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() }
+            onRejected: { promiseReturn.reject($0); group.leave() },
+            onCanceled: { promiseReturn.cancel(); group.leave() }
         )
         
         group.notify(queue: queue) {
-            guard case .resolved(let value0) = promise0.state,
-                  case .resolved(let value1) = promise1.state,
-                  case .resolved(let value2) = promise2.state,
-                  case .resolved(let value3) = promise3.state,
-                  case .resolved(let value4) = promise4.state else
-            {
-                promiseReturn.reject(InternalError.resultOfAllHasWrongType)
+            guard
+                case .resolved(let value0) = promise0.state,
+                case .resolved(let value1) = promise1.state,
+                case .resolved(let value2) = promise2.state,
+                case .resolved(let value3) = promise3.state,
+                case .resolved(let value4) = promise4.state
+            else {
                 return
             }
             

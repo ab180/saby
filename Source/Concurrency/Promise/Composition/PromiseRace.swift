@@ -19,7 +19,8 @@ extension Promise {
             promise.subscribe(
                 on: queue,
                 onResolved: { promiseReturn.resolve($0) },
-                onRejected: { promiseReturn.reject($0) }
+                onRejected: { promiseReturn.reject($0) },
+                onCanceled: { promiseReturn.cancel() }
             )
         }
         

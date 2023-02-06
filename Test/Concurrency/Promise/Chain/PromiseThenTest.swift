@@ -154,6 +154,27 @@ final class PromiseThenTest: XCTestCase {
         PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
     }
     
+    func test__then_return_promise_cancel() {
+        let end = DispatchSemaphore(value: 0)
+        let trigger = Promise<Void>.pending()
+        let thenPromise = Promise<Void>.pending().promise
+        
+        let promise =
+        Promise<Int> { () -> Int in
+            10
+        }
+        .cancel(when: trigger.promise)
+        .then { _ in
+            trigger.resolve(())
+            end.signal()
+            return thenPromise
+        }
+        
+        PromiseTest.expect(semaphore: end, timeout: .seconds(1))
+        PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
+        PromiseTest.expect(promise: thenPromise, state: .canceled, timeout: .seconds(1))
+    }
+    
     func test__then_return_promise_from_reject() {
         let promise =
         Promise<Int> { () -> Int in

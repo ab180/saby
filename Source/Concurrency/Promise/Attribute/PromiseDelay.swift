@@ -12,13 +12,13 @@ extension Promise where Value == Void {
         on queue: DispatchQueue = .global(),
         _ interval: DispatchTimeInterval
     ) -> Promise<Void> {
-        let (promise, resolve, _) = Promise.pending(on: queue)
+        let pending = Promise.pending(on: queue)
         
         queue.asyncAfter(deadline: .now() + interval) {
-            resolve(())
+            pending.resolve(())
         }
         
-        return promise
+        return pending.promise
     }
 }
 
@@ -39,7 +39,8 @@ extension Promise {
                     promiseReturn.resolve(value)
                 }
             },
-            onRejected: { promiseReturn.reject($0) }
+            onRejected: { promiseReturn.reject($0) },
+            onCanceled: { promiseReturn.cancel() }
         )
         
         return promiseReturn

@@ -51,6 +51,20 @@ final class PromiseAllTest: XCTestCase {
         PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
     }
     
+    func test__all_2_cancel_1() {
+        let trigger = Promise<Void>.resolved(())
+        
+        let promise =
+        Promise.all(
+            Promise<Int>().cancel(when: trigger),
+            Promise {
+                true
+            }
+        )
+        
+        PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
+    }
+    
     func test__all_3() {
         let promise =
         Promise.all(
@@ -83,6 +97,23 @@ final class PromiseAllTest: XCTestCase {
         )
         
         PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
+    }
+    
+    func test__all_3_cancel_1() {
+        let trigger = Promise<Void>.resolved(())
+        
+        let promise =
+        Promise.all(
+            Promise<Int>().cancel(when: trigger),
+            Promise {
+                true
+            },
+            Promise {
+                "10"
+            }
+        )
+        
+        PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
     }
     
     func test__all_4() {
@@ -123,6 +154,26 @@ final class PromiseAllTest: XCTestCase {
         )
         
         PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
+    }
+    
+    func test__all_4_cancel_1() {
+        let trigger = Promise<Void>.resolved(())
+        
+        let promise =
+        Promise.all(
+            Promise<Int>().cancel(when: trigger),
+            Promise {
+                true
+            },
+            Promise {
+                "10"
+            },
+            Promise {
+                10
+            }
+        )
+        
+        PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
     }
     
     func test__all_5() {
@@ -169,6 +220,29 @@ final class PromiseAllTest: XCTestCase {
         )
         
         PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
+    }
+    
+    func test__all_5_cancel_1() {
+        let trigger = Promise<Void>.resolved(())
+        
+        let promise =
+        Promise.all(
+            Promise<Int>().cancel(when: trigger),
+            Promise {
+                true
+            },
+            Promise {
+                "10"
+            },
+            Promise {
+                10
+            },
+            Promise {
+                true
+            }
+        )
+        
+        PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
     }
     
     func test__all_same_5_reject_1() {

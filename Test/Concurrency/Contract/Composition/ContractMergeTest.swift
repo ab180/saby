@@ -46,6 +46,22 @@ final class ContractMergeTest: XCTestCase {
         ) {
             contract1.reject(ContractTest.SampleError.two)
         }
+        
+        ContractTest.expect(
+            contract: contract,
+            state: .canceled,
+            timeout: .seconds(1)
+        ) {
+            contract0.cancel(when: Promise<Void>.resolved(()))
+        }
+        
+        ContractTest.expect(
+            contract: contract,
+            state: .canceled,
+            timeout: .seconds(1)
+        ) {
+            contract1.resolve(10)
+        }
     }
     
     func test__merge_2() {
@@ -84,6 +100,22 @@ final class ContractMergeTest: XCTestCase {
             timeout: .seconds(1)
         ) {
             contract1.reject(ContractTest.SampleError.two)
+        }
+        
+        ContractTest.expect(
+            contract: contract,
+            state: .canceled,
+            timeout: .seconds(1)
+        ) {
+            contract0.cancel(when: Promise<Void>.resolved(()))
+        }
+        
+        ContractTest.expect(
+            contract: contract,
+            state: .canceled,
+            timeout: .seconds(1)
+        ) {
+            contract1.resolve("10")
         }
     }
 }

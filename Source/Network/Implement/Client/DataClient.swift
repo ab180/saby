@@ -39,7 +39,7 @@ extension DataClient {
         body: Data? = nil,
         optionBlock: (inout URLRequest) -> Void = { _ in }
     ) -> Promise<Data?> {
-        let (promise, resolve, reject) = Promise<Data?>.pending()
+        let pending = Promise<Data?>.pending()
         
         var request = URLRequest(url: url)
         optionBlock(&request)
@@ -53,7 +53,7 @@ extension DataClient {
         
         session.dataTask(with: request) { data, response, error in
             if let error = error {
-                reject(error)
+                pending.reject(error)
                 return
             }
             
@@ -61,14 +61,14 @@ extension DataClient {
                 let response = response as? HTTPURLResponse,
                 response.statusCode / 100 == 2
             else {
-                reject(InternalError.responseCodeNot2XX)
+                pending.reject(InternalError.responseCodeNot2XX)
                 return
             }
 
-            resolve(data)
+            pending.resolve(data)
         }.resume()
         
-        return promise
+        return pending.promise
     }
 }
 

@@ -14,15 +14,16 @@ extension Contract {
     ) -> Contract<Value> {
         let queue = queue ?? self.queue
         
-        let contract = Contract<Value>(on: queue)
+        let contract = Contract<Value>(queue: queue)
         
-        subscribe(subscriber: Subscriber(
+        subscribe(
             on: queue,
             onResolved: { value in
                 if block(value) { contract.resolve(value) }
             },
-            onRejected: { error in contract.reject(error) }
-        ))
+            onRejected: { error in contract.reject(error) },
+            onCanceled: { contract.cancel() }
+        )
         
         return contract
     }
@@ -33,16 +34,17 @@ extension Contract {
     ) -> Contract<Result> {
         let queue = queue ?? self.queue
         
-        let contract = Contract<Result>(on: queue)
+        let contract = Contract<Result>(queue: queue)
         
-        subscribe(subscriber: Subscriber(
+        subscribe(
             on: queue,
             onResolved: { value in
                 guard let result = block(value) else { return }
                 contract.resolve(result)
             },
-            onRejected: { error in contract.reject(error) }
-        ))
+            onRejected: { error in contract.reject(error) },
+            onCanceled: { contract.cancel() }
+        )
         
         return contract
     }
@@ -53,22 +55,29 @@ extension Contract {
     ) -> Contract<Result> {
         let queue = queue ?? self.queue
         
-        let contract = Contract<Result>(on: queue)
+        let contract = Contract<Result>(queue: queue)
         
-        subscribe(subscriber: Subscriber(
+        subscribe(
             on: queue,
             onResolved: { value in
-                block(value).subscribe(
+                let promise = block(value)
+                promise.subscribe(
                     on: queue,
                     onResolved: { result in
                         guard let result else { return }
                         contract.resolve(result)
                     },
-                    onRejected: { contract.reject($0) }
+                    onRejected: { contract.reject($0) },
+                    onCanceled: { contract.cancel() }
+                )
+                self.subscribe(
+                    on: queue,
+                    onCanceled: { promise.cancel() }
                 )
             },
-            onRejected: { error in contract.reject(error) }
-        ))
+            onRejected: { error in contract.reject(error) },
+            onCanceled: { contract.cancel() }
+        )
         
         return contract
     }
@@ -79,20 +88,26 @@ extension Contract {
     ) -> Contract<Result> {
         let queue = queue ?? self.queue
         
-        let contract = Contract<Result>(on: queue)
+        let contract = Contract<Result>(queue: queue)
         
-        subscribe(subscriber: Subscriber(
+        subscribe(
             on: queue,
             onResolved: { value in
-                guard let valuePromise = block(value) else { return }
-                valuePromise.subscribe(
+                guard let promise = block(value) else { return }
+                promise.subscribe(
                     on: queue,
                     onResolved: { contract.resolve($0) },
-                    onRejected: { contract.reject($0) }
+                    onRejected: { contract.reject($0) },
+                    onCanceled: { contract.cancel() }
+                )
+                self.subscribe(
+                    on: queue,
+                    onCanceled: { promise.cancel() }
                 )
             },
-            onRejected: { error in contract.reject(error) }
-        ))
+            onRejected: { error in contract.reject(error) },
+            onCanceled: { contract.cancel() }
+        )
         
         return contract
     }
