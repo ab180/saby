@@ -39,11 +39,11 @@ final class PromiseCatchTest: XCTestCase {
         let end = DispatchSemaphore(value: 0)
         let trigger = Promise<Void>.pending()
         
-        let promise =
-        Promise<Int> { () -> Int in
-            throw PromiseTest.Error.one
+        let promise = Promise.cancel(when: trigger.promise) {
+            Promise<Int> { () -> Int in
+                throw PromiseTest.Error.one
+            }
         }
-        .cancel(when: trigger.promise)
         .catch { error in
             trigger.resolve(())
             end.signal()

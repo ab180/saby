@@ -42,11 +42,11 @@ final class PromiseFinallyTest: XCTestCase {
         
         let trigger = Promise<Void>.pending()
         
-        let promise =
-        Promise<Int> { () -> Int in
-            throw PromiseTest.Error.one
+        let promise = Promise.cancel(when: trigger.promise) {
+            Promise<Int> { () -> Int in
+                throw PromiseTest.Error.one
+            }
         }
-        .cancel(when: trigger.promise)
         .finally {
             trigger.resolve(())
             end.signal()

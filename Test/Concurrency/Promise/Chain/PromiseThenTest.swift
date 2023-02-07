@@ -159,11 +159,11 @@ final class PromiseThenTest: XCTestCase {
         let trigger = Promise<Void>.pending()
         let thenPromise = Promise<Void>.pending().promise
         
-        let promise =
-        Promise<Int> { () -> Int in
-            10
+        let promise = Promise.cancel(when: trigger.promise) {
+            Promise<Int> { () -> Int in
+                10
+            }
         }
-        .cancel(when: trigger.promise)
         .then { _ in
             trigger.resolve(())
             end.signal()

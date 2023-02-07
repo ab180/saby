@@ -8,20 +8,20 @@
 import Foundation
 
 extension Promise {
-    @discardableResult
-    public func cancel<AnyValue>(
-        on queue: DispatchQueue? = nil,
-        when promise: Promise<AnyValue>
+    public static func cancel<AnyValue>(
+        on queue: DispatchQueue = .global(),
+        when promise: Promise<AnyValue>,
+        block: () -> Promise<Value>
     ) -> Promise<Value> {
-        let queue = queue ?? self.queue
+        let returnPromise = block()
         
         promise.subscribe(
             on: queue,
-            onResolved: { _ in self.cancel() },
+            onResolved: { _ in returnPromise.cancel() },
             onRejected: { _ in },
             onCanceled: {}
         )
-
-        return self
+        
+        return returnPromise
     }
 }

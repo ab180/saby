@@ -56,7 +56,9 @@ final class PromiseAllTest: XCTestCase {
         
         let promise =
         Promise.all(
-            Promise<Int>().cancel(when: trigger),
+            Promise.cancel(when: trigger) {
+                Promise<Int>()
+            },
             Promise {
                 true
             }
@@ -104,7 +106,9 @@ final class PromiseAllTest: XCTestCase {
         
         let promise =
         Promise.all(
-            Promise<Int>().cancel(when: trigger),
+            Promise.cancel(when: trigger) {
+                Promise<Int>()
+            },
             Promise {
                 true
             },
@@ -161,7 +165,9 @@ final class PromiseAllTest: XCTestCase {
         
         let promise =
         Promise.all(
-            Promise<Int>().cancel(when: trigger),
+            Promise.cancel(when: trigger) {
+                Promise<Int>()
+            },
             Promise {
                 true
             },
@@ -227,7 +233,9 @@ final class PromiseAllTest: XCTestCase {
         
         let promise =
         Promise.all(
-            Promise<Int>().cancel(when: trigger),
+            Promise.cancel(when: trigger) {
+                Promise<Int>()
+            },
             Promise {
                 true
             },

@@ -62,11 +62,11 @@ final class PromiseDelayTest: XCTestCase {
         
         let trigger = Promise<Void>.pending()
         
-        let promise =
-        Promise {
-            20
+        let promise = Promise.cancel(when: trigger.promise) {
+            Promise {
+                20
+            }
         }
-        .cancel(when: trigger.promise)
         .delay(.milliseconds(100))
         .then { _ in
             trigger.resolve(())

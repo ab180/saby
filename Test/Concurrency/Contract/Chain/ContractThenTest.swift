@@ -64,7 +64,9 @@ final class ContractThenTest: XCTestCase {
 
         let contract0 = Contract<Int>()
 
-        let contract = contract0.cancel(when: trigger.promise).then { _ in
+        let contract = Contract.cancel(when: trigger.promise) {
+            contract0
+        }.then { _ in
             trigger.resolve(())
             end.signal()
             return thenPromise

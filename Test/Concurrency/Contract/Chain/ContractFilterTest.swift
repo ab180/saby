@@ -61,7 +61,9 @@ final class ContractFilterTest: XCTestCase {
         
         let contract0 = Contract<String>()
 
-        let contract = contract0.cancel(when: trigger.promise).filter { _ in
+        let contract = Contract.cancel(when: trigger.promise) {
+            contract0
+        }.filter { _ in
             trigger.resolve(())
             end.signal()
             return filterPromise

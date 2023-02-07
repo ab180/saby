@@ -50,7 +50,9 @@ final class PromiseRaceTest: XCTestCase {
         
         let promise =
         Promise.race([
-            Promise<Int>().cancel(when: trigger),
+            Promise.cancel(when: trigger) {
+                Promise<Int>()
+            },
             Promise { resolve, reject in
                 DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
                     resolve(20)

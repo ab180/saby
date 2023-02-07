@@ -143,7 +143,7 @@ final class PromiseTest: XCTestCase {
         pending.onCancel {
             expect.fulfill()
         }
-        pending.promise.cancel(when: Promise<Void>.resolved(()))
+        pending.promise.cancel()
         
         XCTAssertEqual(XCTWaiter().wait(for: [expect], timeout: 1), .completed)
         PromiseTest.expect(promise: pending.promise, state: .canceled, timeout: .seconds(1))

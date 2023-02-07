@@ -146,6 +146,9 @@ extension Promise {
         if case .canceled = state {} else {
             state = .canceled
             cancelGroup.leave()
+            if case .pending = state {
+                executeGroup.leave()
+            }
         }
         
         pthread_mutex_unlock(lock)

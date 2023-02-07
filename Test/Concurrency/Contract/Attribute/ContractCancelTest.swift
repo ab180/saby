@@ -12,8 +12,9 @@ final class ContractCancelTest: XCTestCase {
     func test__cancel() {
         let trigger = Promise<Void>.resolved(())
         
-        let contract =
-        Contract<Int>().cancel(when: trigger)
+        let contract = Contract.cancel(when: trigger) {
+            Contract<Int>()
+        }
         
         ContractTest.expect(
             contract: contract,

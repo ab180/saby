@@ -8,20 +8,20 @@
 import Foundation
 
 extension Contract {
-    @discardableResult
-    public func cancel<AnyValue>(
-        on queue: DispatchQueue? = nil,
-        when promise: Promise<AnyValue>
+    public static func cancel<AnyValue>(
+        on queue: DispatchQueue = .global(),
+        when promise: Promise<AnyValue>,
+        block: () -> Contract<Value>
     ) -> Contract<Value> {
-        let queue = queue ?? self.queue
+        let contract = block()
         
         promise.subscribe(
             on: queue,
-            onResolved: { _ in self.cancel() },
+            onResolved: { _ in contract.cancel() },
             onRejected: { _ in },
             onCanceled: {}
         )
-
-        return self
+        
+        return contract
     }
 }

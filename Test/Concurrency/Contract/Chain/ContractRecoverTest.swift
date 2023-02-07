@@ -64,7 +64,9 @@ final class ContractRecoverTest: XCTestCase {
         
         let contract0 = Contract<Int>()
 
-        let contract = contract0.cancel(when: trigger.promise).recover { _ in
+        let contract = Contract.cancel(when: trigger.promise) {
+            contract0
+        }.recover { _ in
             trigger.resolve(())
             end.signal()
             return recoverPromise

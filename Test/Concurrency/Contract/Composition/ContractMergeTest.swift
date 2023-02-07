@@ -52,7 +52,7 @@ final class ContractMergeTest: XCTestCase {
             state: .canceled,
             timeout: .seconds(1)
         ) {
-            contract0.cancel(when: Promise<Void>.resolved(()))
+            contract0.cancel()
         }
         
         ContractTest.expect(
@@ -107,7 +107,7 @@ final class ContractMergeTest: XCTestCase {
             state: .canceled,
             timeout: .seconds(1)
         ) {
-            contract0.cancel(when: Promise<Void>.resolved(()))
+            contract0.cancel()
         }
         
         ContractTest.expect(

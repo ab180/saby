@@ -72,13 +72,14 @@ final class ContractTest: XCTestCase {
         let executing = Contract<Int>.executing()
 
         ContractTest.expect(
-            contract: executing.contract.cancel(when: Promise<Void>.resolved(())),
+            contract: executing.contract,
             state: .canceled,
             timeout: .seconds(1)
         ) {
             executing.onCancel {
                 expect.fulfill()
             }
+            executing.contract.cancel()
         }
 
         XCTAssertEqual(XCTWaiter().wait(for: [expect], timeout: 1), .completed)

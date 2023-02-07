@@ -12,8 +12,9 @@ final class PromiseCancelTest: XCTestCase {
     func test__cancel() {
         let trigger = Promise<Void>.resolved(())
         
-        let promise =
-        Promise<Void>().cancel(when: trigger)
+        let promise = Promise.cancel(when: trigger) {
+            Promise<Void>()
+        }
         
         PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
     }

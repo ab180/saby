@@ -41,11 +41,11 @@ final class PromiseRecoverTest: XCTestCase {
         let trigger = Promise<Void>.pending()
         let recoverPromise = Promise<Void>.pending().promise
         
-        let promise =
-        Promise { () -> Void in
-            throw PromiseTest.Error.one
+        let promise = Promise.cancel(when: trigger.promise) {
+            Promise { () -> Void in
+                throw PromiseTest.Error.one
+            }
         }
-        .cancel(when: trigger.promise)
         .recover { error in
             trigger.resolve(())
             end.signal()

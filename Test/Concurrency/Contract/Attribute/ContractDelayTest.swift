@@ -55,7 +55,7 @@ final class ContractDelayTest: XCTestCase {
             value + 1
         }
         
-        promise0.cancel(when: Promise<Void>.resolved(()))
+        promise0.cancel()
         
         ContractTest.expect(
             contract: contract,
