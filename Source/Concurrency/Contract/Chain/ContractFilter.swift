@@ -17,7 +17,7 @@ extension Contract {
         let contract = Contract<Value>(queue: queue)
         
         subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { value in
                 if block(value) { contract.resolve(value) }
             },
@@ -37,7 +37,7 @@ extension Contract {
         let contract = Contract<Result>(queue: queue)
         
         subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { value in
                 guard let result = block(value) else { return }
                 contract.resolve(result)
@@ -58,11 +58,11 @@ extension Contract {
         let contract = Contract<Result>(queue: queue)
         
         subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { value in
                 let promise = block(value)
                 promise.subscribe(
-                    on: queue,
+                    queue: queue,
                     onResolved: { result in
                         guard let result else { return }
                         contract.resolve(result)
@@ -71,7 +71,7 @@ extension Contract {
                     onCanceled: { contract.cancel() }
                 )
                 self.subscribe(
-                    on: queue,
+                    queue: queue,
                     onCanceled: { promise.cancel() }
                 )
             },
@@ -91,17 +91,17 @@ extension Contract {
         let contract = Contract<Result>(queue: queue)
         
         subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { value in
                 guard let promise = block(value) else { return }
                 promise.subscribe(
-                    on: queue,
+                    queue: queue,
                     onResolved: { contract.resolve($0) },
                     onRejected: { contract.reject($0) },
                     onCanceled: { contract.cancel() }
                 )
                 self.subscribe(
-                    on: queue,
+                    queue: queue,
                     onCanceled: { promise.cancel() }
                 )
             },

@@ -59,15 +59,12 @@ final class ContractRecoverTest: XCTestCase {
     
     func test__recover_return_promise_cancel() {
         let end = DispatchSemaphore(value: 0)
-        let trigger = Promise<Void>.pending()
         let recoverPromise = Promise<Int>.pending().promise
         
         let contract0 = Contract<Int>()
 
-        let contract = Contract.cancel(when: trigger.promise) {
-            contract0
-        }.recover { _ in
-            trigger.resolve(())
+        let contract = contract0.recover { _ in
+            contract0.cancel()
             end.signal()
             return recoverPromise
         }

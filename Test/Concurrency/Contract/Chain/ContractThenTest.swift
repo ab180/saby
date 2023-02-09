@@ -59,15 +59,12 @@ final class ContractThenTest: XCTestCase {
     
     func test__then_return_promise_cancel() {
         let end = DispatchSemaphore(value: 0)
-        let trigger = Promise<Void>.pending()
         let thenPromise = Promise<Int>.pending().promise
 
         let contract0 = Contract<Int>()
 
-        let contract = Contract.cancel(when: trigger.promise) {
-            contract0
-        }.then { _ in
-            trigger.resolve(())
+        let contract = contract0.then { _ in
+            contract0.cancel()
             end.signal()
             return thenPromise
         }

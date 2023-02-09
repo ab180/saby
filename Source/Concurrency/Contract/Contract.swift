@@ -97,7 +97,7 @@ extension Contract {
     }
 
     func subscribe(
-        on queue: DispatchQueue,
+        queue: DispatchQueue,
         onResolved: @escaping (Value) -> Void,
         onRejected: @escaping (Error) -> Void,
         onCanceled: @escaping () -> Void
@@ -124,7 +124,7 @@ extension Contract {
     }
     
     func subscribe(
-        on queue: DispatchQueue,
+        queue: DispatchQueue,
         onCanceled: @escaping () -> Void
     ) {
         cancelGroup.notify(queue: queue) {
@@ -136,6 +136,36 @@ extension Contract {
                 onCanceled()
             }
         }
+    }
+}
+
+extension Contract {
+    public func subscribe(
+        on queue: DispatchQueue? = nil,
+        onResolved: @escaping (Value) -> Void,
+        onRejected: @escaping (Error) -> Void,
+        onCanceled: @escaping () -> Void
+    ) {
+        let queue = queue ?? self.queue
+        
+        subscribe(
+            queue: queue,
+            onResolved: onResolved,
+            onRejected: onRejected,
+            onCanceled: onCanceled
+        )
+    }
+    
+    public func subscribe(
+        on queue: DispatchQueue? = nil,
+        onCanceled: @escaping () -> Void
+    ) {
+        let queue = queue ?? self.queue
+        
+        subscribe(
+            queue: queue,
+            onCanceled: onCanceled
+        )
     }
 }
 
@@ -153,24 +183,60 @@ extension Contract {
 
 extension Contract {
     public static func executing(
-        on queue: DispatchQueue = .global()
+        on queue: DispatchQueue = .global(),
+        cancelWhen: ContractExecuting<Value>.CancelWhen = .none
     ) -> ContractExecuting<Value> {
-        let contract = Contract(queue: queue)
-        
-        return ContractExecuting(
-            contract: contract,
-            resolve: { contract.resolve($0) },
-            reject: { contract.reject($0) },
-            onCancel: { contract.subscribe(on: queue, onCanceled: $0) }
+        ContractExecuting(
+            queue: queue,
+            cancelWhen: cancelWhen
         )
+    }
+    
+    public static func canceled(
+        on queue: DispatchQueue = .global()
+    ) -> Contract<Value> {
+        let contract = Contract(queue: queue)
+        contract.state = .canceled
+        contract.cancelGroup.leave()
+        
+        return contract
     }
 }
 
-public struct ContractExecuting<Value> {
+public final class ContractExecuting<Value> {
     public let contract: Contract<Value>
     public let resolve: (Value) -> Void
     public let reject: (Error) -> Void
+    public let cancel: () -> Void
     public let onCancel: (@escaping () -> Void) -> Void
+    
+    let cancelWhen: CancelWhen
+    
+    init(
+        queue: DispatchQueue,
+        cancelWhen: CancelWhen
+    ) {
+        let contract = Contract<Value>(queue: queue)
+        
+        self.contract = contract
+        self.resolve = { contract.resolve($0) }
+        self.reject = { contract.reject($0) }
+        self.cancel = { contract.cancel() }
+        self.onCancel = { contract.subscribe(queue: queue, onCanceled: $0) }
+        
+        self.cancelWhen = cancelWhen
+    }
+    
+    deinit {
+        if case .deinit = cancelWhen {
+            cancel()
+        }
+    }
+    
+    public enum CancelWhen {
+        case `deinit`
+        case none
+    }
 }
 
 enum ContractState {

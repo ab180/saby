@@ -156,16 +156,15 @@ final class PromiseThenTest: XCTestCase {
     
     func test__then_return_promise_cancel() {
         let end = DispatchSemaphore(value: 0)
-        let trigger = Promise<Void>.pending()
+        var promiseCancel: (() -> Void)?
         let thenPromise = Promise<Void>.pending().promise
         
-        let promise = Promise.cancel(when: trigger.promise) {
-            Promise<Int> { () -> Int in
-                10
-            }
+        let promise = Promise<Int> { resolve, reject, cancel, _ in
+            promiseCancel = cancel
+            resolve(10)
         }
         .then { _ in
-            trigger.resolve(())
+            promiseCancel?()
             end.signal()
             return thenPromise
         }

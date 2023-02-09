@@ -19,7 +19,7 @@ extension Promise {
         promises.forEach { promise in
             group.enter()
             promise.subscribe(
-                on: promise.queue,
+                queue: promise.queue,
                 onResolved: { _ in group.leave() },
                 onRejected: { promiseReturn.reject($0); group.leave() },
                 onCanceled: { promiseReturn.cancel(); group.leave() }
@@ -55,14 +55,14 @@ extension Promise {
         
         group.enter()
         promise0.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() },
             onCanceled: { promiseReturn.cancel(); group.leave() }
         )
         group.enter()
         promise1.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() },
             onCanceled: { promiseReturn.cancel(); group.leave() }
@@ -94,21 +94,21 @@ extension Promise {
 
         group.enter()
         promise0.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() },
             onCanceled: { promiseReturn.cancel(); group.leave() }
         )
         group.enter()
         promise1.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() },
             onCanceled: { promiseReturn.cancel(); group.leave() }
         )
         group.enter()
         promise2.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() },
             onCanceled: { promiseReturn.cancel(); group.leave() }
@@ -142,28 +142,28 @@ extension Promise {
 
         group.enter()
         promise0.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() },
             onCanceled: { promiseReturn.cancel(); group.leave() }
         )
         group.enter()
         promise1.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() },
             onCanceled: { promiseReturn.cancel(); group.leave() }
         )
         group.enter()
         promise2.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() },
             onCanceled: { promiseReturn.cancel(); group.leave() }
         )
         group.enter()
         promise3.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() },
             onCanceled: { promiseReturn.cancel(); group.leave() }
@@ -199,35 +199,35 @@ extension Promise {
 
         group.enter()
         promise0.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() },
             onCanceled: { promiseReturn.cancel(); group.leave() }
         )
         group.enter()
         promise1.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() },
             onCanceled: { promiseReturn.cancel(); group.leave() }
         )
         group.enter()
         promise2.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() },
             onCanceled: { promiseReturn.cancel(); group.leave() }
         )
         group.enter()
         promise3.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() },
             onCanceled: { promiseReturn.cancel(); group.leave() }
         )
         group.enter()
         promise4.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { _ in group.leave() },
             onRejected: { promiseReturn.reject($0); group.leave() },
             onCanceled: { promiseReturn.cancel(); group.leave() }

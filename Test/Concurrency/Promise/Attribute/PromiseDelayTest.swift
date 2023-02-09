@@ -59,17 +59,15 @@ final class PromiseDelayTest: XCTestCase {
     
     func test__delay_cancel() {
         let end = DispatchSemaphore(value: 0)
+        var promiseCancel: (() -> Void)?
         
-        let trigger = Promise<Void>.pending()
-        
-        let promise = Promise.cancel(when: trigger.promise) {
-            Promise {
-                20
-            }
+        let promise = Promise<Int> { resolve, reject, cancel, _ in
+            promiseCancel = cancel
+            resolve(20)
         }
         .delay(.milliseconds(100))
         .then { _ in
-            trigger.resolve(())
+            promiseCancel?()
             end.signal()
         }
         

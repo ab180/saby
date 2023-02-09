@@ -56,15 +56,12 @@ final class ContractFilterTest: XCTestCase {
     
     func test__filter_promise_cancel() {
         let end = DispatchSemaphore(value: 0)
-        let trigger = Promise<Void>.pending()
         let filterPromise = Promise<Int>.pending().promise
         
         let contract0 = Contract<String>()
 
-        let contract = Contract.cancel(when: trigger.promise) {
-            contract0
-        }.filter { _ in
-            trigger.resolve(())
+        let contract = contract0.filter { _ in
+            contract0.cancel()
             end.signal()
             return filterPromise
         }

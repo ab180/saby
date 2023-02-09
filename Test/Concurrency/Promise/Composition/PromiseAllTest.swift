@@ -52,13 +52,9 @@ final class PromiseAllTest: XCTestCase {
     }
     
     func test__all_2_cancel_1() {
-        let trigger = Promise<Void>.resolved(())
-        
         let promise =
         Promise.all(
-            Promise.cancel(when: trigger) {
-                Promise<Int>()
-            },
+            Promise<Int>.canceled(),
             Promise {
                 true
             }
@@ -102,13 +98,9 @@ final class PromiseAllTest: XCTestCase {
     }
     
     func test__all_3_cancel_1() {
-        let trigger = Promise<Void>.resolved(())
-        
         let promise =
         Promise.all(
-            Promise.cancel(when: trigger) {
-                Promise<Int>()
-            },
+            Promise<Int>.canceled(),
             Promise {
                 true
             },
@@ -161,13 +153,9 @@ final class PromiseAllTest: XCTestCase {
     }
     
     func test__all_4_cancel_1() {
-        let trigger = Promise<Void>.resolved(())
-        
         let promise =
         Promise.all(
-            Promise.cancel(when: trigger) {
-                Promise<Int>()
-            },
+            Promise<Int>.canceled(),
             Promise {
                 true
             },
@@ -229,13 +217,9 @@ final class PromiseAllTest: XCTestCase {
     }
     
     func test__all_5_cancel_1() {
-        let trigger = Promise<Void>.resolved(())
-        
         let promise =
         Promise.all(
-            Promise.cancel(when: trigger) {
-                Promise<Int>()
-            },
+            Promise<Int>.canceled(),
             Promise {
                 true
             },

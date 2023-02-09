@@ -46,7 +46,7 @@ final class PromiseTest: XCTestCase {
         let expect = XCTestExpectation()
         expect.expectedFulfillmentCount = 1
         
-        let promise = Promise<Int> { resolve, reject, onCancel in
+        let promise = Promise<Int> { resolve, reject, cancel, onCancel in
             onCancel {
                 expect.fulfill()
             }

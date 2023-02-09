@@ -18,7 +18,7 @@ extension Contract {
         let contract = Contract<Value>(queue: self.queue)
         
         subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { value in contract.resolve(value) },
             onRejected: { error in
                 block(error)

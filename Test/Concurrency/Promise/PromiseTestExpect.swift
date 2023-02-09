@@ -35,7 +35,7 @@ extension PromiseTest {
         switch state {
         case .resolved(let expect):
             promise.subscribe(
-                on: promise.queue,
+                queue: promise.queue,
                 onResolved: { value in
                     XCTAssert(expect(value), message, file: file, line: line)
                     end.signal()
@@ -51,7 +51,7 @@ extension PromiseTest {
             )
         case .rejected(let expect):
             promise.subscribe(
-                on: promise.queue,
+                queue: promise.queue,
                 onResolved: { value in
                     XCTFail(message, file: file, line: line)
                     end.signal()
@@ -73,7 +73,7 @@ extension PromiseTest {
             end.signal()
         case .canceled:
             promise.subscribe(
-                on: promise.queue,
+                queue: promise.queue,
                 onCanceled: {
                     end.signal()
                 }
@@ -96,7 +96,7 @@ extension PromiseTest {
         switch state {
         case .resolved(let expect):
             promise.subscribe(
-                on: promise.queue,
+                queue: promise.queue,
                 onResolved: { value in
                     XCTAssertEqual(value, expect, message, file: file, line: line)
                     end.signal()
@@ -120,7 +120,7 @@ extension PromiseTest {
             )
         case .rejected(let expect):
             promise.subscribe(
-                on: promise.queue,
+                queue: promise.queue,
                 onResolved: { value in
                     XCTFail(
                         "Promise is resolved",
@@ -150,7 +150,7 @@ extension PromiseTest {
             end.signal()
         case .canceled:
             promise.subscribe(
-                on: promise.queue,
+                queue: promise.queue,
                 onCanceled: {
                     end.signal()
                 }
@@ -171,7 +171,7 @@ extension PromiseTest {
         switch state {
         case .resolved(_):
             promise.subscribe(
-                on: promise.queue,
+                queue: promise.queue,
                 onResolved: { value in
                     end.signal()
                 },
@@ -194,7 +194,7 @@ extension PromiseTest {
             )
         case .rejected(let expect):
             promise.subscribe(
-                on: promise.queue,
+                queue: promise.queue,
                 onResolved: { value in
                     XCTFail(
                         "Promise is resolved",
@@ -228,7 +228,7 @@ extension PromiseTest {
             end.signal()
         case .canceled:
             promise.subscribe(
-                on: promise.queue,
+                queue: promise.queue,
                 onCanceled: {
                     end.signal()
                 }

@@ -38,16 +38,15 @@ final class PromiseRecoverTest: XCTestCase {
     
     func test__recover_from_reject_return_promise_cancel() {
         let end = DispatchSemaphore(value: 0)
-        let trigger = Promise<Void>.pending()
+        var promiseCancel: (() -> Void)?
         let recoverPromise = Promise<Void>.pending().promise
         
-        let promise = Promise.cancel(when: trigger.promise) {
-            Promise { () -> Void in
-                throw PromiseTest.Error.one
-            }
+        let promise = Promise<Void> { resolve, reject, cancel, _ in
+            promiseCancel = cancel
+            throw PromiseTest.Error.one
         }
         .recover { error in
-            trigger.resolve(())
+            promiseCancel?()
             end.signal()
             return recoverPromise
         }

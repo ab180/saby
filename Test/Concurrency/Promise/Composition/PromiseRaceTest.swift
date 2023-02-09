@@ -46,13 +46,9 @@ final class PromiseRaceTest: XCTestCase {
     }
     
     func test__race_2_cancel_1() {
-        let trigger = Promise<Void>.resolved(())
-        
         let promise =
         Promise.race([
-            Promise.cancel(when: trigger) {
-                Promise<Int>()
-            },
+            Promise<Int>.canceled(),
             Promise { resolve, reject in
                 DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
                     resolve(20)

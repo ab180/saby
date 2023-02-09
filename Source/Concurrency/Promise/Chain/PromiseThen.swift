@@ -18,7 +18,7 @@ extension Promise {
         let promiseReturn = Promise<Void>(queue: self.queue)
         
         subscribe(
-            on: queue,
+            queue: queue,
             onResolved: {
                 do {
                     try block($0)
@@ -44,7 +44,7 @@ extension Promise {
         let promiseReturn = Promise<Result>(queue: self.queue)
         
         subscribe(
-            on: queue,
+            queue: queue,
             onResolved: {
                 do {
                     let value = try block($0)
@@ -70,18 +70,18 @@ extension Promise {
         let promiseReturn = Promise<Result>(queue: self.queue)
         
         subscribe(
-            on: queue,
+            queue: queue,
             onResolved: {
                 do {
                     let promise = try block($0)
                     promise.subscribe(
-                        on: queue,
+                        queue: queue,
                         onResolved: { promiseReturn.resolve($0) },
                         onRejected: { promiseReturn.reject($0) },
                         onCanceled: { promiseReturn.cancel() }
                     )
                     self.subscribe(
-                        on: queue,
+                        queue: queue,
                         onCanceled: { promise.cancel() }
                     )
                 } catch let error {

@@ -41,7 +41,7 @@ extension ContractTest {
         case .resolved(let expect):
             let token = OnceToken()
             contract.subscribe(
-                on: contract.queue,
+                queue: contract.queue,
                 onResolved: once(token: token) { value -> Void in
                     XCTAssertEqual(value, expect, message, file: file, line: line)
                     end.signal()
@@ -58,7 +58,7 @@ extension ContractTest {
         case .rejected(let expect):
             let token = OnceToken()
             contract.subscribe(
-                on: contract.queue,
+                queue: contract.queue,
                 onResolved: once(token: token) { value -> Void in
                     XCTFail(message, file: file, line: line)
                     end.signal()
@@ -75,7 +75,7 @@ extension ContractTest {
         case .canceled:
             let token = OnceToken()
             contract.subscribe(
-                on: contract.queue,
+                queue: contract.queue,
                 onCanceled: once(token: token) {
                     end.signal()
                 }

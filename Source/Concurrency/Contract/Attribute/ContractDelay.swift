@@ -17,10 +17,10 @@ extension Contract {
         let contract = Contract<Value>(queue: self.queue)
         
         subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { value in
                 promise.subscribe(
-                    on: queue,
+                    queue: queue,
                     onResolved: { _ in contract.resolve(value) },
                     onRejected: { _ in contract.cancel() },
                     onCanceled: { contract.cancel() }

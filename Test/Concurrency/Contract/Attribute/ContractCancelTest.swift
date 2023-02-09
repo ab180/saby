@@ -10,11 +10,7 @@ import XCTest
 
 final class ContractCancelTest: XCTestCase {
     func test__cancel() {
-        let trigger = Promise<Void>.resolved(())
-        
-        let contract = Contract.cancel(when: trigger) {
-            Contract<Int>()
-        }
+        let contract = Contract<Int>.canceled()
         
         ContractTest.expect(
             contract: contract,

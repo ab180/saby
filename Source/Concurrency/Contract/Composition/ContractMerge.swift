@@ -17,7 +17,7 @@ extension Contract {
         
         contracts.forEach {
             $0.subscribe(
-                on: queue,
+                queue: queue,
                 onResolved: { value0 in contract.resolve(value0) },
                 onRejected: { error in contract.reject(error) },
                 onCanceled: { contract.cancel() }
@@ -36,14 +36,14 @@ extension Contract {
         let contract = Contract<MergedValue2<Value0, Value1>>(queue: queue)
         
         contract0.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { value0 in contract.resolve(.value0(value0)) },
             onRejected: { error in contract.reject(error) },
             onCanceled: { contract.cancel() }
         )
         
         contract1.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { value1 in contract.resolve(.value1(value1)) },
             onRejected: { error in contract.reject(error) },
             onCanceled: { contract.cancel() }
@@ -62,21 +62,21 @@ extension Contract {
         let contract = Contract<MergedValue3<Value0, Value1, Value2>>(queue: queue)
         
         contract0.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { value0 in contract.resolve(.value0(value0)) },
             onRejected: { error in contract.reject(error) },
             onCanceled: { contract.cancel() }
         )
         
         contract1.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { value1 in contract.resolve(.value1(value1)) },
             onRejected: { error in contract.reject(error) },
             onCanceled: { contract.cancel() }
         )
         
         contract2.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { value2 in contract.resolve(.value2(value2)) },
             onRejected: { error in contract.reject(error) },
             onCanceled: { contract.cancel() }
@@ -96,28 +96,28 @@ extension Contract {
         let contract = Contract<MergedValue4<Value0, Value1, Value2, Value3>>(queue: queue)
         
         contract0.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { value0 in contract.resolve(.value0(value0)) },
             onRejected: { error in contract.reject(error) },
             onCanceled: { contract.cancel() }
         )
         
         contract1.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { value1 in contract.resolve(.value1(value1)) },
             onRejected: { error in contract.reject(error) },
             onCanceled: { contract.cancel() }
         )
         
         contract2.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { value2 in contract.resolve(.value2(value2)) },
             onRejected: { error in contract.reject(error) },
             onCanceled: { contract.cancel() }
         )
         
         contract3.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { value3 in contract.resolve(.value3(value3)) },
             onRejected: { error in contract.reject(error) },
             onCanceled: { contract.cancel() }
@@ -138,35 +138,35 @@ extension Contract {
         let contract = Contract<MergedValue5<Value0, Value1, Value2, Value3, Value4>>(queue: queue)
         
         contract0.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { value0 in contract.resolve(.value0(value0)) },
             onRejected: { error in contract.reject(error) },
             onCanceled: { contract.cancel() }
         )
         
         contract1.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { value1 in contract.resolve(.value1(value1)) },
             onRejected: { error in contract.reject(error) },
             onCanceled: { contract.cancel() }
         )
         
         contract2.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { value2 in contract.resolve(.value2(value2)) },
             onRejected: { error in contract.reject(error) },
             onCanceled: { contract.cancel() }
         )
         
         contract3.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { value3 in contract.resolve(.value3(value3)) },
             onRejected: { error in contract.reject(error) },
             onCanceled: { contract.cancel() }
         )
         
         contract4.subscribe(
-            on: queue,
+            queue: queue,
             onResolved: { value4 in contract.resolve(.value4(value4)) },
             onRejected: { error in contract.reject(error) },
             onCanceled: { contract.cancel() }

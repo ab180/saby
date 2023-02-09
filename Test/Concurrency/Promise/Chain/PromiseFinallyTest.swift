@@ -39,16 +39,14 @@ final class PromiseFinallyTest: XCTestCase {
     
     func test__finally_cancel() {
         let end = DispatchSemaphore(value: 0)
+        var promiseCancel: (() -> Void)?
         
-        let trigger = Promise<Void>.pending()
-        
-        let promise = Promise.cancel(when: trigger.promise) {
-            Promise<Int> { () -> Int in
-                throw PromiseTest.Error.one
-            }
+        let promise = Promise<Int> { resolve, reject, cancel, _ in
+            promiseCancel = cancel
+            throw PromiseTest.Error.one
         }
         .finally {
-            trigger.resolve(())
+            promiseCancel?()
             end.signal()
         }
         

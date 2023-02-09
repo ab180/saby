@@ -61,6 +61,7 @@ extension Promise {
         _ block: @escaping (
             _ resolve: @escaping (Value) -> Void,
             _ reject: @escaping (Error) -> Void,
+            _ cancel: @escaping () -> Void,
             _ onCancel: @escaping (@escaping () -> Void) -> Void
         ) throws -> Void
     ) {
@@ -71,7 +72,8 @@ extension Promise {
                 try block(
                     { self.resolve($0) },
                     { self.reject($0) },
-                    { self.subscribe(on: queue, onCanceled: $0) }
+                    { self.cancel() },
+                    { self.subscribe(queue: queue, onCanceled: $0) }
                 )
             } catch let error {
                 self.reject(error)
@@ -105,7 +107,7 @@ extension Promise {
             do {
                 let promise = try block()
                 promise.subscribe(
-                    on: queue,
+                    queue: queue,
                     onResolved: { self.resolve($0) },
                     onRejected: { self.reject($0) },
                     onCanceled: { self.cancel() }
@@ -155,7 +157,7 @@ extension Promise {
     }
     
     func subscribe(
-        on queue: DispatchQueue,
+        queue: DispatchQueue,
         onResolved: @escaping (Value) -> Void,
         onRejected: @escaping (Error) -> Void,
         onCanceled: @escaping () -> Void
@@ -184,7 +186,7 @@ extension Promise {
     }
     
     func subscribe(
-        on queue: DispatchQueue,
+        queue: DispatchQueue,
         onCanceled: @escaping () -> Void
     ) {
         cancelGroup.notify(queue: queue) {
@@ -196,6 +198,36 @@ extension Promise {
                 onCanceled()
             }
         }
+    }
+}
+
+extension Promise {
+    public func subscribe(
+        on queue: DispatchQueue? = nil,
+        onResolved: @escaping (Value) -> Void,
+        onRejected: @escaping (Error) -> Void,
+        onCanceled: @escaping () -> Void
+    ) {
+        let queue = queue ?? self.queue
+        
+        subscribe(
+            queue: queue,
+            onResolved: onResolved,
+            onRejected: onRejected,
+            onCanceled: onCanceled
+        )
+    }
+    
+    public func subscribe(
+        on queue: DispatchQueue? = nil,
+        onCanceled: @escaping () -> Void
+    ) {
+        let queue = queue ?? self.queue
+        
+        subscribe(
+            queue: queue,
+            onCanceled: onCanceled
+        )
     }
 }
 
@@ -223,15 +255,12 @@ extension Promise {
 
 extension Promise {
     public static func pending(
-        on queue: DispatchQueue = .global()
+        on queue: DispatchQueue = .global(),
+        cancelWhen: PromisePending<Value>.CancelWhen = .none
     ) -> PromisePending<Value> {
-        let promise = Promise(queue: queue)
-        
-        return PromisePending(
-            promise: promise,
-            resolve: { promise.resolve($0) },
-            reject: { promise.reject($0) },
-            onCancel: { promise.subscribe(on: queue, onCanceled: $0) }
+        PromisePending(
+            queue: queue,
+            cancelWhen: cancelWhen
         )
     }
     
@@ -269,11 +298,40 @@ extension Promise {
     }
 }
 
-public struct PromisePending<Value> {
+public final class PromisePending<Value> {
     public let promise: Promise<Value>
     public let resolve: (Value) -> Void
     public let reject: (Error) -> Void
+    public let cancel: () -> Void
     public let onCancel: (@escaping () -> Void) -> Void
+    
+    let cancelWhen: CancelWhen
+    
+    init(
+        queue: DispatchQueue,
+        cancelWhen: CancelWhen
+    ) {
+        let promise = Promise<Value>(queue: queue)
+        
+        self.promise = promise
+        self.resolve = { promise.resolve($0) }
+        self.reject = { promise.reject($0) }
+        self.cancel = { promise.cancel() }
+        self.onCancel = { promise.subscribe(queue: queue, onCanceled: $0) }
+        
+        self.cancelWhen = cancelWhen
+    }
+    
+    deinit {
+        if case .deinit = cancelWhen {
+            cancel()
+        }
+    }
+    
+    public enum CancelWhen {
+        case `deinit`
+        case none
+    }
 }
 
 enum PromiseState<Value> {
