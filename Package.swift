@@ -110,6 +110,10 @@ package
             targets: ["SabyAppleDataFetcher"]
         ),
         .library(
+            name: "SabyAppleHash",
+            targets: ["SabyAppleHash"]
+        ),
+        .library(
             name: "SabyAppleStorage",
             targets: ["SabyAppleStorage"]
         ),
@@ -126,6 +130,10 @@ package
             dependencies: ["SabyAppleObjectiveCReflection", "SabyConcurrency"],
             path: "Source/AppleDataFetcher"),
         .target(
+            name: "SabyAppleHash",
+            dependencies: [],
+            path: "Source/AppleHash"),
+        .target(
             name: "SabyAppleStorage",
             dependencies: ["SabyConcurrency", "SabySafe"],
             path: "Source/AppleStorage"),
@@ -137,6 +145,10 @@ package
             name: "SabyAppleObjectiveCReflection",
             dependencies: [],
             path: "Source/AppleObjectiveCReflection"),
+        .testTarget(
+            name: "SabyAppleHashTest",
+            dependencies: ["SabyAppleHash"],
+            path: "Test/AppleHash"),
         .testTarget(
             name: "SabyAppleStorageTest",
             dependencies: ["SabyAppleStorage", "SabySafe"],
