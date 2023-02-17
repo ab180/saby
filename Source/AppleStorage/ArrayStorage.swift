@@ -12,7 +12,7 @@ public protocol ArrayStorage<Value> {
     
     func push(_ value: Value)
     func delete(_ value: Value)
-    func get(key: Value.Key) -> Promise<Value>
+    func get(key: Value.Key) -> Promise<Value?>
     func get(limit: GetLimit) -> Promise<[Value]>
     func save() -> Promise<Void>
 }
