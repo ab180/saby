@@ -70,9 +70,8 @@ extension FileDictionaryStorage: DictionaryStorage {
         }
     }
     
-    public func get(key: Key) -> Promise<Value> {
-        guard let result = cachedItems.capture[key] else { return .rejected(ThrowingError.defaultError) }
-        return .resolved(result)
+    public func get(key: Key) -> Promise<Value?> {
+        return .resolved(cachedItems.capture[key])
     }
     
     public func save() -> Promise<Void> {
