@@ -153,7 +153,7 @@ extension CoreDataArrayStorage: ArrayStorage {
         }
     }
     
-    public func get(key: Item.Key) -> Promise<Item> {
+    public func get(key: Item.Key) -> Promise<Item?> {
         let keyString: CVarArg
         switch key {
         case let key as UUID: keyString = (key as CVarArg)
@@ -163,9 +163,8 @@ extension CoreDataArrayStorage: ArrayStorage {
         let predicate = NSPredicate(format: "\(entityKeyName) == %@", keyString)
         
         return Promise {
-            self.getAll(predicate: predicate).then {
-                try $0.first ?? throwing()
-            }
+            self.getAll(predicate: predicate)
+                .then { $0.first }
         }
     }
     

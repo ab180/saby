@@ -113,7 +113,7 @@ final class FileDictionaryStorageTest: XCTestCase {
         FileDictionaryStorageTest.storage.save()
             .then { XCTAssertEqual( FileDictionaryStorageTest.storage.keys.count, testCount) }
             .then { FileDictionaryStorageTest.storage.get(key: targetKey) }
-            .then { XCTAssertEqual($0.key, targetValue!.key) }
+            .then { XCTAssertEqual($0?.key, targetValue?.key) }
             .then { expectation.fulfill() }
         
         wait(for: [expectation], timeout: 5)
