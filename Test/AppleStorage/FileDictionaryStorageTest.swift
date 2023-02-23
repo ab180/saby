@@ -1,6 +1,6 @@
 //
 //  FileDictionaryStorageTests.swift
-//  
+//  SabyAppleStorageTest
 //
 //  Created by mjgu on 2023/01/19.
 //
@@ -9,7 +9,7 @@ import XCTest
 import SabyConcurrency
 @testable import SabyAppleStorage
 
-let directoryName = "saby.dictionary.storage"
+private let directoryName = "saby.dictionary.storage"
 
 extension FileDictionaryStorage {
     func removeAll() {
