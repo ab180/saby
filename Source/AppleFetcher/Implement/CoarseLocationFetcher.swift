@@ -1,6 +1,6 @@
 //
 //  CoarseLocationFetcher.swift
-//  SabyAppleDataFetcher
+//  SabyAppleFetcher
 //
 //  Created by WOF on 2022/08/23.
 //
@@ -31,7 +31,7 @@ public struct CoarseLocation {
 
 extension CoarseLocationFetcher {
     private func fetchLocale() -> String {
-        (UserDefaults(suiteName: "SabyAppleDataFetcher")?
+        (UserDefaults(suiteName: "SabyAppleFetcher")?
             .stringArray(forKey: "AppleLanguages")?
             .first ?? Locale.autoupdatingCurrent.identifier)
     }
