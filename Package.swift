@@ -8,6 +8,9 @@ var package = Package(
             name: "SabyConcurrency",
             targets: ["SabyConcurrency"]),
         .library(
+            name: "SabyEncode",
+            targets: ["SabyEncode"]),
+        .library(
             name: "SabyESCArchitecture",
             targets: ["SabyESCArchitecture"]),
         .library(
@@ -39,6 +42,10 @@ var package = Package(
             name: "SabyConcurrency",
             dependencies: [],
             path: "Source/Concurrency"),
+        .target(
+            name: "SabyEncode",
+            dependencies: [],
+            path: "Source/Encode"),
         .target(
             name: "SabyESCArchitecture",
             dependencies: ["SabyConcurrency"],
@@ -75,6 +82,10 @@ var package = Package(
             name: "SabyConcurrencyTest",
             dependencies: ["SabyConcurrency"],
             path: "Test/Concurrency"),
+        .testTarget(
+            name: "SabyEncodeTest",
+            dependencies: ["SabyEncode"],
+            path: "Test/Encode"),
         .testTarget(
             name: "SabyJSONTest",
             dependencies: ["SabyJSON"],
