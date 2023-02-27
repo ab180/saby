@@ -8,12 +8,11 @@
 import Foundation
 
 extension Promise {
-    public static func race<Result>(
+    public static func race(
         on queue: DispatchQueue = .global(),
-        _ promises: [Promise<Result>]
-    ) -> Promise<Result> where Value == Void
-    {
-        let promiseReturn = Promise<Result>(queue: queue)
+        _ promises: [Promise<Value, Failure>]
+    ) -> Promise<Value, Failure> {
+        let promiseReturn = Promise<Value, Failure>(queue: queue)
         
         for promise in promises {
             promise.subscribe(

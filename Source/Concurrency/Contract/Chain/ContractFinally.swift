@@ -12,10 +12,10 @@ extension Contract {
     public func finally(
         on queue: DispatchQueue? = nil,
         _ block: @escaping () -> Void
-    ) -> Contract<Value> {
+    ) -> Contract<Value, Failure> {
         let queue = queue ?? self.queue
         
-        let contract = Contract<Value>(queue: self.queue)
+        let contract = Contract<Value, Failure>(queue: self.queue)
         
         subscribe(
             queue: queue,

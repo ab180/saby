@@ -11,38 +11,11 @@ extension Promise {
     @discardableResult
     public func recover(
         on queue: DispatchQueue? = nil,
-        _ block: @escaping (Error) throws -> Void
-    ) -> Promise<Void>
-    where Value == Void {
+        _ block: @escaping (Failure) throws -> Value
+    ) -> Promise<Value, Error> {
         let queue = queue ?? self.queue
         
-        let promiseReturn = Promise<Void>(queue: self.queue)
-        
-        subscribe(
-            queue: queue,
-            onResolved: { promiseReturn.resolve($0) },
-            onRejected: {
-                do {
-                    try block($0)
-                    promiseReturn.resolve(())
-                } catch let error {
-                    promiseReturn.reject(error)
-                }
-            },
-            onCanceled: { promiseReturn.cancel() }
-        )
-        
-        return promiseReturn
-    }
-    
-    @discardableResult
-    public func recover(
-        on queue: DispatchQueue? = nil,
-        _ block: @escaping (Error) throws -> Value
-    ) -> Promise<Value> {
-        let queue = queue ?? self.queue
-        
-        let promiseReturn = Promise<Value>(queue: self.queue)
+        let promiseReturn = Promise<Value, Error>(queue: self.queue)
         
         subscribe(
             queue: queue,
@@ -62,13 +35,13 @@ extension Promise {
     }
     
     @discardableResult
-    public func recover(
+    public func recover<ResultFailure>(
         on queue: DispatchQueue? = nil,
-        _ block: @escaping (Error) throws -> Promise<Value>
-    ) -> Promise<Value> {
+        _ block: @escaping (Failure) throws -> Promise<Value, ResultFailure>
+    ) -> Promise<Value, Error> {
         let queue = queue ?? self.queue
         
-        let promiseReturn = Promise<Value>(queue: self.queue)
+        let promiseReturn = Promise<Value, Error>(queue: self.queue)
         
         subscribe(
             queue: queue,
@@ -89,6 +62,61 @@ extension Promise {
                 } catch let error {
                     promiseReturn.reject(error)
                 }
+            },
+            onCanceled: { promiseReturn.cancel() }
+        )
+        
+        return promiseReturn
+    }
+}
+
+extension Promise {
+    @discardableResult
+    public func recover(
+        on queue: DispatchQueue? = nil,
+        _ block: @escaping (Failure) -> Value
+    ) -> Promise<Value, Never> {
+        let queue = queue ?? self.queue
+        
+        let promiseReturn = Promise<Value, Never>(queue: self.queue)
+        
+        subscribe(
+            queue: queue,
+            onResolved: { promiseReturn.resolve($0) },
+            onRejected: {
+                let value = block($0)
+                promiseReturn.resolve(value)
+            },
+            onCanceled: { promiseReturn.cancel() }
+        )
+        
+        return promiseReturn
+    }
+    
+    @discardableResult
+    public func recover<ResultFailure>(
+        on queue: DispatchQueue? = nil,
+        _ block: @escaping (Failure) -> Promise<Value, ResultFailure>
+    ) -> Promise<Value, ResultFailure> {
+        let queue = queue ?? self.queue
+        
+        let promiseReturn = Promise<Value, ResultFailure>(queue: self.queue)
+        
+        subscribe(
+            queue: queue,
+            onResolved: { promiseReturn.resolve($0) },
+            onRejected: {
+                let promise = block($0)
+                promise.subscribe(
+                    queue: queue,
+                    onResolved: { promiseReturn.resolve($0) },
+                    onRejected: { promiseReturn.reject($0) },
+                    onCanceled: { promiseReturn.cancel() }
+                )
+                self.subscribe(
+                    queue: queue,
+                    onCanceled: { promise.cancel() }
+                )
             },
             onCanceled: { promiseReturn.cancel() }
         )

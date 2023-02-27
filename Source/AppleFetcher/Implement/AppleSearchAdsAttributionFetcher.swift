@@ -48,7 +48,7 @@ public final class AppleSearchAdsAttributionFetcher: Fetcher {
 }
 
 extension AppleSearchAdsAttributionFetcher {
-    enum InternalError: Error {
+    enum InternalError: SampleError {
         case attributionAndErrorAreBothNil
     }
 }
@@ -103,11 +103,11 @@ private final class InstanceADClient {
     }
     
     func requestAttributionDetailsWithBlock(
-        handler: @escaping ([String: NSObject]?, Error?) -> Void
+        handler: @escaping ([String: NSObject]?, SampleError?) -> Void
     ) {
         let handler: @convention(block) (
             [String: NSObject]?,
-            Error?
+            SampleError?
         ) -> Void = handler
         
         instanceADClient.call(

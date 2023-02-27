@@ -47,11 +47,11 @@ extension FileValueStorage: ValueStorage {
         cachedItem.mutate { _ in nil }
     }
     
-    public func get() -> Promise<Value?> {
+    public func get() -> Promise<Value?, Error> {
         return .resolved(cachedItem.capture)
     }
     
-    public func save() -> Promise<Void> {
+    public func save() -> Promise<Void, Error> {
         Promise { () -> Void in
             let data = try self.encoder.encode(self.cachedItem.capture)
             guard let filePath = self.fileURL else { throw URLError(.badURL) }

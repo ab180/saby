@@ -11,11 +11,11 @@ extension Promise {
     @discardableResult
     public func `catch`(
         on queue: DispatchQueue? = nil,
-        _ block: @escaping (Error) -> Void
-    ) -> Promise<Value> {
+        _ block: @escaping (Failure) -> Void
+    ) -> Promise<Value, Failure> {
         let queue = queue ?? self.queue
         
-        let promiseReturn = Promise<Value>(queue: self.queue)
+        let promiseReturn = Promise<Value, Failure>(queue: self.queue)
         
         subscribe(
             queue: queue,

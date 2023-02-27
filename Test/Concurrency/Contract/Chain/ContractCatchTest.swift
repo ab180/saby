@@ -10,7 +10,7 @@ import XCTest
 
 final class ContractCatchTest: XCTestCase {
     func test__catch_return_value() {
-        let contract0 = Contract<Int>()
+        let contract0 = Contract<Int, Error>()
 
         let contract = contract0.catch { error in }
         

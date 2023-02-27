@@ -11,14 +11,8 @@ extension Promise where Value == Void {
     public static func delay(
         on queue: DispatchQueue = .global(),
         _ interval: DispatchTimeInterval
-    ) -> Promise<Void> {
-        let pending = Promise.pending(on: queue)
-        
-        queue.asyncAfter(deadline: .now() + interval) {
-            pending.resolve(())
-        }
-        
-        return pending.promise
+    ) -> Promise<Void, Failure> {
+        Promise.resolved(()).delay(on: queue, interval)
     }
 }
 
@@ -27,10 +21,10 @@ extension Promise {
     public func delay(
         on queue: DispatchQueue? = nil,
         _ interval: DispatchTimeInterval
-    ) -> Promise<Value> {
+    ) -> Promise<Value, Failure> {
         let queue = queue ?? self.queue
         
-        let promiseReturn = Promise<Value>(queue: self.queue)
+        let promiseReturn = Promise<Value, Failure>(queue: self.queue)
         
         self.subscribe(
             queue: queue,

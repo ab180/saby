@@ -30,9 +30,9 @@ final class PromiseRaceTest: XCTestCase {
     func test__race_2_reject_1() {
         let promise =
         Promise.race([
-            Promise<Int> { resolve, reject in
+            Promise<Int, Error> { resolve, reject in
                 DispatchQueue.global().asyncAfter(deadline: .now() + 0.01) {
-                    reject(PromiseTest.Error.one)
+                    reject(PromiseTest.SampleError.one)
                 }
             },
             Promise { resolve, reject in
@@ -42,13 +42,13 @@ final class PromiseRaceTest: XCTestCase {
             }
         ])
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
+        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
     func test__race_2_cancel_1() {
         let promise =
         Promise.race([
-            Promise<Int>.canceled(),
+            Promise<Int, Error>.canceled(),
             Promise { resolve, reject in
                 DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
                     resolve(20)

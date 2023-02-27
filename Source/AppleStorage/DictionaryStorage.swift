@@ -16,6 +16,6 @@ public protocol DictionaryStorage<Key, Value> {
     
     func set(key: Key, value: Value)
     func delete(key: Key)
-    func get(key: Key) -> Promise<Value?>
-    func save() -> Promise<Void>
+    func get(key: Key) -> Promise<Value?, Error>
+    func save() -> Promise<Void, Error>
 }

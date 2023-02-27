@@ -7,8 +7,9 @@
 
 import SabyConcurrency
 
-public protocol Signaler<State> {
-    associatedtype State
+public protocol Signaler<Value, Failure> {
+    associatedtype Value
+    associatedtype Failure: Error
     
-    var promise: Promise<State> { get }
+    var promise: Promise<Value, Failure> { get }
 }

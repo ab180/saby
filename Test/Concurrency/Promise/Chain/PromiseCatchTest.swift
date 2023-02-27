@@ -11,9 +11,10 @@ import XCTest
 final class PromiseCatchTest: XCTestCase {
     func test__catch() {
         let promise =
-        Promise {
+        Promise<Int, Error> {
             10
-        }.catch { error in
+        }
+        .catch { error in
             XCTFail()
         }
         
@@ -24,24 +25,25 @@ final class PromiseCatchTest: XCTestCase {
         let end = DispatchSemaphore(value: 0)
         
         let promise =
-        Promise<Int> { () -> Int in
-            throw PromiseTest.Error.one
-        }.catch { error in
-            XCTAssertEqual(error as? PromiseTest.Error, PromiseTest.Error.one)
+        Promise<Int, Error> { () -> Int in
+            throw PromiseTest.SampleError.one
+        }
+        .catch { error in
+            XCTAssertEqual(error as? PromiseTest.SampleError, PromiseTest.SampleError.one)
             end.signal()
         }
         
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
+        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
     func test__catch_cancel() {
         let end = DispatchSemaphore(value: 0)
         var promiseCancel: (() -> Void)?
         
-        let promise = Promise<Int> { resolve, reject, cancel, _ in
+        let promise = Promise<Int, Error> { resolve, reject, cancel, _ in
             promiseCancel = cancel
-            throw PromiseTest.Error.one
+            throw PromiseTest.SampleError.one
         }
         .catch { error in
             promiseCancel?()

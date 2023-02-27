@@ -12,6 +12,6 @@ public protocol ValueStorage<Value> {
     
     func set(_ value: Value)
     func delete()
-    func get() -> Promise<Value?>
-    func save() -> Promise<Void>
+    func get() -> Promise<Value?, Error>
+    func save() -> Promise<Void, Error>
 }

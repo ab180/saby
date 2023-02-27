@@ -13,7 +13,7 @@ import SabyAppleObjectiveCReflection
 import SabyConcurrency
 
 public final class TrackingAuthorizationStatusFetcher: Fetcher {
-    public typealias Value = Promise<TrackingAuthorizationStatus>
+    public typealias Value = Promise<TrackingAuthorizationStatus, Error>
     
     private let classATTrackingManager: ClassATTrackingManager
     
@@ -23,7 +23,7 @@ public final class TrackingAuthorizationStatusFetcher: Fetcher {
         self.classATTrackingManager = classATTrackingManager
     }
     
-    public func fetch() -> Promise<TrackingAuthorizationStatus> {
+    public func fetch() -> Promise<TrackingAuthorizationStatus, Error> {
         Promise {
             try self.classATTrackingManager.trackingAuthorizationStatus()
         }

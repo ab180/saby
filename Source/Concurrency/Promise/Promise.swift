@@ -7,9 +7,9 @@
 
 import Foundation
 
-public final class Promise<Value> {
+public final class Promise<Value, Failure: Error> {
     var lock: UnsafeMutablePointer<pthread_mutex_t>
-    var state: PromiseState<Value>
+    var state: PromiseState<Value, Failure>
     
     let queue: DispatchQueue
     let executeGroup: DispatchGroup
@@ -37,12 +37,12 @@ public final class Promise<Value> {
     }
 }
 
-extension Promise {
+extension Promise where Failure == Error {
     public convenience init(
         on queue: DispatchQueue = .global(),
         _ block: @escaping (
             _ resolve: @escaping (Value) -> Void,
-            _ reject: @escaping (Error) -> Void
+            _ reject: @escaping (Failure) -> Void
         ) throws -> Void
     ) {
         self.init(queue: queue)
@@ -60,7 +60,7 @@ extension Promise {
         on queue: DispatchQueue = .global(),
         _ block: @escaping (
             _ resolve: @escaping (Value) -> Void,
-            _ reject: @escaping (Error) -> Void,
+            _ reject: @escaping (Failure) -> Void,
             _ cancel: @escaping () -> Void,
             _ onCancel: @escaping (@escaping () -> Void) -> Void
         ) throws -> Void
@@ -99,7 +99,7 @@ extension Promise {
     
     public convenience init(
         on queue: DispatchQueue = .global(),
-        _ block: @escaping () throws -> Promise<Value>
+        _ block: @escaping () throws -> Promise<Value, Failure>
     ) {
         self.init(queue: queue)
         
@@ -119,6 +119,72 @@ extension Promise {
     }
 }
 
+extension Promise where Failure == Never {
+    public convenience init(
+        on queue: DispatchQueue = .global(),
+        _ block: @escaping (
+            _ resolve: @escaping (Value) -> Void,
+            _ reject: @escaping (Failure) -> Void
+        ) -> Void
+    ) {
+        self.init(queue: queue)
+
+        queue.async {
+            block({ self.resolve($0) }, { _ in })
+        }
+    }
+    
+    public convenience init(
+        on queue: DispatchQueue = .global(),
+        _ block: @escaping (
+            _ resolve: @escaping (Value) -> Void,
+            _ reject: @escaping (Failure) -> Void,
+            _ cancel: @escaping () -> Void,
+            _ onCancel: @escaping (@escaping () -> Void) -> Void
+        ) -> Void
+    ) {
+        self.init(queue: queue)
+
+        queue.async {
+            block(
+                { self.resolve($0) },
+                { _ in },
+                { self.cancel() },
+                { self.subscribe(queue: queue, onCanceled: $0) }
+            )
+        }
+    }
+    
+    public convenience init(
+        on queue: DispatchQueue = .global(),
+        _ block: @escaping () -> Value
+    ) {
+        self.init(queue: queue)
+
+        queue.async {
+            let value = block()
+            self.resolve(value)
+        }
+    }
+    
+    public convenience init(
+        on queue: DispatchQueue = .global(),
+        _ block: @escaping () -> Promise<Value, Failure>
+    ) {
+        self.init(queue: queue)
+        
+        queue.async {
+            let promise = block()
+            promise.subscribe(
+                queue: queue,
+                onResolved: { self.resolve($0) },
+                onRejected: { _ in },
+                onCanceled: { self.cancel() }
+            )
+        }
+    }
+}
+
 extension Promise {
     func resolve(_ value: Value) {
         pthread_mutex_lock(lock)
@@ -131,7 +197,7 @@ extension Promise {
         pthread_mutex_unlock(lock)
     }
     
-    func reject(_ error: Error) {
+    func reject(_ error: Failure) {
         pthread_mutex_lock(lock)
         
         if case .pending = state {
@@ -159,7 +225,7 @@ extension Promise {
     func subscribe(
         queue: DispatchQueue,
         onResolved: @escaping (Value) -> Void,
-        onRejected: @escaping (Error) -> Void,
+        onRejected: @escaping (Failure) -> Void,
         onCanceled: @escaping () -> Void
     ) {
         executeGroup.notify(queue: queue) {
@@ -205,7 +271,7 @@ extension Promise {
     public func subscribe(
         on queue: DispatchQueue? = nil,
         onResolved: @escaping (Value) -> Void,
-        onRejected: @escaping (Error) -> Void,
+        onRejected: @escaping (Failure) -> Void,
         onCanceled: @escaping () -> Void
     ) {
         let queue = queue ?? self.queue
@@ -256,8 +322,8 @@ extension Promise {
 extension Promise {
     public static func pending(
         on queue: DispatchQueue = .global(),
-        cancelWhen: PromisePending<Value>.CancelWhen = .none
-    ) -> PromisePending<Value> {
+        cancelWhen: PromisePending<Value, Failure>.CancelWhen = .none
+    ) -> PromisePending<Value, Failure> {
         PromisePending(
             queue: queue,
             cancelWhen: cancelWhen
@@ -267,7 +333,7 @@ extension Promise {
     public static func resolved(
         on queue: DispatchQueue = .global(),
         _ value: Value
-    ) -> Promise<Value> {
+    ) -> Promise<Value, Failure> {
         let promise = Promise(queue: queue)
         promise.state = .resolved(value)
         promise.executeGroup.leave()
@@ -278,8 +344,8 @@ extension Promise {
     public static func rejected(
         on queue: DispatchQueue = .global(),
         _ error: Error
-    ) -> Promise<Value> {
-        let promise = Promise(queue: queue)
+    ) -> Promise<Value, Error> where Failure == Error {
+        let promise = Promise<Value, Error>(queue: queue)
         promise.state = .rejected(error)
         promise.executeGroup.leave()
         
@@ -288,7 +354,7 @@ extension Promise {
     
     public static func canceled(
         on queue: DispatchQueue = .global()
-    ) -> Promise<Value> {
+    ) -> Promise<Value, Failure> {
         let promise = Promise(queue: queue)
         promise.state = .canceled
         promise.executeGroup.leave()
@@ -298,10 +364,10 @@ extension Promise {
     }
 }
 
-public final class PromisePending<Value> {
-    public let promise: Promise<Value>
+public final class PromisePending<Value, Failure: Error> {
+    public let promise: Promise<Value, Failure>
     public let resolve: (Value) -> Void
-    public let reject: (Error) -> Void
+    public let reject: (Failure) -> Void
     public let cancel: () -> Void
     public let onCancel: (@escaping () -> Void) -> Void
     
@@ -311,7 +377,7 @@ public final class PromisePending<Value> {
         queue: DispatchQueue,
         cancelWhen: CancelWhen
     ) {
-        let promise = Promise<Value>(queue: queue)
+        let promise = Promise<Value, Failure>(queue: queue)
         
         self.promise = promise
         self.resolve = { promise.resolve($0) }
@@ -334,10 +400,10 @@ public final class PromisePending<Value> {
     }
 }
 
-enum PromiseState<Value> {
+enum PromiseState<Value, Failure: Error> {
     case pending
     case resolved(_ value: Value)
-    case rejected(_ error: Error)
+    case rejected(_ error: Failure)
     case canceled
 }
 

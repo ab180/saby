@@ -18,7 +18,7 @@ extension Expect {
 
 extension Expect {
     public static func promise<Value>(
-        _ actual: Promise<Value>,
+        _ actual: Promise<Value, Error>,
         state: PromiseState<(Value) -> Bool>,
         timeout: DispatchTimeInterval,
         message: String = "Promise is not expected state",
@@ -52,7 +52,7 @@ extension Expect {
     }
     
     public static func promise<Value: Equatable>(
-        _ actual: Promise<Value>,
+        _ actual: Promise<Value, Error>,
         state: PromiseState<Value>,
         timeout: DispatchTimeInterval,
         message: String = "Promise is not expected state",
@@ -86,7 +86,7 @@ extension Expect {
     }
     
     public static func promise(
-        _ actual: Promise<Void>,
+        _ actual: Promise<Void, Error>,
         state: PromiseState<Void>,
         timeout: DispatchTimeInterval,
         message: String = "Promise is not expected state",

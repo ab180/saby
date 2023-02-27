@@ -13,11 +13,11 @@ import UIKit
 import SabyConcurrency
 
 public final class ScreenFetcher: Fetcher {
-    public typealias Value = Promise<Screen>
+    public typealias Value = Promise<Screen, SampleError>
     
     public init() {}
 
-    public func fetch() -> Promise<Screen> {
+    public func fetch() -> Promise<Screen, SampleError> {
         return Promise.all(
             Promise.resolved(fetchSize()),
             Promise.resolved(fetchScale()),
@@ -50,7 +50,7 @@ extension ScreenFetcher {
         UIScreen.main.scale
     }
     
-    private func fetchOrientation() -> Promise<UIInterfaceOrientation> {
+    private func fetchOrientation() -> Promise<UIInterfaceOrientation, SampleError> {
         Promise(on: DispatchQueue.main) { () -> UIInterfaceOrientation in
             if #available(iOS 13.0, macCatalyst 13.0, tvOS 13.0, *) {
                 return UIApplication.shared.connectedScenes

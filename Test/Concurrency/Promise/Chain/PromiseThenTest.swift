@@ -21,7 +21,7 @@ final class PromiseThenTest: XCTestCase {
         }
         
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: promise, state: .resolved(()), timeout: .seconds(1))
+        PromiseTest.expect(promise: promise, state: .resolved({ $0 == () }), timeout: .seconds(1))
     }
     
     func test__then_return_void_throw_error() {
@@ -34,22 +34,22 @@ final class PromiseThenTest: XCTestCase {
             XCTAssertEqual(value, 10)
             end.signal()
             
-            throw PromiseTest.Error.one
+            throw PromiseTest.SampleError.one
         }
         
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
+        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
     func test__then_return_void_from_reject() {
         let promise =
-        Promise<Int> { () -> Int in
-            throw PromiseTest.Error.one
+        Promise<Int, Error> { () -> Int in
+            throw PromiseTest.SampleError.one
         }.then { value in
             XCTFail()
         }
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
+        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
     func test__then_return_value() {
@@ -79,24 +79,24 @@ final class PromiseThenTest: XCTestCase {
             XCTAssertEqual(value, 10)
             end.signal()
             
-            throw PromiseTest.Error.one
+            throw PromiseTest.SampleError.one
         }
         
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
+        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
     func test__then_return_value_from_reject() {
         let promise =
-        Promise<Int> { () -> Int in
-            throw PromiseTest.Error.one
+        Promise<Int, Error> { () -> Int in
+            throw PromiseTest.SampleError.one
         }.then { value -> Int in
             XCTFail()
             
             return 20
         }
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
+        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
     func test__then_return_promise() {
@@ -105,7 +105,7 @@ final class PromiseThenTest: XCTestCase {
         let promise =
         Promise {
             10
-        }.then { value -> Promise<Int> in
+        }.then { value -> Promise<Int, Error> in
             XCTAssertEqual(value, 10)
             end.signal()
             
@@ -124,15 +124,15 @@ final class PromiseThenTest: XCTestCase {
         let promise =
         Promise {
             10
-        }.then { value -> Promise<Int> in
+        }.then { value -> Promise<Int, Error> in
             XCTAssertEqual(value, 10)
             end.signal()
             
-            throw PromiseTest.Error.one
+            throw PromiseTest.SampleError.one
         }
         
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
+        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
     func test__then_return_rejected_promise() {
@@ -141,25 +141,25 @@ final class PromiseThenTest: XCTestCase {
         let promise =
         Promise {
             10
-        }.then { value -> Promise<Int> in
+        }.then { value -> Promise<Int, Error> in
             XCTAssertEqual(value, 10)
             end.signal()
             
-            return Promise.rejected(
-                PromiseTest.Error.one
+            return Promise<Int, Error>.rejected(
+                PromiseTest.SampleError.one
             )
         }
         
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
+        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
     func test__then_return_promise_cancel() {
         let end = DispatchSemaphore(value: 0)
         var promiseCancel: (() -> Void)?
-        let thenPromise = Promise<Void>.pending().promise
+        let thenPromise = Promise<Void, Error>.pending().promise
         
-        let promise = Promise<Int> { resolve, reject, cancel, _ in
+        let promise = Promise<Int, Error> { resolve, reject, cancel, _ in
             promiseCancel = cancel
             resolve(10)
         }
@@ -176,9 +176,9 @@ final class PromiseThenTest: XCTestCase {
     
     func test__then_return_promise_from_reject() {
         let promise =
-        Promise<Int> { () -> Int in
-            throw PromiseTest.Error.one
-        }.then { value -> Promise<Int> in
+        Promise<Int, Error> { () -> Int in
+            throw PromiseTest.SampleError.one
+        }.then { value -> Promise<Int, Error> in
             XCTFail()
             
             return Promise {
@@ -186,6 +186,85 @@ final class PromiseThenTest: XCTestCase {
             }
         }
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
+        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+    }
+    
+    func test__never_then_return_value() {
+        let promise =
+        Promise<Int, Never> {
+            10
+        }.then {
+            $0 + 10
+        }
+        
+        PromiseTest.expect(promise: promise, state: .resolved(20), timeout: .seconds(1))
+    }
+    
+    func test__never_then_throw_error() {
+        let promise =
+        Promise<Int, Never> {
+            10
+        }.then { value -> Promise<Int, Error> in
+            throw PromiseTest.SampleError.one
+        }
+        
+        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+    }
+    
+    func test__never_then_return_resolved_promise() {
+        let promise =
+        Promise<Int, Never> {
+            10
+        }.then {
+            Promise<Int, Error>.resolved($0 + 10)
+        }
+        
+        PromiseTest.expect(promise: promise, state: .resolved(20), timeout: .seconds(1))
+    }
+    
+    func test__never_then_return_rejected_promise() {
+        let promise =
+        Promise<Int, Never> {
+            10
+        }.then { _ in
+            Promise<Int, Error>.rejected(PromiseTest.SampleError.one)
+        }
+        
+        XCTAssertTrue(promise is Promise)
+        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+    }
+    
+    func test__never_then_return_canceled_promise() {
+        let promise =
+        Promise<Int, Never> {
+            10
+        }.then { _ in
+            Promise<Int, Never>.canceled()
+        }
+        
+        XCTAssertTrue(promise is Promise)
+        PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
+    }
+    
+    func test__never_then_return_resolved_never_promise() {
+        let promise =
+        Promise<Int, Never> {
+            10
+        }.then {
+            Promise<Int, Never>.resolved($0 + 10)
+        }
+        
+        PromiseTest.expect(promise: promise, state: .resolved(20), timeout: .seconds(1))
+    }
+    
+    func test__never_then_return_canceled_never_promise() {
+        let promise =
+        Promise<Int, Never> {
+            10
+        }.then { _ in
+            Promise<Int, Never>.canceled()
+        }
+        
+        PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
     }
 }

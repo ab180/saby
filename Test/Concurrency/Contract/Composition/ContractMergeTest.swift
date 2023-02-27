@@ -10,8 +10,8 @@ import XCTest
 
 final class ContractMergeTest: XCTestCase {
     func test__merge_same_2() {
-        let contract0 = Contract<Int>()
-        let contract1 = Contract<Int>()
+        let contract0 = Contract<Int, Error>()
+        let contract1 = Contract<Int, Error>()
         
         let contract = Contract.merge([contract0, contract1])
         
@@ -65,8 +65,8 @@ final class ContractMergeTest: XCTestCase {
     }
     
     func test__merge_2() {
-        let contract0 = Contract<Int>()
-        let contract1 = Contract<String>()
+        let contract0 = Contract<Int, Error>()
+        let contract1 = Contract<String, Error>()
         
         let contract = Contract.merge(contract0, contract1)
         
@@ -100,6 +100,45 @@ final class ContractMergeTest: XCTestCase {
             timeout: .seconds(1)
         ) {
             contract1.reject(ContractTest.SampleError.two)
+        }
+        
+        ContractTest.expect(
+            contract: contract,
+            state: .canceled,
+            timeout: .seconds(1)
+        ) {
+            contract0.cancel()
+        }
+        
+        ContractTest.expect(
+            contract: contract,
+            state: .canceled,
+            timeout: .seconds(1)
+        ) {
+            contract1.resolve("10")
+        }
+    }
+    
+    func test__never_merge_2() {
+        let contract0 = Contract<Int, Never>()
+        let contract1 = Contract<String, Never>()
+        
+        let contract = Contract.merge(contract0, contract1)
+        
+        ContractTest.expect(
+            contract: contract,
+            state: .resolved(.value0(10)),
+            timeout: .seconds(1)
+        ) {
+            contract0.resolve(10)
+        }
+
+        ContractTest.expect(
+            contract: contract,
+            state: .resolved(.value1("20")),
+            timeout: .seconds(1)
+        ) {
+            contract1.resolve("20")
         }
         
         ContractTest.expect(

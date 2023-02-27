@@ -40,21 +40,21 @@ final class PromiseAllTest: XCTestCase {
     func test__all_2_reject_1() {
         let promise =
         Promise.all(
-            Promise<Int> { () -> Int in
-                throw PromiseTest.Error.one
+            Promise<Int, Error> { () -> Int in
+                throw PromiseTest.SampleError.one
             },
             Promise {
                 true
             }
         )
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
+        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
     func test__all_2_cancel_1() {
         let promise =
         Promise.all(
-            Promise<Int>.canceled(),
+            Promise<Int, Error>.canceled(),
             Promise {
                 true
             }
@@ -83,8 +83,8 @@ final class PromiseAllTest: XCTestCase {
     func test__all_3_reject_1() {
         let promise =
         Promise.all(
-            Promise<Int> { () -> Int in
-                throw PromiseTest.Error.one
+            Promise<Int, Error> { () -> Int in
+                throw PromiseTest.SampleError.one
             },
             Promise {
                 true
@@ -94,13 +94,13 @@ final class PromiseAllTest: XCTestCase {
             }
         )
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
+        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
     func test__all_3_cancel_1() {
         let promise =
         Promise.all(
-            Promise<Int>.canceled(),
+            Promise<Int, Error>.canceled(),
             Promise {
                 true
             },
@@ -135,8 +135,8 @@ final class PromiseAllTest: XCTestCase {
     func test__all_4_reject_1() {
         let promise =
         Promise.all(
-            Promise<Int> { () -> Int in
-                throw PromiseTest.Error.one
+            Promise<Int, Error> { () -> Int in
+                throw PromiseTest.SampleError.one
             },
             Promise {
                 true
@@ -149,13 +149,13 @@ final class PromiseAllTest: XCTestCase {
             }
         )
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
+        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
     func test__all_4_cancel_1() {
         let promise =
         Promise.all(
-            Promise<Int>.canceled(),
+            Promise<Int, Error>.canceled(),
             Promise {
                 true
             },
@@ -196,8 +196,8 @@ final class PromiseAllTest: XCTestCase {
     func test__all_5_reject_1() {
         let promise =
         Promise.all(
-            Promise<Int> { () -> Int in
-                throw PromiseTest.Error.one
+            Promise<Int, Error> { () -> Int in
+                throw PromiseTest.SampleError.one
             },
             Promise {
                 true
@@ -213,13 +213,13 @@ final class PromiseAllTest: XCTestCase {
             }
         )
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
+        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
     func test__all_5_cancel_1() {
         let promise =
         Promise.all(
-            Promise<Int>.canceled(),
+            Promise<Int, Error>.canceled(),
             Promise {
                 true
             },
@@ -240,8 +240,8 @@ final class PromiseAllTest: XCTestCase {
     func test__all_same_5_reject_1() {
         let promise =
         Promise.all([
-            Promise<Int> { () -> Int in
-                throw PromiseTest.Error.one
+            Promise<Int, Error> { () -> Int in
+                throw PromiseTest.SampleError.one
             },
             Promise {
                 20
@@ -257,6 +257,6 @@ final class PromiseAllTest: XCTestCase {
             }
         ])
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.Error.one), timeout: .seconds(1))
+        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
 }

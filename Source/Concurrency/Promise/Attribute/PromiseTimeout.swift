@@ -7,18 +7,21 @@
 
 import Foundation
 
-extension Promise where Value == Void {
+extension Promise where
+    Value == Void,
+    Failure == Error
+{
     public static func timeout(
         on queue: DispatchQueue = .global(),
         _ interval: DispatchTimeInterval
-    ) -> Promise<Void> {
-        let pending = Promise.pending(on: queue)
+    ) -> Promise<Void, Error> {
+        let promise = Promise(queue: queue)
         
         queue.asyncAfter(deadline: .now() + interval) {
-            pending.reject(PromiseError.timeout)
+            promise.reject(PromiseError.timeout)
         }
         
-        return pending.promise
+        return promise
     }
 }
 
@@ -27,13 +30,22 @@ extension Promise {
     public func timeout(
         on queue: DispatchQueue? = nil,
         _ interval: DispatchTimeInterval
-    ) -> Promise<Value> {
+    ) -> Promise<Value, Error> {
         let queue = queue ?? self.queue
         
+        let promiseReturn = Promise<Value, Error>(queue: self.queue)
+        
+        subscribe(
+            queue: queue,
+            onResolved: { promiseReturn.resolve($0) },
+            onRejected: { promiseReturn.reject($0) },
+            onCanceled: { promiseReturn.cancel() }
+        )
+        
         queue.asyncAfter(deadline: .now() + interval) {
-            self.reject(PromiseError.timeout)
+            promiseReturn.reject(PromiseError.timeout)
         }
         
-        return self
+        return promiseReturn
     }
 }

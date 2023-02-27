@@ -64,12 +64,12 @@ extension FileArrayStorage: ArrayStorage {
         cachedItems = Atomic(cachedItems.capture.filter { $0.key != value.key })
     }
     
-    public func get(key: Item.Key) -> Promise<Item?> {
+    public func get(key: Item.Key) -> Promise<Item?, Error> {
         let item = cachedItems.capture.first { $0.key == key }
         return Promise.resolved(item)
     }
     
-    public func get(limit: GetLimit) -> Promise<[Item]> {
+    public func get(limit: GetLimit) -> Promise<[Item], Error> {
         let capturedItems = cachedItems.capture
         
         switch limit {
@@ -81,7 +81,7 @@ extension FileArrayStorage: ArrayStorage {
         }
     }
     
-    public func save() -> Promise<Void> {
+    public func save() -> Promise<Void, Error> {
         return Promise {
             self.locker.lock()
             

@@ -17,7 +17,7 @@ extension ContractTest {
     
     enum State<Value> {
         case resolved(_ value: Value)
-        case rejected(_ error: Swift.Error)
+        case rejected(_ error: Error)
         case canceled
     }
     
@@ -27,13 +27,14 @@ extension ContractTest {
         }
     }
     
-    static func expect<Value: Equatable>(contract: Contract<Value>,
-                                         state: State<Value>,
-                                         timeout: DispatchTimeInterval,
-                                         block: () -> Void,
-                                         file: StaticString = #file,
-                                         line: UInt = #line)
-    {
+    static func expect<Value: Equatable, Failure>(
+        contract: Contract<Value, Failure>,
+        state: State<Value>,
+        timeout: DispatchTimeInterval,
+        block: () -> Void,
+        file: StaticString = #file,
+        line: UInt = #line
+    ) {
         let end = DispatchSemaphore(value: 0)
         let message = Message.unexpected(value: state)
         
@@ -86,11 +87,12 @@ extension ContractTest {
         expect(semaphore: end, timeout: timeout, file: file, line: line)
     }
     
-    private static func expect(semaphore: DispatchSemaphore,
-                               timeout: DispatchTimeInterval,
-                               file: StaticString,
-                               line: UInt)
-    {
+    private static func expect(
+        semaphore: DispatchSemaphore,
+        timeout: DispatchTimeInterval,
+        file: StaticString,
+        line: UInt
+    ) {
         if case .timedOut = semaphore.wait(timeout: .now() + timeout) {
             XCTFail("test is failed with timeout: \(timeout)", file: file, line: line)
         }

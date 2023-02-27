@@ -10,8 +10,8 @@ import XCTest
 
 final class ContractDelayTest: XCTestCase {
     func test__delay_resolve() {
-        let contract0 = Contract<Int>()
-        let promise0 = Promise<Void>()
+        let contract0 = Contract<Int, Error>()
+        let promise0 = Promise<Void, Never>()
         
         let contract = contract0.delay(until: promise0).then { value in
             value + 1
@@ -28,15 +28,15 @@ final class ContractDelayTest: XCTestCase {
         }
     }
     
-    func test__delay_reject() {
-        let contract0 = Contract<Int>()
-        let promise0 = Promise<Void>()
+    func test__delay_cancel() {
+        let contract0 = Contract<Int, Error>()
+        let promise0 = Promise<Void, Never>()
         
         let contract = contract0.delay(until: promise0).then { value in
             value + 1
         }
         
-        promise0.reject(ContractTest.SampleError.one)
+        promise0.cancel()
         
         ContractTest.expect(
             contract: contract,
@@ -47,9 +47,28 @@ final class ContractDelayTest: XCTestCase {
         }
     }
     
-    func test__delay_cancel() {
-        let contract0 = Contract<Int>()
-        let promise0 = Promise<Void>()
+    func test__safe_delay_resolve() {
+        let contract0 = Contract<Int, Never>()
+        let promise0 = Promise<Void, Never>()
+        
+        let contract = contract0.delay(until: promise0).then { value in
+            value + 1
+        }
+        
+        promise0.resolve(())
+        
+        ContractTest.expect(
+            contract: contract,
+            state: .resolved(11),
+            timeout: .seconds(1)
+        ) {
+            contract0.resolve(10)
+        }
+    }
+    
+    func test__safe_delay_cancel() {
+        let contract0 = Contract<Int, Never>()
+        let promise0 = Promise<Void, Never>()
         
         let contract = contract0.delay(until: promise0).then { value in
             value + 1

@@ -10,7 +10,7 @@ import XCTest
 
 final class ContractTest: XCTestCase {
     func test__init() {
-        let contract = Contract<Void>()
+        let contract = Contract<Void, Error>()
         
         if contract.subscribers.count != 0 {
             XCTFail("Initialized Contract's subscribers' count is not 0")
@@ -18,7 +18,7 @@ final class ContractTest: XCTestCase {
     }
     
     func test__resolve() {
-        let contract = Contract<Int>()
+        let contract = Contract<Int, Error>()
         
         ContractTest.expect(
             contract: contract,
@@ -30,7 +30,7 @@ final class ContractTest: XCTestCase {
     }
     
     func test__reject() {
-        let contract = Contract<Int>()
+        let contract = Contract<Int, Error>()
         
         ContractTest.expect(
             contract: contract,
@@ -41,8 +41,20 @@ final class ContractTest: XCTestCase {
         }
     }
     
+    func test__cancel() {
+        let contract = Contract<Int, Error>.canceled()
+        
+        ContractTest.expect(
+            contract: contract,
+            state: .canceled,
+            timeout: .seconds(1)
+        ) {
+            contract.resolve(0)
+        }
+    }
+    
     func test__executing_resolve() {
-        let executing = Contract<Int>.executing()
+        let executing = Contract<Int, Error>.executing()
         
         ContractTest.expect(
             contract: executing.contract,
@@ -54,7 +66,7 @@ final class ContractTest: XCTestCase {
     }
     
     func test__executing_reject() {
-        let executing = Contract<Int>.executing()
+        let executing = Contract<Int, Error>.executing()
         
         ContractTest.expect(
             contract: executing.contract,
@@ -69,7 +81,7 @@ final class ContractTest: XCTestCase {
         let expect = XCTestExpectation()
         expect.expectedFulfillmentCount = 1
         
-        let executing = Contract<Int>.executing()
+        let executing = Contract<Int, Error>.executing()
 
         ContractTest.expect(
             contract: executing.contract,

@@ -12,10 +12,10 @@ extension Promise {
     public func finally(
         on queue: DispatchQueue? = nil,
         _ block: @escaping () -> Void
-    ) -> Promise<Value> {
+    ) -> Promise<Value, Failure> {
         let queue = queue ?? self.queue
         
-        let promiseReturn = Promise<Value>(queue: self.queue)
+        let promiseReturn = Promise<Value, Failure>(queue: self.queue)
         
         subscribe(
             queue: queue,

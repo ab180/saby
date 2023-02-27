@@ -19,7 +19,7 @@ public protocol Client<Request, Response> {
         header: ClientHeader,
         body: Request,
         optionBlock: (inout URLRequest) -> Void
-    ) -> Promise<Response>
+    ) -> Promise<Response, Error>
 }
 
 extension Client {
@@ -28,7 +28,7 @@ extension Client {
         method: ClientMethod = .get,
         header: ClientHeader = [:],
         optionBlock: (inout URLRequest) -> Void = { _ in }
-    ) -> Promise<Response> where RequestValue? == Request {
+    ) -> Promise<Response, Error> where RequestValue? == Request {
         request(url: url, method: method, header: header, body: nil, optionBlock: optionBlock)
     }
     
@@ -38,7 +38,7 @@ extension Client {
         header: ClientHeader = [:],
         body: Request,
         optionBlock: (inout URLRequest) -> Void = { _ in }
-    ) -> Promise<Response> {
+    ) -> Promise<Response, Error> {
         request(url: url, method: method, header: header, body: body, optionBlock: optionBlock)
     }
 }

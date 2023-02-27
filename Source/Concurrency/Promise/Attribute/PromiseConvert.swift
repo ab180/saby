@@ -9,27 +9,108 @@ import Foundation
 
 extension Promise {
     public static func from(
-        _ promise: Promise<Value>?
-    ) -> Promise<Value?> {
+        _ promise: Promise<Value, Failure>?
+    ) -> Promise<Value?, Failure> {
         if let promise = promise {
             return promise.toPromiseOptional()
         }
         else {
-            return Promise<Value?>.resolved(nil)
+            return Promise<Value?, Failure>.resolved(nil)
         }
     }
 }
 
 extension Promise {
-    public func toPromiseOptional() -> Promise<Value?> {
-        self.then { $0 }
+    public func toPromiseOptional() -> Promise<Value?, Failure> {
+        let promiseReturn = Promise<Value?, Failure>(queue: self.queue)
+        
+        subscribe(
+            queue: queue,
+            onResolved: { promiseReturn.resolve($0) },
+            onRejected: { promiseReturn.reject($0) },
+            onCanceled: { promiseReturn.cancel() }
+        )
+        
+        return promiseReturn
     }
     
-    public func toPromiseVoid() -> Promise<Void> {
-        self.then { _ in }
+    public func toPromiseVoid() -> Promise<Void, Failure> {
+        let promiseReturn = Promise<Void, Failure>(queue: self.queue)
+        
+        subscribe(
+            queue: queue,
+            onResolved: { _ in promiseReturn.resolve(()) },
+            onRejected: { promiseReturn.reject($0) },
+            onCanceled: { promiseReturn.cancel() }
+        )
+        
+        return promiseReturn
     }
     
-    public func toPromiseAny() -> Promise<Any> {
-        self.then { $0 }
+    public func toPromiseAny() -> Promise<Any, Failure> {
+        let promiseReturn = Promise<Any, Failure>(queue: self.queue)
+        
+        subscribe(
+            queue: queue,
+            onResolved: { promiseReturn.resolve($0) },
+            onRejected: { promiseReturn.reject($0) },
+            onCanceled: { promiseReturn.cancel() }
+        )
+        
+        return promiseReturn
+    }
+}
+
+extension Promise where Failure == Never {
+    public func toPromiseError() -> Promise<Value, Error> {
+        let promiseReturn = Promise<Value, Error>(queue: self.queue)
+        
+        subscribe(
+            queue: queue,
+            onResolved: { promiseReturn.resolve($0) },
+            onRejected: { _ in },
+            onCanceled: { promiseReturn.cancel() }
+        )
+        
+        return promiseReturn
+    }
+    
+    public func toPromiseOptionalError() -> Promise<Value?, Error> {
+        let promiseReturn = Promise<Value?, Error>(queue: self.queue)
+        
+        subscribe(
+            queue: queue,
+            onResolved: { promiseReturn.resolve($0) },
+            onRejected: { _ in },
+            onCanceled: { promiseReturn.cancel() }
+        )
+        
+        return promiseReturn
+    }
+    
+    public func toPromiseVoidError() -> Promise<Void, Error> {
+        let promiseReturn = Promise<Void, Error>(queue: self.queue)
+        
+        subscribe(
+            queue: queue,
+            onResolved: { _ in promiseReturn.resolve(()) },
+            onRejected: { _ in },
+            onCanceled: { promiseReturn.cancel() }
+        )
+        
+        return promiseReturn
+    }
+    
+    public func toPromiseAnyError() -> Promise<Any, Error> {
+        let promiseReturn = Promise<Any, Error>(queue: self.queue)
+        
+        subscribe(
+            queue: queue,
+            onResolved: { promiseReturn.resolve($0) },
+            onRejected: { _ in },
+            onCanceled: { promiseReturn.cancel() }
+        )
+        
+        return promiseReturn
     }
 }

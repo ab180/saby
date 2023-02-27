@@ -12,10 +12,10 @@ extension Contract {
     public func then<Result>(
         on queue: DispatchQueue? = nil,
         _ block: @escaping (Value) throws -> Result
-    ) -> Contract<Result> {
+    ) -> Contract<Result, Error> {
         let queue = queue ?? self.queue
         
-        let contract = Contract<Result>(queue: self.queue)
+        let contract = Contract<Result, Error>(queue: self.queue)
         
         subscribe(
             queue: queue,
@@ -36,13 +36,13 @@ extension Contract {
     }
     
     @discardableResult
-    public func then<Result>(
+    public func then<Result, ResultFailure>(
         on queue: DispatchQueue? = nil,
-        _ block: @escaping (Value) throws -> Promise<Result>
-    ) -> Contract<Result> {
+        _ block: @escaping (Value) throws -> Promise<Result, ResultFailure>
+    ) -> Contract<Result, Error> {
         let queue = queue ?? self.queue
         
-        let contract = Contract<Result>(queue: self.queue)
+        let contract = Contract<Result, Error>(queue: self.queue)
         
         subscribe(
             queue: queue,
@@ -65,6 +65,61 @@ extension Contract {
                 }
             },
             onRejected: { error in contract.reject(error) },
+            onCanceled: { contract.cancel() }
+        )
+        
+        return contract
+    }
+}
+
+extension Contract where Failure == Never {
+    @discardableResult
+    public func then<Result>(
+        on queue: DispatchQueue? = nil,
+        _ block: @escaping (Value) -> Result
+    ) -> Contract<Result, Never> {
+        let queue = queue ?? self.queue
+        
+        let contract = Contract<Result, Never>(queue: self.queue)
+        
+        subscribe(
+            queue: queue,
+            onResolved: { value in
+                let result = block(value)
+                contract.resolve(result)
+            },
+            onRejected: { _ in },
+            onCanceled: { contract.cancel() }
+        )
+        
+        return contract
+    }
+    
+    @discardableResult
+    public func then<Result, ResultFailure>(
+        on queue: DispatchQueue? = nil,
+        _ block: @escaping (Value) -> Promise<Result, ResultFailure>
+    ) -> Contract<Result, ResultFailure> {
+        let queue = queue ?? self.queue
+        
+        let contract = Contract<Result, ResultFailure>(queue: self.queue)
+        
+        subscribe(
+            queue: queue,
+            onResolved: { value in
+                let promise = block(value)
+                promise.subscribe(
+                    queue: queue,
+                    onResolved: { contract.resolve($0) },
+                    onRejected: { contract.reject($0) },
+                    onCanceled: { contract.cancel() }
+                )
+                self.subscribe(
+                    queue: queue,
+                    onCanceled: { promise.cancel() }
+                )
+            },
+            onRejected: { _ in },
             onCanceled: { contract.cancel() }
         )
         

@@ -61,7 +61,7 @@ final class PromiseDelayTest: XCTestCase {
         let end = DispatchSemaphore(value: 0)
         var promiseCancel: (() -> Void)?
         
-        let promise = Promise<Int> { resolve, reject, cancel, _ in
+        let promise = Promise<Int, Error> { resolve, reject, cancel, _ in
             promiseCancel = cancel
             resolve(20)
         }
@@ -73,5 +73,20 @@ final class PromiseDelayTest: XCTestCase {
         
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
         PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
+    }
+    
+    func test__never_delay_create() {
+        let promise = Promise<Void, Never>.delay(.milliseconds(0))
+        
+        PromiseTest.expect(promise: promise, state: .resolved({ $0 == () }), timeout: .seconds(1))
+    }
+    
+    func test__safe_delay() {
+        let promise = Promise<Int, Never> {
+            10
+        }
+        .delay(.milliseconds(0))
+        
+        PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
     }
 }

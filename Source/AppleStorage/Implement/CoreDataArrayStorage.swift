@@ -62,28 +62,28 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
     
     /// Is substituted for initializer. because a ``loadPersistentStores`` in ``NSPersistentContext`` method is synchronize.
     ///
-    /// private class method ``create(objectDescriptor:entityKeyName:)`` return type is ``Promise<CoreDataResource>``.
-    /// and Convert to Promise<CoreDataArrayStorage>.
+    /// private class method ``create(objectDescriptor:entityKeyName:)`` return type is ``Promise<CoreDataResource, Error>``.
+    /// and Convert to Promise<CoreDataArrayStorage, Error>.
     ///
     /// - Parameters:
     ///   - objectDescriptor: Bundle Target with CoreData model Name to load.
     ///   - entityKeyName: Use the filtering key for fetching data. this parameter is key column name. referring to ``NSPredicate``
     /// - Returns: Async(Promise) result object a CoreDataArrayStorage. Plus, consider an **exception** while in create instance.
-    public static func create(modelName: String, bundle: Bundle, entityKeyName: String) -> Promise<CoreDataArrayStorage> {
+    public static func create(modelName: String, bundle: Bundle, entityKeyName: String) -> Promise<CoreDataArrayStorage, Error> {
         return convertContainerToStorage(
             entityKeyName: entityKeyName,
             from: createContainer(modelName: modelName, bundle: bundle)
         )
     }
     
-    public static func create(modelName: String, managedObjectModel: NSManagedObjectModel, entityKeyName: String) -> Promise<CoreDataArrayStorage> {
+    public static func create(modelName: String, managedObjectModel: NSManagedObjectModel, entityKeyName: String) -> Promise<CoreDataArrayStorage, Error> {
         convertContainerToStorage(
             entityKeyName: entityKeyName,
             from: createContainer(modelName: modelName, managedObjectModel: managedObjectModel)
         )
     }
     
-    private static func convertContainerToStorage(entityKeyName: String, from: Promise<NSPersistentContainer>) -> Promise<CoreDataArrayStorage> {
+    private static func convertContainerToStorage(entityKeyName: String, from: Promise<NSPersistentContainer, Error>) -> Promise<CoreDataArrayStorage, Error> {
         
         let objectKeyID = String(describing: Item.self)
         
@@ -102,7 +102,7 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
         }
     }
     
-    private static func createContainer(modelName: String) -> (NSManagedObjectModel) -> Promise<NSPersistentContainer> {
+    private static func createContainer(modelName: String) -> (NSManagedObjectModel) -> Promise<NSPersistentContainer, Error> {
         return { managedObjectModel in
             CoreDataContextManager.shared.locker.lock()
             
@@ -126,7 +126,7 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
         }
     }
     
-    private class func createContainer(modelName: String, bundle: Bundle) -> Promise<NSPersistentContainer> {
+    private class func createContainer(modelName: String, bundle: Bundle) -> Promise<NSPersistentContainer, Error> {
         return Promise {
             try fetchManagedObjectModel(modelName: modelName, bundle: bundle)
         }.then { managedObjectModel in
@@ -134,7 +134,7 @@ public final class CoreDataArrayStorage<Item> where Item: CoreDataStorageDatable
         }
     }
     
-    private class func createContainer(modelName: String, managedObjectModel: NSManagedObjectModel) -> Promise<NSPersistentContainer> {
+    private class func createContainer(modelName: String, managedObjectModel: NSManagedObjectModel) -> Promise<NSPersistentContainer, Error> {
         createContainer(modelName: modelName)(managedObjectModel)
     }
 }
@@ -153,7 +153,7 @@ extension CoreDataArrayStorage: ArrayStorage {
         }
     }
     
-    public func get(key: Item.Key) -> Promise<Item?> {
+    public func get(key: Item.Key) -> Promise<Item?, Error> {
         let keyString: CVarArg
         switch key {
         case let key as UUID: keyString = (key as CVarArg)
@@ -168,7 +168,7 @@ extension CoreDataArrayStorage: ArrayStorage {
         }
     }
     
-    public func get(limit: GetLimit) -> Promise<[Item]> {
+    public func get(limit: GetLimit) -> Promise<[Item], Error> {
         switch limit {
         case .unlimited:
             return getAll()
@@ -177,7 +177,7 @@ extension CoreDataArrayStorage: ArrayStorage {
         }
     }
     
-    public func save() -> Promise<Void> {
+    public func save() -> Promise<Void, Error> {
         return Promise { resolve, reject in
             self.context.perform {
                 do {
@@ -198,7 +198,7 @@ extension CoreDataArrayStorage {
 }
 
 extension CoreDataArrayStorage {
-    private class func loadContext(container: NSPersistentContainer) -> Promise<NSPersistentContainer> {
+    private class func loadContext(container: NSPersistentContainer) -> Promise<NSPersistentContainer, Error> {
         return Promise { resolve, reject in
             if let container = CoreDataContextManager.shared.loadedContainer {
                 resolve(container)
@@ -230,7 +230,7 @@ extension CoreDataArrayStorage {
         return result
     }
     
-    private func getAll(predicate: NSPredicate? = nil, limit: Int? = nil) -> Promise<[Item]> {
+    private func getAll(predicate: NSPredicate? = nil, limit: Int? = nil) -> Promise<[Item], Error> {
         let fetchRequest = fetchRequest(limit: limit)
         fetchRequest.predicate = predicate
         
@@ -269,7 +269,7 @@ fileprivate extension NSPersistentContainer {
     
     /// It's same to `loadPersistentStores:CompletionHandler` method. Is converted a completionHandler to Promise
     /// - Returns: loaded `NSPersistentContainer`.
-    func loadPersistentStores() -> Promise<NSPersistentContainer> {
+    func loadPersistentStores() -> Promise<NSPersistentContainer, Error> {
         Promise(on: .global()) { resolve, reject in
             self.loadPersistentStores { _, error in
                 guard let error = error else {

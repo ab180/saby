@@ -7,7 +7,7 @@
 
 import Foundation
 
-public final class Contract<Value> {
+public final class Contract<Value, Failure: Error> {
     var lock: UnsafeMutablePointer<pthread_mutex_t>
     var state: ContractState
     
@@ -15,7 +15,7 @@ public final class Contract<Value> {
     var executeGroup: DispatchGroup
     var cancelGroup: DispatchGroup
 
-    var subscribers: [ContractSubscriber<Value>]
+    var subscribers: [ContractSubscriber<Value, Failure>]
     
     init(queue: DispatchQueue = .global()) {
         self.lock = UnsafeMutablePointer.allocate(capacity: 1)
@@ -63,7 +63,7 @@ extension Contract {
         pthread_mutex_unlock(lock)
     }
 
-    func reject(_ error: Error) {
+    func reject(_ error: Failure) {
         pthread_mutex_lock(lock)
         
         if case .executing = state {
@@ -99,7 +99,7 @@ extension Contract {
     func subscribe(
         queue: DispatchQueue,
         onResolved: @escaping (Value) -> Void,
-        onRejected: @escaping (Error) -> Void,
+        onRejected: @escaping (Failure) -> Void,
         onCanceled: @escaping () -> Void
     ) {
         pthread_mutex_lock(lock)
@@ -143,7 +143,7 @@ extension Contract {
     public func subscribe(
         on queue: DispatchQueue? = nil,
         onResolved: @escaping (Value) -> Void,
-        onRejected: @escaping (Error) -> Void,
+        onRejected: @escaping (Failure) -> Void,
         onCanceled: @escaping () -> Void
     ) {
         let queue = queue ?? self.queue
@@ -184,8 +184,8 @@ extension Contract {
 extension Contract {
     public static func executing(
         on queue: DispatchQueue = .global(),
-        cancelWhen: ContractExecuting<Value>.CancelWhen = .none
-    ) -> ContractExecuting<Value> {
+        cancelWhen: ContractExecuting<Value, Failure>.CancelWhen = .none
+    ) -> ContractExecuting<Value, Failure> {
         ContractExecuting(
             queue: queue,
             cancelWhen: cancelWhen
@@ -194,7 +194,7 @@ extension Contract {
     
     public static func canceled(
         on queue: DispatchQueue = .global()
-    ) -> Contract<Value> {
+    ) -> Contract<Value, Failure> {
         let contract = Contract(queue: queue)
         contract.state = .canceled
         contract.cancelGroup.leave()
@@ -203,10 +203,10 @@ extension Contract {
     }
 }
 
-public final class ContractExecuting<Value> {
-    public let contract: Contract<Value>
+public final class ContractExecuting<Value, Failure: Error> {
+    public let contract: Contract<Value, Failure>
     public let resolve: (Value) -> Void
-    public let reject: (Error) -> Void
+    public let reject: (Failure) -> Void
     public let cancel: () -> Void
     public let onCancel: (@escaping () -> Void) -> Void
     
@@ -216,7 +216,7 @@ public final class ContractExecuting<Value> {
         queue: DispatchQueue,
         cancelWhen: CancelWhen
     ) {
-        let contract = Contract<Value>(queue: queue)
+        let contract = Contract<Value, Failure>(queue: queue)
         
         self.contract = contract
         self.resolve = { contract.resolve($0) }
@@ -244,8 +244,8 @@ enum ContractState {
     case canceled
 }
 
-struct ContractSubscriber<Value> {
+struct ContractSubscriber<Value, Failure: Error> {
     let queue: DispatchQueue
     let onResolved: (Value) -> Void
-    let onRejected: (Error) -> Void
+    let onRejected: (Failure) -> Void
 }

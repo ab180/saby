@@ -41,7 +41,7 @@ extension JSONClient {
         method: ClientMethod = .get,
         header: ClientHeader = [:],
         optionBlock: (inout URLRequest) -> Void = { _ in }
-    ) -> Promise<Response> where RequestValue? == Request {
+    ) -> Promise<Response, Error> where RequestValue? == Request {
         request(url: url, method: method, header: header, body: nil, optionBlock: optionBlock)
     }
     
@@ -51,9 +51,9 @@ extension JSONClient {
         header: ClientHeader = [:],
         body: Request,
         optionBlock: (inout URLRequest) -> Void = { _ in }
-    ) -> Promise<Response> {
+    ) -> Promise<Response, Error> {
         guard let body = try? self.encoder.encode(body) else {
-            return Promise<Response>.rejected(InternalError.bodyIsNotEncodable)
+            return Promise<Response, Error>.rejected(InternalError.bodyIsNotEncodable)
         }
         
         return client.request(

@@ -18,7 +18,7 @@ extension Expect {
 
 extension Expect {
     public static func contract<Value>(
-        _ actual: Contract<Value>,
+        _ actual: Contract<Value, Error>,
         state: ContractState<(Value) -> Bool>,
         timeout: DispatchTimeInterval,
         block: () -> Void,
@@ -66,7 +66,7 @@ extension Expect {
 
 extension Expect {
     public static func contract<Value: Equatable>(
-        _ actual: Contract<Value>,
+        _ actual: Contract<Value, Error>,
         state: ContractState<Value>,
         timeout: DispatchTimeInterval,
         block: () -> Void,

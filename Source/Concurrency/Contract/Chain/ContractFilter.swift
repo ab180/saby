@@ -11,10 +11,10 @@ extension Contract {
     public func filter(
         on queue: DispatchQueue? = nil,
         _ block: @escaping (Value) -> Bool
-    ) -> Contract<Value> {
+    ) -> Contract<Value, Failure> {
         let queue = queue ?? self.queue
         
-        let contract = Contract<Value>(queue: queue)
+        let contract = Contract<Value, Failure>(queue: queue)
         
         subscribe(
             queue: queue,
@@ -31,10 +31,10 @@ extension Contract {
     public func filter<Result>(
         on queue: DispatchQueue? = nil,
         _ block: @escaping (Value) -> Result?
-    ) -> Contract<Result> {
+    ) -> Contract<Result, Failure> {
         let queue = queue ?? self.queue
         
-        let contract = Contract<Result>(queue: queue)
+        let contract = Contract<Result, Failure>(queue: queue)
         
         subscribe(
             queue: queue,
@@ -51,11 +51,11 @@ extension Contract {
     
     public func filter<Result>(
         on queue: DispatchQueue? = nil,
-        _ block: @escaping (Value) -> Promise<Result?>
-    ) -> Contract<Result> {
+        _ block: @escaping (Value) -> Promise<Result?, Never>
+    ) -> Contract<Result, Failure> {
         let queue = queue ?? self.queue
         
-        let contract = Contract<Result>(queue: queue)
+        let contract = Contract<Result, Failure>(queue: queue)
         
         subscribe(
             queue: queue,
@@ -67,7 +67,7 @@ extension Contract {
                         guard let result else { return }
                         contract.resolve(result)
                     },
-                    onRejected: { contract.reject($0) },
+                    onRejected: { _ in },
                     onCanceled: { contract.cancel() }
                 )
                 self.subscribe(
@@ -84,11 +84,11 @@ extension Contract {
     
     public func filter<Result>(
         on queue: DispatchQueue? = nil,
-        _ block: @escaping (Value) -> Promise<Result>?
-    ) -> Contract<Result> {
+        _ block: @escaping (Value) -> Promise<Result, Never>?
+    ) -> Contract<Result, Failure> {
         let queue = queue ?? self.queue
         
-        let contract = Contract<Result>(queue: queue)
+        let contract = Contract<Result, Failure>(queue: queue)
         
         subscribe(
             queue: queue,
@@ -97,7 +97,7 @@ extension Contract {
                 promise.subscribe(
                     queue: queue,
                     onResolved: { contract.resolve($0) },
-                    onRejected: { contract.reject($0) },
+                    onRejected: { _ in },
                     onCanceled: { contract.cancel() }
                 )
                 self.subscribe(

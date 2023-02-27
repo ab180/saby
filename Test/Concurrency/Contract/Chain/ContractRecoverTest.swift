@@ -10,7 +10,7 @@ import XCTest
 
 final class ContractRecoverTest: XCTestCase {
     func test__recover_return_value() {
-        let contract0 = Contract<Int>()
+        let contract0 = Contract<Int, Error>()
 
         let contract = contract0.recover { error in
             10
@@ -34,10 +34,10 @@ final class ContractRecoverTest: XCTestCase {
     }
     
     func test__recover_return_promise() {
-        let contract0 = Contract<Int>()
+        let contract0 = Contract<Int, Error>()
 
         let contract = contract0.recover { error in
-            Promise.resolved(10)
+            Promise<Int, Error>.resolved(10)
         }
         
         ContractTest.expect(
@@ -59,9 +59,9 @@ final class ContractRecoverTest: XCTestCase {
     
     func test__recover_return_promise_cancel() {
         let end = DispatchSemaphore(value: 0)
-        let recoverPromise = Promise<Int>.pending().promise
+        let recoverPromise = Promise<Int, Error>.pending().promise
         
-        let contract0 = Contract<Int>()
+        let contract0 = Contract<Int, Error>()
 
         let contract = contract0.recover { _ in
             contract0.cancel()

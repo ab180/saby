@@ -13,7 +13,7 @@ import SabyAppleObjectiveCReflection
 import SabyConcurrency
 
 public final class IdentifierForAdvertiserFetcher: Fetcher {
-    public typealias Value = Promise<IdentifierForAdvertiser>
+    public typealias Value = Promise<IdentifierForAdvertiser, Error>
     
     private let instanceASIdentifierManager: InstanceASIdentifierManager
     
@@ -28,7 +28,7 @@ public final class IdentifierForAdvertiserFetcher: Fetcher {
         self.instanceASIdentifierManager = instanceASIdentifierManager
     }
     
-    public func fetch() -> Promise<IdentifierForAdvertiser> {
+    public func fetch() -> Promise<IdentifierForAdvertiser, Error> {
         Promise {
             IdentifierForAdvertiser(
                 identifier: try self.instanceASIdentifierManager.advertisingIdentifier(),

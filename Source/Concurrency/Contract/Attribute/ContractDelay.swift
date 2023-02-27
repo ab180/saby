@@ -10,11 +10,11 @@ import Foundation
 extension Contract {
     public func delay<AnyValue>(
         on queue: DispatchQueue? = nil,
-        until promise: Promise<AnyValue>
-    ) -> Contract<Value> {
+        until promise: Promise<AnyValue, Never>
+    ) -> Contract<Value, Failure> {
         let queue = queue ?? self.queue
         
-        let contract = Contract<Value>(queue: self.queue)
+        let contract = Contract<Value, Failure>(queue: self.queue)
         
         subscribe(
             queue: queue,
@@ -22,7 +22,7 @@ extension Contract {
                 promise.subscribe(
                     queue: queue,
                     onResolved: { _ in contract.resolve(value) },
-                    onRejected: { _ in contract.cancel() },
+                    onRejected: { _ in },
                     onCanceled: { contract.cancel() }
                 )
             },

@@ -38,8 +38,8 @@ extension DataClient {
         header: ClientHeader = [:],
         body: Data? = nil,
         optionBlock: (inout URLRequest) -> Void = { _ in }
-    ) -> Promise<Data?> {
-        let pending = Promise<Data?>.pending()
+    ) -> Promise<Data?, Error> {
+        let pending = Promise<Data?, Error>.pending()
         
         var request = URLRequest(url: url)
         optionBlock(&request)

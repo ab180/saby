@@ -9,7 +9,7 @@ import XCTest
 @testable import SabyConcurrency
 
 extension PromiseTest {
-    enum Error: Swift.Error {
+    enum SampleError: Swift.Error {
         case one
         case two
         case three
@@ -22,7 +22,7 @@ extension PromiseTest {
         case canceled
     }
     
-    static func expect<Value>(promise: Promise<Value>,
+    static func expect<Value, Failure>(promise: Promise<Value, Failure>,
                               state: PromiseTest.State<(Value) -> Bool>,
                               timeout: DispatchTimeInterval,
                               file: StaticString = #file,
@@ -83,7 +83,7 @@ extension PromiseTest {
         PromiseTest.expect(semaphore: end, timeout: timeout, file: file, line: line)
     }
     
-    static func expect<Value: Equatable>(promise: Promise<Value>,
+    static func expect<Value: Equatable, Failure>(promise: Promise<Value, Failure>,
                                          state: PromiseTest.State<Value>,
                                          timeout: DispatchTimeInterval,
                                          file: StaticString = #file,
@@ -145,84 +145,6 @@ extension PromiseTest {
         case .pending:
             if case .pending = promise.state {} else {
                 XCTFail(message, file: file, line: line)
-            }
-            
-            end.signal()
-        case .canceled:
-            promise.subscribe(
-                queue: promise.queue,
-                onCanceled: {
-                    end.signal()
-                }
-            )
-        }
-        
-        PromiseTest.expect(semaphore: end, timeout: timeout, file: file, line: line)
-    }
-    
-    static func expect(promise: Promise<Void>,
-                       state: PromiseTest.State<Void>,
-                       timeout: DispatchTimeInterval,
-                       file: StaticString = #file,
-                       line: UInt = #line)
-    {
-        let end = DispatchSemaphore(value: 0)
-        
-        switch state {
-        case .resolved(_):
-            promise.subscribe(
-                queue: promise.queue,
-                onResolved: { value in
-                    end.signal()
-                },
-                onRejected: { error in
-                    XCTFail(
-                        "Promise is rejected",
-                        file: file,
-                        line: line
-                    )
-                    end.signal()
-                },
-                onCanceled: {
-                    XCTFail(
-                        "Promise is canceled",
-                        file: file,
-                        line: line
-                    )
-                    end.signal()
-                }
-            )
-        case .rejected(let expect):
-            promise.subscribe(
-                queue: promise.queue,
-                onResolved: { value in
-                    XCTFail(
-                        "Promise is resolved",
-                        file: file,
-                        line: line
-                    )
-                    end.signal()
-                },
-                onRejected: { error in
-                    XCTAssertEqual(error.localizedDescription, expect.localizedDescription, file: file, line: line)
-                    end.signal()
-                },
-                onCanceled: {
-                    XCTFail(
-                        "Promise is canceld",
-                        file: file,
-                        line: line
-                    )
-                    end.signal()
-                }
-            )
-        case .pending:
-            if case .pending = promise.state {} else {
-                XCTFail(
-                    "Promise is pending",
-                    file: file,
-                    line: line
-                )
             }
             
             end.signal()
