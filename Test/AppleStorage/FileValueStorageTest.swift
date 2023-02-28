@@ -9,7 +9,7 @@ import XCTest
 import SabyConcurrency
 @testable import SabyAppleStorage
 
-private let directoryName = "saby.dictionary.storage"
+private let directoryName = "saby.dictionary.value.storage"
 
 private struct DummyItem: Codable, Equatable {
     var key: UUID

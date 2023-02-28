@@ -16,23 +16,6 @@ fileprivate struct DummyItem: Codable, KeyIdentifiable {
 
 final class FileArrayStorageTest: XCTestCase {
     
-    fileprivate static let storage = FileArrayStorage<DummyItem>(
-        directoryName: "saby.storage",
-        fileName: String(describing: DummyItem.self)
-    )
-    
-    class func clear() {
-        storage.removeAll()
-    }
-    
-    override class func setUp() {
-        clear()
-    }
-    
-    override class func tearDown() {
-        clear()
-    }
-    
     private struct TestItemGroup {
         private static let testCount = 100
         
@@ -51,12 +34,17 @@ final class FileArrayStorageTest: XCTestCase {
     }
     
     func testPush() {
-        defer { FileArrayStorageTest.clear() }
+        let storage = FileArrayStorage<DummyItem>(
+            directoryName: "saby.storage.testpush",
+            fileName: String(describing: DummyItem.self)
+        )
+        storage.removeAll()
+        
+        defer { storage.removeAll() }
         
         let expectation = self.expectation(description: "testPush")
         expectation.expectedFulfillmentCount = 2
         
-        let storage = FileArrayStorageTest.storage
         let testItems = TestItemGroup()
         
         testItems.pushItems.forEach(storage.push)
@@ -86,12 +74,17 @@ final class FileArrayStorageTest: XCTestCase {
     }
     
     func testRemove() {
-        defer { FileArrayStorageTest.clear() }
+        let storage = FileArrayStorage<DummyItem>(
+            directoryName: "saby.storage.testremove",
+            fileName: String(describing: DummyItem.self)
+        )
+        storage.removeAll()
+        
+        defer { storage.removeAll() }
         
         let expectation = self.expectation(description: "testRemove")
         expectation.expectedFulfillmentCount = 1
         
-        let storage = FileArrayStorageTest.storage
         let testItems = TestItemGroup()
         
         testItems.pushItems.forEach(storage.push)
@@ -107,6 +100,8 @@ final class FileArrayStorageTest: XCTestCase {
         }.then { fetchedItems in
             XCTAssertEqual(fetchedItems.count, testItems.pushCount - testItems.removeCount)
             expectation.fulfill()
+        }.catch { error in
+            XCTFail("failed Promise chaining: \(error)")
         }
         
         wait(for: [expectation], timeout: 5000)
