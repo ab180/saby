@@ -13,7 +13,7 @@ import SabyAppleObjectiveCReflection
 import SabyConcurrency
 
 public final class AppleSearchAdsAttributionFetcher: Fetcher {
-    public typealias Value = Promise<[String: NSObject]>
+    public typealias Value = Promise<[String: NSObject], Error>
     
     private let instanceADClient: InstanceADClient
     
@@ -28,7 +28,7 @@ public final class AppleSearchAdsAttributionFetcher: Fetcher {
         self.instanceADClient = instanceADClient
     }
     
-    public func fetch() -> Promise<[String: NSObject]> {
+    public func fetch() -> Promise<[String: NSObject], Error> {
         Promise { resolve, reject in
             self.instanceADClient.requestAttributionDetailsWithBlock { attribution, error in
                 if let attribution = attribution {
@@ -48,7 +48,7 @@ public final class AppleSearchAdsAttributionFetcher: Fetcher {
 }
 
 extension AppleSearchAdsAttributionFetcher {
-    enum InternalError: SampleError {
+    enum InternalError: Error {
         case attributionAndErrorAreBothNil
     }
 }
@@ -103,11 +103,11 @@ private final class InstanceADClient {
     }
     
     func requestAttributionDetailsWithBlock(
-        handler: @escaping ([String: NSObject]?, SampleError?) -> Void
+        handler: @escaping ([String: NSObject]?, Error?) -> Void
     ) {
         let handler: @convention(block) (
             [String: NSObject]?,
-            SampleError?
+            Error?
         ) -> Void = handler
         
         instanceADClient.call(
