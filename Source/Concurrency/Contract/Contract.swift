@@ -34,8 +34,13 @@ public final class Contract<Value, Failure: Error> {
     }
     
     deinit {
-        pthread_mutex_destroy(lock)
+        pthread_mutex_lock(lock)
+        if case .canceled = state {} else {
+            cancelGroup.leave()
+        }
+        pthread_mutex_unlock(lock)
         
+        pthread_mutex_destroy(lock)
         lock.deallocate()
     }
 }
