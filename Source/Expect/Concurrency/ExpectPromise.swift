@@ -10,16 +10,16 @@ import SabyConcurrency
 import XCTest
 
 extension Expect {
-    public enum PromiseState<Value> {
+    public enum PromiseState<Value, Failure> {
         case resolved(_ value: Value)
-        case rejected(_ error: Error)
+        case rejected(_ error: Failure)
     }
 }
 
 extension Expect {
-    public static func promise<Value>(
-        _ actual: Promise<Value, Error>,
-        state: PromiseState<(Value) -> Bool>,
+    public static func promise<Value, Failure>(
+        _ actual: Promise<Value, Failure>,
+        state: PromiseState<(Value) -> Bool, Failure>,
         timeout: DispatchTimeInterval,
         message: String = "Promise is not expected state",
         file: StaticString = #file,
@@ -51,9 +51,9 @@ extension Expect {
         Expect.semaphore(end, timeout: timeout, file: file, line: line)
     }
     
-    public static func promise<Value: Equatable>(
-        _ actual: Promise<Value, Error>,
-        state: PromiseState<Value>,
+    public static func promise<Value: Equatable, Failure>(
+        _ actual: Promise<Value, Failure>,
+        state: PromiseState<Value, Failure>,
         timeout: DispatchTimeInterval,
         message: String = "Promise is not expected state",
         file: StaticString = #file,
@@ -85,9 +85,9 @@ extension Expect {
         Expect.semaphore(end, timeout: timeout, file: file, line: line)
     }
     
-    public static func promise(
-        _ actual: Promise<Void, Error>,
-        state: PromiseState<Void>,
+    public static func promise<Failure>(
+        _ actual: Promise<Void, Failure>,
+        state: PromiseState<Void, Failure>,
         timeout: DispatchTimeInterval,
         message: String = "Promise is not expected state",
         file: StaticString = #file,

@@ -10,16 +10,16 @@ import SabyConcurrency
 import XCTest
 
 extension Expect {
-    public enum ContractState<Value> {
+    public enum ContractState<Value, Failure> {
         case resolved(_ value: Value)
-        case rejected(_ error: Swift.Error)
+        case rejected(_ error: Failure)
     }
 }
 
 extension Expect {
-    public static func contract<Value>(
-        _ actual: Contract<Value, Error>,
-        state: ContractState<(Value) -> Bool>,
+    public static func contract<Value, Failure>(
+        _ actual: Contract<Value, Failure>,
+        state: ContractState<(Value) -> Bool, Failure>,
         timeout: DispatchTimeInterval,
         block: () -> Void,
         file: StaticString = #file,
@@ -65,9 +65,9 @@ extension Expect {
 }
 
 extension Expect {
-    public static func contract<Value: Equatable>(
-        _ actual: Contract<Value, Error>,
-        state: ContractState<Value>,
+    public static func contract<Value: Equatable, Failure>(
+        _ actual: Contract<Value, Failure>,
+        state: ContractState<Value, Failure>,
         timeout: DispatchTimeInterval,
         block: () -> Void,
         file: StaticString = #file,
