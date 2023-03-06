@@ -7,6 +7,6 @@
 
 import Foundation
 
-protocol Encode {
+public protocol Encode {
     static func encode(data: Data) -> String
 }
