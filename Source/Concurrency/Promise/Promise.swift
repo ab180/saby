@@ -307,21 +307,37 @@ extension Promise {
 
 extension Promise {
     public var isPending: Bool {
+        pthread_mutex_lock(self.lock)
+        let state = self.state
+        pthread_mutex_unlock(self.lock)
+
         guard case .pending = state else { return false }
         return true
     }
     
     public var isResolved: Bool {
+        pthread_mutex_lock(self.lock)
+        let state = self.state
+        pthread_mutex_unlock(self.lock)
+
         guard case .resolved(_) = state else { return false }
         return true
     }
     
     public var isRejected: Bool {
+        pthread_mutex_lock(self.lock)
+        let state = self.state
+        pthread_mutex_unlock(self.lock)
+
         guard case .rejected(_) = state else { return false }
         return true
     }
     
     public var isCanceled: Bool {
+        pthread_mutex_lock(self.lock)
+        let state = self.state
+        pthread_mutex_unlock(self.lock)
+
         guard case .canceled = state else { return false }
         return true
     }

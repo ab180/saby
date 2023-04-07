@@ -176,11 +176,19 @@ extension Contract {
 
 extension Contract {
     public var isExecuting: Bool {
+        pthread_mutex_lock(self.lock)
+        let state = self.state
+        pthread_mutex_unlock(self.lock)
+
         guard case .executing = state else { return false }
         return true
     }
     
     public var isCanceled: Bool {
+        pthread_mutex_lock(self.lock)
+        let state = self.state
+        pthread_mutex_unlock(self.lock)
+
         guard case .canceled = state else { return false }
         return true
     }
