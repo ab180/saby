@@ -14,14 +14,14 @@ var package = Package(
             name: "SabyESCArchitecture",
             targets: ["SabyESCArchitecture"]),
         .library(
-            name: "SabyExpect",
-            targets: ["SabyExpect"]),
+            name: "SabyTestExpect",
+            targets: ["SabyTestExpect"]),
         .library(
             name: "SabyJSON",
             targets: ["SabyJSON"]),
         .library(
-            name: "SabyMock",
-            targets: ["SabyMock"]),
+            name: "SabyTestMock",
+            targets: ["SabyTestMock"]),
         .library(
             name: "SabyNetwork",
             targets: ["SabyNetwork"]),
@@ -51,17 +51,17 @@ var package = Package(
             dependencies: ["SabyConcurrency"],
             path: "Source/ESCArchitecture"),
         .target(
-            name: "SabyExpect",
+            name: "SabyTestExpect",
             dependencies: ["SabyConcurrency"],
-            path: "Source/Expect"),
+            path: "Source/TestExpect"),
         .target(
             name: "SabyJSON",
             dependencies: [],
             path: "Source/JSON"),
         .target(
-            name: "SabyMock",
+            name: "SabyTestMock",
             dependencies: ["SabyJSON"],
-            path: "Source/Mock"),
+            path: "Source/TestMock"),
         .target(
             name: "SabyNetwork",
             dependencies: ["SabyConcurrency", "SabyJSON", "SabySafe"],
@@ -92,7 +92,7 @@ var package = Package(
             path: "Test/JSON"),
         .testTarget(
             name: "SabyNetworkTest",
-            dependencies: ["SabyNetwork", "SabyMock", "SabyExpect"],
+            dependencies: ["SabyNetwork", "SabyTestMock", "SabyTestExpect"],
             path: "Test/Network"),
         .testTarget(
             name: "SabyNumericTest",
