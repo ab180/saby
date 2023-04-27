@@ -5,6 +5,8 @@
 //  Created by WOF on 2022/08/23.
 //
 
+#if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
+
 import Foundation
 
 extension NSObjectClass {
@@ -27,3 +29,5 @@ public final class NSObjectInstance {
         self.object = object
     }
 }
+
+#endif

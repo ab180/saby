@@ -104,7 +104,10 @@ final class JSONConvertTest: XCTestCase {
         XCTAssertEqual(JSON.from(unsafe: [:]), [:])
         XCTAssertEqual(JSON.from(unsafe: ["valid":"1","invalid":JSONEncoder()]), JSON.from(["valid":"1"]))
         XCTAssertEqual(JSON.from(unsafe: ["valid":nil,"invalid":JSONEncoder()]), JSON.from(["valid":nil]))
-        XCTAssertEqual(JSON.from(unsafe: ["a":["a":nil],"b":["a":JSONEncoder()]]), JSON.from(["a":["a":nil],"b":[:]]))
+        XCTAssertEqual(
+            JSON.from(unsafe: ["a":["a":nil as Any?],"b":["a":JSONEncoder()]]),
+            JSON.from(["a":["a":nil],"b":[:]])
+        )
     }
     
     func test__from_array_any() {

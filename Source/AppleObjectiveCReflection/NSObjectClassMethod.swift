@@ -5,6 +5,8 @@
 //  Created by WOF on 2022/08/23.
 //
 
+#if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
+
 import Foundation
 
 extension NSObjectClass {
@@ -122,3 +124,5 @@ extension NSObjectClass {
         return function(anyClass, classMethod.selector, argument0, argument1, argument2, argument3, argument4)
     }
 }
+
+#endif

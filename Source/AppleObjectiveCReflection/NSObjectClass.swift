@@ -5,6 +5,8 @@
 //  Created by WOF on 2022/08/22.
 //
 
+#if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
+
 import Foundation
 
 public final class NSObjectClass {
@@ -16,3 +18,5 @@ public final class NSObjectClass {
         self.anyClass = anyClass
     }
 }
+
+#endif
