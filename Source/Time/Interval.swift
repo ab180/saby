@@ -1,5 +1,5 @@
 //
-//  TimeIntervalConvert.swift
+//  Interval.swift
 //  SabyTime
 //
 //  Created by WOF on 2022/08/19.
@@ -7,8 +7,8 @@
 
 import Foundation
 
-public struct Interval: Equatable {
-    private let interval: TimeInterval
+public struct Interval: Comparable, Equatable {
+    let interval: TimeInterval
     
     public init(second: TimeInterval) {
         self.interval = second
@@ -34,6 +34,30 @@ extension Interval {
     
     public static func day(_ day: Double) -> Interval {
         Interval(second: day * 24 * 60 * 60)
+    }
+}
+
+extension Interval {
+    public static func +(left: Interval, right: Interval) -> Interval {
+        Interval(second: left.interval + right.interval)
+    }
+    
+    public static func -(left: Interval, right: Interval) -> Interval {
+        Interval(second: left.interval - right.interval)
+    }
+    
+    public static func <(left: Interval, right: Interval) -> Bool {
+        left.interval < right.interval
+    }
+}
+
+extension Interval {
+    public static func +(left: Interval, right: Timestamp) -> Timestamp {
+        Timestamp(secondFrom1970: left.interval + right.timestamp)
+    }
+    
+    public static func -(left: Interval, right: Timestamp) -> Timestamp {
+        Timestamp(secondFrom1970: left.interval - right.timestamp)
     }
 }
 
