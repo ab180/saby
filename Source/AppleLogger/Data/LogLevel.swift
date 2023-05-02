@@ -18,7 +18,7 @@ public enum LogLevel: Comparable, CaseIterable {
     case error
     case fault
     
-    var name: String {
+    public var name: String {
         switch self {
         case .debug:
             return "DEBUG"
