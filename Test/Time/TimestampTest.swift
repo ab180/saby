@@ -10,7 +10,10 @@ import XCTest
 
 final class TimestampTest: XCTestCase {
     func test__now_create() {
-        XCTAssertEqual(Timestamp.now().secondFrom1970, Date().timeIntervalSince1970)
+        XCTAssertEqual(
+            Int(Timestamp.now().secondFrom1970),
+            Int(Date().timeIntervalSince1970)
+        )
     }
     
     func test__second_from_1970_create() {
