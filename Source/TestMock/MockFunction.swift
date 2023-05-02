@@ -1,6 +1,6 @@
 //
 //  MockFunction.swift
-//  SabyMock
+//  SabyTestMock
 //
 //  Created by WOF on 2022/12/06.
 //

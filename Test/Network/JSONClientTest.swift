@@ -9,8 +9,8 @@ import XCTest
 @testable import SabyNetwork
 
 import SabyJSON
-import SabyMock
-import SabyExpect
+import SabyTestMock
+import SabyTestExpect
 
 final class JSONClientTest: XCTestCase {
     func test__init() {

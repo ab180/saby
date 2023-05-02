@@ -8,8 +8,8 @@
 import XCTest
 @testable import SabyNetwork
 
-import SabyMock
-import SabyExpect
+import SabyTestMock
+import SabyTestExpect
 
 final class DataClientTest: XCTestCase {
     func test__init() {
