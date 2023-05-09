@@ -33,6 +33,37 @@ final class FileArrayStorageTest: XCTestCase {
         }
     }
     
+    func testDuplicatedKey() {
+        let storage = FileArrayStorage<DummyItem>(
+            directoryName: "saby.storage.testpush",
+            fileName: String(describing: DummyItem.self)
+        )
+        storage.removeAll()
+        
+        defer { storage.removeAll() }
+        
+        let expectation = self.expectation(description: "testPush")
+        expectation.expectedFulfillmentCount = 1
+        
+        let sameUUID = UUID()
+        let firstItem = DummyItem(key: sameUUID)
+        let secondItem = DummyItem(key: sameUUID)
+        
+        storage.push(firstItem)
+        storage.push(secondItem)
+        
+        Promise {
+            storage.save()
+        }.then {
+            storage.get(limit: .unlimited)
+        }.then { result in // Fetching Unlimit Count
+            expectation.fulfill()
+            return
+        }
+        
+        wait(for: [expectation], timeout: 5)
+    }
+    
     func testPush() {
         let storage = FileArrayStorage<DummyItem>(
             directoryName: "saby.storage.testpush",
