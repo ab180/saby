@@ -54,7 +54,10 @@ extension FileArrayStorage: ArrayStorage {
         locker.lock()
         defer { locker.unlock() }
         
-        cachedItems.mutate({ $0 + [value] })
+        cachedItems.mutate({ cachedItems in
+            let filterdItems = cachedItems.filter { $0.key != value.key }
+            return filterdItems + [value]
+        })
     }
     
     public func delete(_ value: Item) {
