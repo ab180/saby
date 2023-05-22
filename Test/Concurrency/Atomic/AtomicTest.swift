@@ -12,21 +12,13 @@ final class AtomicTest: XCTestCase {
     func test__init() {
         let atomic = Atomic<Int>(10)
             
-        XCTAssertEqual(atomic.capture, 10)
+        XCTAssertEqual(atomic.capture { $0 }, 10)
     }
     
     func test__capture() {
         let atomic = Atomic([1, 2, 3])
             
-        XCTAssertEqual(atomic.capture, [1, 2, 3])
-    }
-    
-    func test__use() {
-        let atomic = Atomic([1, 2, 3])
-            
-        atomic.use { array in
-            XCTAssertEqual(array, [1, 2, 3])
-        }
+        XCTAssertEqual(atomic.capture { $0 }, [1, 2, 3])
     }
     
     func test__mutate() {
@@ -46,7 +38,7 @@ final class AtomicTest: XCTestCase {
         }
         
         token.notify(queue: queue) {
-            XCTAssertEqual(atomic.capture, 10000)
+            XCTAssertEqual(atomic.capture { $0 }, 10000)
             end.signal()
         }
         

@@ -6,111 +6,180 @@
 //
 
 import Foundation
-import SabySafe
 import SabyConcurrency
 
-public final class FileDictionaryStorage<Key, Value>
-where Key: Hashable & Codable, Value: Codable
-{
-    private let locker = Lock()
-    private let directoryName: String
-    private let fileName: String
-    private lazy var cachedItems: Atomic<[Key: Value]> = Atomic(fetchFromFile())
-    private lazy var directoryURL: URL? = {
-        let manager = FileManager.default
-        let urls = manager.urls(for: .libraryDirectory, in: .userDomainMask)
-        guard false == urls.isEmpty else { return nil }
-        
-        var result = urls[0].appendingPathComponent(directoryName)
-        
-        return result
-    }()
+public final class FileDictionaryStorage<
+    Key: Hashable & Codable,
+    Value: Codable
+>: DictionaryStorage {
+    typealias Context = FileDictionaryStorageContext
     
-    private lazy var fileURL: URL? = {
-        guard var directoryPath = directoryURL else { return nil }
-        return directoryPath.appendingPathComponent(fileName)
-    }()
+    let directoryName: String
+    let fileName: String
+    let fileLock = Lock()
     
-    /// Default initializer.
-    ///
-    /// - Parameters:
-    /// - directoryName: Will saved to `SearchPathDirectory.libraryDirectory`/`directoryName` paths.
+    let contextPromise: Atomic<Promise<Context<Key, Value>, Error>>
+    
+    let encoder = PropertyListEncoder()
+    let decoder = PropertyListDecoder()
+    let fileManager = FileManager.default
+
     public init(directoryName: String, fileName: String) {
         self.directoryName = directoryName
         self.fileName = fileName
+        
+        self.contextPromise = Atomic(Context.load(
+            directoryName: directoryName,
+            fileName: fileName,
+            decoder: decoder,
+            fileManager: fileManager
+        ))
     }
 }
 
-extension FileDictionaryStorage: DictionaryStorage {
-    
-    public typealias Key = Key
-    public typealias Value = Value
-    
-    public var keys: Dictionary<Key, Value>.Keys {
-        cachedItems.capture.keys
-    }
-    
-    public var values: Dictionary<Key, Value>.Values {
-        cachedItems.capture.values
-    }
-    
-    public func set(key: Key, value: Value) {
-        cachedItems.mutate({
-            var mutable = $0
-            mutable[key] = value
-            return mutable
-        })
-    }
-    
-    public func delete(key: Key) {
-        cachedItems.mutate {
-            var mutable = $0
-            mutable.removeValue(forKey: key)
-            return mutable
+extension FileDictionaryStorage {
+    public func set(key: Key, value: Value) -> Promise<Void, Error> {
+        execute { context in
+            context.values.mutate { values in
+                var values = values
+                values[key] = value
+                return values
+            }
         }
     }
     
-    public func get(key: Key) -> Promise<Value?, Error> {
-        guard let result = cachedItems.capture[key] else { return .rejected(ThrowingError.defaultError) }
-        return .resolved(result)
+    public func delete(key: Key) -> Promise<Void, Error> {
+        execute { context in
+            context.values.mutate { values in
+                var values = values
+                values[key] = nil
+                return values
+            }
+        }
     }
     
+    public func clear() -> Promise<Void, Error> {
+        execute { context in
+            context.values.mutate { _ in
+                [:]
+            }
+        }
+    }
+
+    public func get(key: Key) -> Promise<Value?, Error> {
+        execute { context in
+            context.values.capture { values in
+                values[key]
+            }
+        }
+    }
+
     public func save() -> Promise<Void, Error> {
-        return Promise {
-            defer { self.locker.unlock() }
+        execute { context in
+            let values = context.values.capture { $0 }
+            let data = try self.encoder.encode(values)
             
-            let data = try PropertyListEncoder().encode(self.cachedItems.capture)
-            guard let filePath = self.fileURL else { throw URLError(.badURL) }
-            
-            self.locker.lock()
-            
-            if
-                let directoryURL = self.directoryURL,
-                false == FileManager.default.fileExists(atPath: directoryURL.path)
-            {
-                try FileManager.default.createDirectory(
-                    at: directoryURL, withIntermediateDirectories: true
+            let directoryURL = context.url.deletingLastPathComponent()
+            if !self.fileManager.fileExists(atPath: directoryURL.path) {
+                try self.fileManager.createDirectory(
+                    at: directoryURL,
+                    withIntermediateDirectories: true
                 )
             }
             
-            try data.write(to: filePath)
-            return
+            self.fileLock.lock()
+            try data.write(to: context.url)
+            self.fileLock.unlock()
         }
     }
 }
 
 extension FileDictionaryStorage {
-    private func fetchFromFile() -> [Key: Value] {
-        guard
-            let directoryURL = self.directoryURL,
-            let filePath = self.fileURL,
-            true == FileManager.default.fileExists(atPath: directoryURL.path),
-            true == FileManager.default.fileExists(atPath: filePath.path),
-            
-            let data = try? Data(contentsOf: filePath),
-            let dictionary = try? PropertyListDecoder().decode([Key: Value].self, from: data)
-        else { return [:] }
+    fileprivate func execute<Result>(
+        block: @escaping (Context<Key, Value>) throws -> Result
+    ) -> Promise<Result, Error> {
+        let loadPromiseCapture = self.contextPromise.mutate {
+            let capture = !$0.isRejected ? $0 : Context.load(
+                directoryName: self.directoryName,
+                fileName: self.fileName,
+                decoder: self.decoder,
+                fileManager: self.fileManager
+            )
+            return capture
+        }
         
-        return dictionary
+        return loadPromiseCapture.then { context in
+            Promise<Result, Error> { resolve, reject in
+                do {
+                    resolve(try block(context))
+                }
+                catch {
+                    reject(error)
+                }
+            }
+        }
     }
+}
+
+struct FileDictionaryStorageContext<Key: Hashable & Codable, Value: Codable> {
+    let url: URL
+    let values: Atomic<[Key: Value]>
+    
+    private init(url: URL, values: Atomic<[Key: Value]>) {
+        self.url = url
+        self.values = values
+    }
+    
+    static func load(
+        directoryName: String,
+        fileName: String,
+        decoder: PropertyListDecoder,
+        fileManager: FileManager
+    ) -> Promise<FileDictionaryStorageContext, Error> {
+        Promise { resolve, reject in
+            guard
+                let libraryDirectoryURL = FileManager.default.urls(
+                    for: .libraryDirectory,
+                    in: .userDomainMask
+                ).first
+            else {
+                reject(FileDictionaryStorageError.libraryDirectoryNotFound)
+                return
+            }
+            
+            let url = libraryDirectoryURL
+                .appendingPathComponent(directoryName)
+                .appendingPathComponent(fileName)
+            if !fileManager.fileExists(atPath: url.path) {
+                resolve(FileDictionaryStorageContext(
+                    url: url,
+                    values: Atomic([:])
+                ))
+                return
+            }
+            
+            guard
+                let data = try? Data(contentsOf: url),
+                let values = try? decoder.decode(
+                    [Key: Value].self,
+                    from: data
+                )
+            else {
+                resolve(FileDictionaryStorageContext(
+                    url: url,
+                    values: Atomic([:])
+                ))
+                return
+            }
+            
+            resolve(FileDictionaryStorageContext(
+                url: url,
+                values: Atomic(values)
+            ))
+        }
+    }
+}
+
+public enum FileDictionaryStorageError: Error {
+    case libraryDirectoryNotFound
 }

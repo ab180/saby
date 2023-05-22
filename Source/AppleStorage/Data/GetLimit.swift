@@ -9,5 +9,5 @@ import Foundation
 
 public enum GetLimit {
     case unlimited
-    case count(UInt)
+    case count(Int)
 }

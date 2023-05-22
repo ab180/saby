@@ -9,12 +9,14 @@ import XCTest
 import SabyConcurrency
 @testable import SabyAppleStorage
 
-fileprivate struct DummyItem: Codable, KeyIdentifiable {
-    typealias Key = UUID
+fileprivate struct DummyItem: Codable {
     var key: UUID
 }
 
+private let directoryName = "saby.array.storage"
+
 final class FileArrayStorageTest: XCTestCase {
+    fileprivate var storage: FileArrayStorage<DummyItem>!
     
     private struct TestItemGroup {
         private static let testCount = 100
@@ -33,15 +35,22 @@ final class FileArrayStorageTest: XCTestCase {
         }
     }
     
-    func testDuplicatedKey() {
-        let storage = FileArrayStorage<DummyItem>(
-            directoryName: "saby.storage.testpush",
+    override func setUpWithError() throws {
+        let path = FileManager.default.urls(
+            for: .libraryDirectory,
+            in: .userDomainMask
+        ).first!.appendingPathComponent(directoryName).path
+        if FileManager.default.fileExists(atPath: path) {
+            try FileManager.default.removeItem(atPath: path)
+        }
+        
+        storage = FileArrayStorage<DummyItem>(
+            directoryName: directoryName,
             fileName: String(describing: DummyItem.self)
         )
-        storage.removeAll()
-        
-        defer { storage.removeAll() }
-        
+    }
+    
+    func test__duplicated_key() throws {
         let expectation = self.expectation(description: "testPush")
         expectation.expectedFulfillmentCount = 1
         
@@ -49,13 +58,13 @@ final class FileArrayStorageTest: XCTestCase {
         let firstItem = DummyItem(key: sameUUID)
         let secondItem = DummyItem(key: sameUUID)
         
-        storage.push(firstItem)
-        storage.push(secondItem)
+        _ = try storage.add(firstItem).wait()
+        _ = try storage.add(secondItem).wait()
         
         Promise {
-            storage.save()
+            self.storage.save()
         }.then {
-            storage.get(limit: .unlimited)
+            self.storage.get(limit: .unlimited)
         }.then { result in // Fetching Unlimit Count
             expectation.fulfill()
             return
@@ -64,32 +73,26 @@ final class FileArrayStorageTest: XCTestCase {
         wait(for: [expectation], timeout: 5)
     }
     
-    func testPush() {
-        let storage = FileArrayStorage<DummyItem>(
-            directoryName: "saby.storage.testpush",
-            fileName: String(describing: DummyItem.self)
-        )
-        storage.removeAll()
-        
-        defer { storage.removeAll() }
-        
+    func test__push() throws {
         let expectation = self.expectation(description: "testPush")
         expectation.expectedFulfillmentCount = 2
         
         let testItems = TestItemGroup()
         
-        testItems.pushItems.forEach(storage.push)
+        try testItems.pushItems.forEach { item in
+            _ = try storage.add(item).wait()
+        }
         
         Promise {
-            storage.save()
+            self.storage.save()
         }.then {
-            storage.get(limit: .unlimited)
+            self.storage.get(limit: .unlimited)
         }.then { // Fetching Unlimit Count
             XCTAssertEqual($0.count, testItems.pushCount)
             expectation.fulfill()
             return
         }.then { // Fetching Max Count (Over)
-            storage.get(limit: .count(UInt.max))
+            self.storage.get(limit: .count(Int.max))
         }.then {
             XCTAssertEqual($0.count, testItems.pushCount)
             expectation.fulfill()
@@ -98,36 +101,27 @@ final class FileArrayStorageTest: XCTestCase {
         wait(for: [expectation], timeout: 5)
     }
     
-    func testForStress() {
-        for _ in 0 ... 1000 {
-            testRemove()
-        }
-    }
-    
-    func testRemove() {
-        let storage = FileArrayStorage<DummyItem>(
-            directoryName: "saby.storage.testremove",
-            fileName: String(describing: DummyItem.self)
-        )
-        storage.removeAll()
-        
-        defer { storage.removeAll() }
-        
+    func test__remove() throws {
         let expectation = self.expectation(description: "testRemove")
         expectation.expectedFulfillmentCount = 1
         
         let testItems = TestItemGroup()
+        var testKeys = [UUID]()
         
-        testItems.pushItems.forEach(storage.push)
-        Promise {
-            storage.save()
+        try testItems.pushItems.forEach { item in
+            testKeys.append(try storage.add(item).wait())
+        }
+        Promise<Void, Error> {
+            self.storage.save()
         }.then {
-            storage.get(limit: .unlimited)
+            self.storage.get(limit: .unlimited)
+        }.then { _ in
+            for index in 0 ..< testItems.removeCount {
+                try self.storage.delete(key: testKeys[index]).wait()
+            }
+            return self.storage.save()
         }.then {
-            $0[0 ... testItems.removeCount - 1].forEach(storage.delete)
-            return storage.save()
-        }.then {
-            storage.get(limit: .unlimited)
+            self.storage.get(limit: .unlimited)
         }.then { fetchedItems in
             XCTAssertEqual(fetchedItems.count, testItems.pushCount - testItems.removeCount)
             expectation.fulfill()

@@ -11,11 +11,9 @@ public protocol DictionaryStorage<Key, Value> {
     associatedtype Key: Hashable
     associatedtype Value
     
-    var keys: Dictionary<Key, Value>.Keys { get }
-    var values: Dictionary<Key, Value>.Values { get }
-    
-    func set(key: Key, value: Value)
-    func delete(key: Key)
+    func set(key: Key, value: Value) -> Promise<Void, Error>
+    func delete(key: Key) -> Promise<Void, Error>
+    func clear() -> Promise<Void, Error>
     func get(key: Key) -> Promise<Value?, Error>
     func save() -> Promise<Void, Error>
 }
