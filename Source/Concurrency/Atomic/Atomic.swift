@@ -24,28 +24,24 @@ public final class Atomic<Value> {
         
         lock.deallocate()
     }
-
+    
     @inline(__always) @inlinable
-    public var capture: Value {
+    @discardableResult
+    public func capture<Result>(_ block: (Value) -> Result) -> Result {
         pthread_mutex_lock(lock)
         defer { pthread_mutex_unlock(lock) }
         
-        return value
+        return block(value)
     }
     
     @inline(__always) @inlinable
-    public func use(_ block: (Value) -> Void) {
-        pthread_mutex_lock(lock)
-        defer { pthread_mutex_unlock(lock) }
-        
-        block(value)
-    }
-    
-    @inline(__always) @inlinable
-    public func mutate(_ block: (Value) -> Value) {
+    @discardableResult
+    public func mutate(_ block: (Value) -> Value) -> Value {
         pthread_mutex_lock(lock)
         defer { pthread_mutex_unlock(lock) }
         
         value = block(value)
+        
+        return value
     }
 }

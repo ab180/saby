@@ -11,91 +11,104 @@ import SabyConcurrency
 
 private let directoryName = "saby.dictionary.storage"
 
-extension FileDictionaryStorage {
-    func removeAll() {
-        for key in self.keys { delete(key: key) }
-    }
-}
-
-fileprivate struct DummyItem: Codable, KeyIdentifiable {
-    typealias Key = UUID
+fileprivate struct DummyItem: Codable, Equatable {
     var key: UUID
 }
 
 final class FileDictionaryStorageTest: XCTestCase {
-    fileprivate static let testCount = 500
-    fileprivate static let storage = FileDictionaryStorage<String, DummyItem>(
-        directoryName: directoryName,
-        fileName: String(describing: DummyItem.self)
-    )
+    fileprivate let testCount = 500
+    fileprivate var storage: FileDictionaryStorage<String, DummyItem>!
     
     fileprivate var testObjects: [(String, DummyItem)] {
         var result: [(String, DummyItem)] = []
-        for _ in 0 ..< FileDictionaryStorageTest.testCount {
+        for _ in 0 ..< testCount {
             result.append((UUID().uuidString, DummyItem(key: UUID())))
         }
         
         return result
     }
     
-    override class func setUp() {
-        super.setUp()
-        storage.removeAll()
-    }
-    
-    class func clear() {
-        storage.removeAll()
-    }
-    
-    func testInsert() throws {
-        defer { FileDictionaryStorageTest.clear() }
+    override func setUpWithError() throws {
+        let path = FileManager.default.urls(
+            for: .libraryDirectory,
+            in: .userDomainMask
+        ).first!.appendingPathComponent(directoryName).path
+        if FileManager.default.fileExists(atPath: path) {
+            try FileManager.default.removeItem(atPath: path)
+        }
         
+        storage = FileDictionaryStorage<String, DummyItem>(
+            directoryName: directoryName,
+            fileName: String(describing: DummyItem.self)
+        )
+    }
+    
+    func test__insert() throws {
         let expectation = expectation(description: "testInsert")
         expectation.expectedFulfillmentCount = 1
         
-        testObjects.forEach {
-            FileDictionaryStorageTest.storage.set(key: $0.0, value: $0.1)
+        let testObjects = testObjects
+        
+        try testObjects.forEach {
+            try storage.set(key: $0.0, value: $0.1).wait()
         }
         
-        FileDictionaryStorageTest.storage.save()
-            .then { XCTAssertEqual( FileDictionaryStorageTest.storage.keys.count, FileDictionaryStorageTest.testCount) }
+        storage.save()
+            .then {
+                self.storage.contextPromise.capture { $0 }.then { $0.values.capture { print($0) } }
+                try testObjects.forEach {
+                    XCTAssertEqual(
+                        try self.storage.get(key: $0.0).wait(),
+                        $0.1
+                    )
+                }
+            }
             .then { expectation.fulfill() }
         
         wait(for: [expectation], timeout: 5)
     }
     
-    func testRemove() throws {
-        defer { FileDictionaryStorageTest.clear() }
-        
+    func test__delete() throws {
         let expectation = expectation(description: "testRemove")
         expectation.expectedFulfillmentCount = 1
         
-        let testCount = FileDictionaryStorageTest.testCount
-        let testObjects = testObjects
-        testObjects.forEach {
-            FileDictionaryStorageTest.storage.set(key: $0.0, value: $0.1)
+        let testCount = testCount
+        var testObjects = testObjects
+        try testObjects.forEach {
+            try storage.set(key: $0.0, value: $0.1).wait()
         }
         
         let removeCount = Int.random(in: 0 ..< (testCount / 2))
         let removeItems = testObjects[0 ..< removeCount]
         
-        let checkCount = testCount - removeCount
-        FileDictionaryStorageTest.storage.save()
-            .then { XCTAssertEqual( FileDictionaryStorageTest.storage.keys.count, testCount) }
-            .then { XCTAssertEqual( FileDictionaryStorageTest.storage.values.count, testCount) }
-            .then { removeItems.forEach { FileDictionaryStorageTest.storage.delete(key:$0.0) } }
-            .then { FileDictionaryStorageTest.storage.save() }
-            .then { XCTAssertEqual( FileDictionaryStorageTest.storage.keys.count, checkCount) }
-            .then { XCTAssertEqual( FileDictionaryStorageTest.storage.keys.count, checkCount) }
-            .then { XCTAssertEqual( FileDictionaryStorageTest.storage.values.count, checkCount) }
+        storage.save()
+            .then {
+                try testObjects.forEach {
+                    XCTAssertEqual(
+                        try self.storage.get(key: $0.0).wait(),
+                        $0.1
+                    )
+                }
+            }
+            .then {
+                try removeItems.forEach { try self.storage.delete(key: $0.0).wait() }
+                removeItems.forEach { key, value in testObjects.removeAll { key == $0.0 } }
+            }
+            .then { self.storage.save() }
+            .then {
+                try testObjects.forEach {
+                    XCTAssertEqual(
+                        try self.storage.get(key: $0.0).wait(),
+                        $0.1
+                    )
+                }
+            }
             .then { expectation.fulfill() }
         
         wait(for: [expectation], timeout: 5)
     }
     
-    func testGet() throws {
-        defer { FileDictionaryStorageTest.clear() }
-        
+    func test__get() throws {
         let expectation = expectation(description: "testGet")
         expectation.expectedFulfillmentCount = 1
         
@@ -106,43 +119,49 @@ final class FileDictionaryStorageTest: XCTestCase {
         for index in 0 ..< testCount {
             let key = UUID().uuidString
             let value = DummyItem(key: UUID())
-            FileDictionaryStorageTest.storage.set(key: key, value: value)
+            try storage.set(key: key, value: value).wait()
             if randomIndex == index { targetKey = key; targetValue = value }
         }
         
-        FileDictionaryStorageTest.storage.save()
-            .then { XCTAssertEqual( FileDictionaryStorageTest.storage.keys.count, testCount) }
-            .then { FileDictionaryStorageTest.storage.get(key: targetKey) }
+        storage.save()
+            .then { self.storage.get(key: targetKey) }
             .then { XCTAssertEqual($0?.key, targetValue?.key) }
             .then { expectation.fulfill() }
         
         wait(for: [expectation], timeout: 5)
     }
     
-    func testSave() throws {
-        defer { FileDictionaryStorageTest.clear() }
-        
+    func test__save() throws {
         let expectation = expectation(description: "testSave")
         expectation.expectedFulfillmentCount = 1
         
-        let setPromise: () -> Promise = {
+        var entries = [(String, DummyItem)]()
+        
+        let setPromise: () -> Promise<Void, Error> = {
             Promise {
                 let key = UUID().uuidString
                 let value = DummyItem(key: UUID())
-                FileDictionaryStorageTest.storage.set(key: key, value: value)
+                entries.append((key, value))
+                return self.storage.set(key: key, value: value)
             }
         }
         
-        Promise.resolved(())
-            .then { FileDictionaryStorageTest.storage.save() }
+        Promise<Void, Error> { self.storage.save() }
             .then { setPromise() }
-            .then { FileDictionaryStorageTest.storage.save() }
+            .then { self.storage.save() }
             .then { setPromise() }
-            .then { FileDictionaryStorageTest.storage.save() }
+            .then { self.storage.save() }
             .then { setPromise() }
-            .then { FileDictionaryStorageTest.storage.save() }
+            .then { self.storage.save() }
             .then { setPromise() }
-            .then { XCTAssertEqual(FileDictionaryStorageTest.storage.keys.count, 4)}
+            .then {
+                try entries.forEach {
+                    XCTAssertEqual(
+                        try self.storage.get(key: $0.0).wait(),
+                        $0.1
+                    )
+                }
+            }
             .then { expectation.fulfill() }
         
         wait(for: [expectation], timeout: 5)

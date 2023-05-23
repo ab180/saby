@@ -8,7 +8,5 @@
 import Foundation
 
 public protocol KeyIdentifiable {
-    associatedtype Key: Hashable, CustomStringConvertible
-    
-    var key: Key { get }
+    var key: UUID { get }
 }

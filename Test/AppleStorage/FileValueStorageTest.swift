@@ -7,6 +7,7 @@
 
 import XCTest
 import SabyConcurrency
+import SabyTestExtension
 @testable import SabyAppleStorage
 
 private let directoryName = "saby.dictionary.value.storage"
@@ -16,42 +17,43 @@ private struct DummyItem: Codable, Equatable {
 }
 
 final class FileValueStorageTest: XCTestCase {
-    fileprivate static let testCount = 500
-    fileprivate static let storage = FileValueStorage<DummyItem>(
-        directoryName: directoryName,
-        fileName: String(describing: DummyItem.self)
-    )
+    fileprivate let testCount = 500
+    fileprivate var storage: FileValueStorage<DummyItem>!
     
     fileprivate var testObjects: [DummyItem] {
         var result: [DummyItem] = []
-        for _ in 0 ..< FileValueStorageTest.testCount {
+        for _ in 0 ..< testCount {
             result.append(DummyItem(key: UUID()))
         }
         
         return result
     }
     
-    override class func setUp() {
-        super.setUp()
-        storage.delete()
-    }
-    
-    class func clear() {
-        storage.delete()
+    override func setUpWithError() throws {
+        let path = FileManager.default.urls(
+            for: .libraryDirectory,
+            in: .userDomainMask
+        ).first!.appendingPathComponent(directoryName).path
+        if FileManager.default.fileExists(atPath: path) {
+            try FileManager.default.removeItem(atPath: path)
+        }
+        
+        storage = FileValueStorage<DummyItem>(
+            directoryName: directoryName,
+            fileName: String(describing: DummyItem.self)
+        )
     }
     
     func test__set() throws {
-        defer { FileValueStorageTest.clear() }
-        
         let expectation = expectation(description: "test__set")
         expectation.expectedFulfillmentCount = 1
         
-        testObjects.forEach {
-            FileValueStorageTest.storage.set($0)
+        try testObjects.forEach {
+            try storage.set($0).wait()
         }
         
-        FileValueStorageTest.storage.save()
-            .then { FileValueStorageTest.storage.get() }
+        storage.save()
+            .then { self.storage.get() }
             .then { XCTAssertNotEqual($0, nil) }
             .then { expectation.fulfill() }
         
@@ -59,20 +61,18 @@ final class FileValueStorageTest: XCTestCase {
     }
     
     func test__delete() throws {
-        defer { FileValueStorageTest.clear() }
-        
         let expectation = expectation(description: "test__delete")
         expectation.expectedFulfillmentCount = 1
         
         let testObjects = testObjects
-        testObjects.forEach {
-            FileValueStorageTest.storage.set($0)
+        try testObjects.forEach {
+            try storage.set($0).wait()
         }
 
-        FileValueStorageTest.storage.save()
-            .then { FileValueStorageTest.storage.delete() }
-            .then { FileValueStorageTest.storage.save() }
-            .then { FileValueStorageTest.storage.get() }
+        storage.save()
+            .then { self.storage.clear() }
+            .then { self.storage.save() }
+            .then { self.storage.get() }
             .then { XCTAssertEqual($0, nil) }
             .then { expectation.fulfill() }
             .catch { print($0) }
@@ -81,22 +81,20 @@ final class FileValueStorageTest: XCTestCase {
     }
     
     func test__get() throws {
-        defer { FileValueStorageTest.clear() }
-        
         let expectation = expectation(description: "test__get")
         expectation.expectedFulfillmentCount = 1
         
-        let testCount = FileValueStorageTest.testCount
+        let testCount = testCount
         let testObjects = testObjects
         let randomIndex = (0 ..< testCount).randomElement()!
-        testObjects.forEach {
-            FileValueStorageTest.storage.set($0)
+        try testObjects.forEach {
+            try storage.set($0).wait()
         }
         
-        FileValueStorageTest.storage.set(testObjects[randomIndex])
+        try storage.set(testObjects[randomIndex]).wait()
         
-        FileValueStorageTest.storage.save()
-            .then { FileValueStorageTest.storage.get() }
+        storage.save()
+            .then { self.storage.get() }
             .then { XCTAssertEqual($0, testObjects[randomIndex]) }
             .then { expectation.fulfill() }
         
@@ -104,16 +102,14 @@ final class FileValueStorageTest: XCTestCase {
     }
     
     func test__save() throws {
-        defer { FileValueStorageTest.clear() }
-        
         let expectation = expectation(description: "test__save")
         expectation.expectedFulfillmentCount = 1
         
         let value = DummyItem(key: UUID())
         
-        Promise { FileValueStorageTest.storage.set(value) }
-            .then { FileValueStorageTest.storage.save() }
-            .then { FileValueStorageTest.storage.get() }
+        Promise { self.storage.set(value) }
+            .then { self.storage.save() }
+            .then { self.storage.get() }
             .then { XCTAssertEqual($0, value) }
             .then { expectation.fulfill() }
         
