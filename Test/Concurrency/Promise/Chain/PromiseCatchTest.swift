@@ -11,11 +11,12 @@ import XCTest
 final class PromiseCatchTest: XCTestCase {
     func test__catch() {
         let promise =
-        Promise<Int, Error> {
+        Promise.async {
             10
         }
-        .catch { error in
-            XCTFail()
+        
+        promise.finally {
+            XCTAssertTrue(promise.isResolved)
         }
         
         PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
@@ -25,7 +26,7 @@ final class PromiseCatchTest: XCTestCase {
         let end = DispatchSemaphore(value: 0)
         
         let promise =
-        Promise<Int, Error> { () -> Int in
+        Promise.async { () -> Int in
             throw PromiseTest.SampleError.one
         }
         .catch { error in

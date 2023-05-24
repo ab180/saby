@@ -8,7 +8,7 @@
 import Foundation
 
 extension Promise where
-    Value == Void,
+    Value == Never,
     Failure == Never
 {
     public static func all<Value0, Failure0>(
@@ -250,7 +250,7 @@ extension Promise where
 }
 
 extension Promise where
-    Value == Void,
+    Value == Never,
     Failure == Never
 {
     public static func all<Value0, Value1>(

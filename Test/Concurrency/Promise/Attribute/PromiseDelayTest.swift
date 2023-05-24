@@ -38,7 +38,7 @@ final class PromiseDelayTest: XCTestCase {
     func test__delay_short() {
         let promise = Promise.race([
             Promise.delay(.milliseconds(100)).then { 10 },
-            Promise {
+            Promise.async {
                 20
             }.delay(.milliseconds(10))
         ])
@@ -49,7 +49,7 @@ final class PromiseDelayTest: XCTestCase {
     func test__delay_long() {
         let promise = Promise.race([
             Promise.delay(.milliseconds(10)).then { 10 },
-            Promise {
+            Promise.async {
                 20
             }.delay(.milliseconds(100))
         ])
@@ -76,13 +76,13 @@ final class PromiseDelayTest: XCTestCase {
     }
     
     func test__never_delay_create() {
-        let promise = Promise<Void, Never>.delay(.milliseconds(0))
+        let promise = Promise.delay(.milliseconds(0))
         
         PromiseTest.expect(promise: promise, state: .resolved({ $0 == () }), timeout: .seconds(1))
     }
     
     func test__safe_delay() {
-        let promise = Promise<Int, Never> {
+        let promise = Promise.async {
             10
         }
         .delay(.milliseconds(0))

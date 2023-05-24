@@ -16,7 +16,7 @@ final class PromiseTryTest: XCTestCase {
         
         let promise =
         Promise.try(count: 5) {
-            Promise {
+            Promise.async {
                 if (value < 3) {
                     value += 1
                     throw PromiseTest.SampleError.one
@@ -34,7 +34,7 @@ final class PromiseTryTest: XCTestCase {
         
         let promise =
         Promise.try(count: 3) {
-            Promise {
+            Promise.async {
                 if (value < 5) {
                     value += 1
                     throw PromiseTest.SampleError.one

@@ -12,10 +12,10 @@ final class PromiseAllTest: XCTestCase {
     func test__all_same_2() {
         let promise =
         Promise.all([
-            Promise<Int, Never> {
+            Promise.async {
                 10
             },
-            Promise<Int, Never> {
+            Promise.async {
                 20
             }
         ])
@@ -26,10 +26,10 @@ final class PromiseAllTest: XCTestCase {
     func test__all_2() {
         let promise =
         Promise.all(
-            Promise {
+            Promise.async {
                 10
             },
-            Promise {
+            Promise.async {
                 true
             }
         )
@@ -40,10 +40,10 @@ final class PromiseAllTest: XCTestCase {
     func test__all_2_reject_1() {
         let promise =
         Promise.all(
-            Promise<Int, Error> { () -> Int in
+            Promise.async { () -> Int in
                 throw PromiseTest.SampleError.one
             },
-            Promise {
+            Promise.async {
                 true
             }
         )
@@ -55,7 +55,7 @@ final class PromiseAllTest: XCTestCase {
         let promise =
         Promise.all(
             Promise<Int, Error>.canceled(),
-            Promise {
+            Promise.async {
                 true
             }
         )
@@ -66,13 +66,13 @@ final class PromiseAllTest: XCTestCase {
     func test__all_3() {
         let promise =
         Promise.all(
-            Promise {
+            Promise.async {
                 10
             },
-            Promise {
+            Promise.async {
                 true
             },
-            Promise {
+            Promise.async {
                 "10"
             }
         )
@@ -83,13 +83,13 @@ final class PromiseAllTest: XCTestCase {
     func test__all_3_reject_1() {
         let promise =
         Promise.all(
-            Promise<Int, Error> { () -> Int in
+            Promise.async { () -> Int in
                 throw PromiseTest.SampleError.one
             },
-            Promise {
+            Promise.async {
                 true
             },
-            Promise {
+            Promise.async {
                 "10"
             }
         )
@@ -101,10 +101,10 @@ final class PromiseAllTest: XCTestCase {
         let promise =
         Promise.all(
             Promise<Int, Error>.canceled(),
-            Promise {
+            Promise.async {
                 true
             },
-            Promise {
+            Promise.async {
                 "10"
             }
         )
@@ -115,16 +115,16 @@ final class PromiseAllTest: XCTestCase {
     func test__all_4() {
         let promise =
         Promise.all(
-            Promise {
+            Promise.async {
                 10
             },
-            Promise {
+            Promise.async {
                 true
             },
-            Promise {
+            Promise.async {
                 "10"
             },
-            Promise {
+            Promise.async {
                 10
             }
         )
@@ -135,16 +135,16 @@ final class PromiseAllTest: XCTestCase {
     func test__all_4_reject_1() {
         let promise =
         Promise.all(
-            Promise<Int, Error> { () -> Int in
+            Promise.async { () -> Int in
                 throw PromiseTest.SampleError.one
             },
-            Promise {
+            Promise.async {
                 true
             },
-            Promise {
+            Promise.async {
                 "10"
             },
-            Promise {
+            Promise.async {
                 10
             }
         )
@@ -156,13 +156,13 @@ final class PromiseAllTest: XCTestCase {
         let promise =
         Promise.all(
             Promise<Int, Error>.canceled(),
-            Promise {
+            Promise.async {
                 true
             },
-            Promise {
+            Promise.async {
                 "10"
             },
-            Promise {
+            Promise.async {
                 10
             }
         )
@@ -173,19 +173,19 @@ final class PromiseAllTest: XCTestCase {
     func test__all_5() {
         let promise =
         Promise.all(
-            Promise {
+            Promise.async {
                 10
             },
-            Promise {
+            Promise.async {
                 true
             },
-            Promise {
+            Promise.async {
                 "10"
             },
-            Promise {
+            Promise.async {
                 10
             },
-            Promise {
+            Promise.async {
                 true
             }
         )
@@ -196,19 +196,19 @@ final class PromiseAllTest: XCTestCase {
     func test__all_5_reject_1() {
         let promise =
         Promise.all(
-            Promise<Int, Error> { () -> Int in
+            Promise.async { () -> Int in
                 throw PromiseTest.SampleError.one
             },
-            Promise {
+            Promise.async {
                 true
             },
-            Promise {
+            Promise.async {
                 "10"
             },
-            Promise {
+            Promise.async {
                 10
             },
-            Promise {
+            Promise.async {
                 true
             }
         )
@@ -220,16 +220,16 @@ final class PromiseAllTest: XCTestCase {
         let promise =
         Promise.all(
             Promise<Int, Error>.canceled(),
-            Promise {
+            Promise.async {
                 true
             },
-            Promise {
+            Promise.async {
                 "10"
             },
-            Promise {
+            Promise.async {
                 10
             },
-            Promise {
+            Promise.async {
                 true
             }
         )
@@ -240,19 +240,19 @@ final class PromiseAllTest: XCTestCase {
     func test__all_same_5_reject_1() {
         let promise =
         Promise.all([
-            Promise<Int, Error> { () -> Int in
+            Promise.async { () -> Int in
                 throw PromiseTest.SampleError.one
             },
-            Promise {
+            Promise.async {
                 20
             },
-            Promise {
+            Promise.async {
                 30
             },
-            Promise {
+            Promise.async {
                 40
             },
-            Promise {
+            Promise.async {
                 50
             }
         ])

@@ -13,7 +13,7 @@ final class PromiseRecoverTest: XCTestCase {
         let end = DispatchSemaphore(value: 0)
         
         let promise =
-        Promise<Int, Error> { () -> Int in
+        Promise.async { () -> Int in
             throw PromiseTest.SampleError.one
         }.recover { error in
             XCTAssertEqual(error as? PromiseTest.SampleError, PromiseTest.SampleError.one)
@@ -27,8 +27,8 @@ final class PromiseRecoverTest: XCTestCase {
     
     func test__recover_from_resolve() {
         let promise =
-        Promise<Int, Error> {
-            10
+        Promise.async {
+            Promise<Int, Error>.resolved(10)
         }.recover { error in
             20
         }
@@ -38,7 +38,7 @@ final class PromiseRecoverTest: XCTestCase {
     
     func test__recover_throw_error_return_value() {
         let promise =
-        Promise<Int, Error> { () -> Int in
+        Promise.async { () -> Int in
             throw PromiseTest.SampleError.one
         }.recover { error -> Int in
             throw PromiseTest.SampleError.two
@@ -49,7 +49,7 @@ final class PromiseRecoverTest: XCTestCase {
     
     func test__recover_throw_error_return_promise() {
         let promise =
-        Promise<Int, Error> { () -> Int in
+        Promise.async { () -> Int in
             throw PromiseTest.SampleError.one
         }.recover { error -> Promise<Int, Error> in
             throw PromiseTest.SampleError.two
@@ -60,7 +60,7 @@ final class PromiseRecoverTest: XCTestCase {
     
     func test__recover_throw_error_return_never_promise() {
         let promise =
-        Promise<Int, Error> { () -> Int in
+        Promise.async { () -> Int in
             throw PromiseTest.SampleError.one
         }.recover { error -> Promise<Int, Never> in
             throw PromiseTest.SampleError.two
@@ -71,7 +71,7 @@ final class PromiseRecoverTest: XCTestCase {
     
     func test__recover_return_resolved_promise() {
         let promise =
-        Promise<Int, Error> { () -> Int in
+        Promise.async { () -> Int in
             throw PromiseTest.SampleError.one
         }.recover { error in
             return Promise<Int, Error>.resolved(10)
@@ -82,7 +82,7 @@ final class PromiseRecoverTest: XCTestCase {
     
     func test__recover_return_rejected_promise() {
         let promise =
-        Promise<Int, Error> { () -> Int in
+        Promise.async { () -> Int in
             throw PromiseTest.SampleError.one
         }.recover { error in
             return Promise.rejected(PromiseTest.SampleError.two)
@@ -93,7 +93,7 @@ final class PromiseRecoverTest: XCTestCase {
     
     func test__recover_return_canceled_promise() {
         let promise =
-        Promise<Int, Error> { () -> Int in
+        Promise.async { () -> Int in
             throw PromiseTest.SampleError.one
         }.recover { error in
             return Promise<Int, Error>.canceled()
@@ -104,7 +104,7 @@ final class PromiseRecoverTest: XCTestCase {
     
     func test__recover_return_resolved_never_promise() {
         let promise =
-        Promise<Int, Error> { () -> Int in
+        Promise.async { () -> Int in
             throw PromiseTest.SampleError.one
         }.recover { error in
             return Promise<Int, Never>.resolved(10)
@@ -115,7 +115,7 @@ final class PromiseRecoverTest: XCTestCase {
     
     func test__recover_return_canceled_never_promise() {
         let promise =
-        Promise<Int, Error> { () -> Int in
+        Promise.async { () -> Int in
             throw PromiseTest.SampleError.one
         }.recover { error in
             return Promise<Int, Error>.canceled()

@@ -45,37 +45,6 @@ public final class Promise<Value, Failure: Error> {
     }
 }
 
-extension Promise {
-    public convenience init(
-        on queue: DispatchQueue = .global(),
-        _ block: @escaping () -> Value
-    ) {
-        self.init(queue: queue)
-
-        queue.async {
-            let value = block()
-            self.resolve(value)
-        }
-    }
-    
-    public convenience init(
-        on queue: DispatchQueue = .global(),
-        _ block: @escaping () -> Promise<Value, Failure>
-    ) {
-        self.init(queue: queue)
-        
-        queue.async {
-            let promise = block()
-            promise.subscribe(
-                queue: queue,
-                onResolved: { self.resolve($0) },
-                onRejected: { self.reject($0) },
-                onCanceled: { self.cancel() }
-            )
-        }
-    }
-}
-
 extension Promise where Failure == Error {
     public convenience init(
         on queue: DispatchQueue = .global(),
@@ -119,43 +88,6 @@ extension Promise where Failure == Error {
             }
         }
     }
-    
-    public convenience init(
-        on queue: DispatchQueue = .global(),
-        _ block: @escaping () throws -> Value
-    ) {
-        self.init(queue: queue)
-
-        queue.async {
-            do {
-                let value = try block()
-                self.resolve(value)
-            } catch let error {
-                self.reject(error)
-            }
-        }
-    }
-    
-    public convenience init(
-        on queue: DispatchQueue = .global(),
-        _ block: @escaping () throws -> Promise<Value, Failure>
-    ) {
-        self.init(queue: queue)
-        
-        queue.async {
-            do {
-                let promise = try block()
-                promise.subscribe(
-                    queue: queue,
-                    onResolved: { self.resolve($0) },
-                    onRejected: { self.reject($0) },
-                    onCanceled: { self.cancel() }
-                )
-            } catch let error {
-                self.reject(error)
-            }
-        }
-    }
 }
 
 extension Promise where Failure == Never {
@@ -192,6 +124,86 @@ extension Promise where Failure == Never {
                 { self.subscribe(queue: queue, onCanceled: $0) }
             )
         }
+    }
+}
+
+extension Promise where
+    Value == Never,
+    Failure == Never
+{
+    public static func async<Result>(
+        on queue: DispatchQueue = .global(),
+        _ block: @escaping () throws -> Result
+    ) -> Promise<Result, Error> {
+        let promise = Promise<Result, Error>()
+
+        queue.async {
+            do {
+                let value = try block()
+                promise.resolve(value)
+            }
+            catch {
+                promise.reject(error)
+            }
+        }
+        
+        return promise
+    }
+    
+    public static func async<Result, ResultFailure: Error>(
+        on queue: DispatchQueue = .global(),
+        _ block: @escaping () throws -> Promise<Result, ResultFailure>
+    ) -> Promise<Result, Error> {
+        let promise = Promise<Result, Error>()
+
+        queue.async {
+            do {
+                let valuePromise = try block()
+                valuePromise.subscribe(
+                    queue: queue,
+                    onResolved: { promise.resolve($0) },
+                    onRejected: { promise.reject($0) },
+                    onCanceled: { promise.cancel() }
+                )
+            } catch let error {
+                promise.reject(error)
+            }
+        }
+        
+        return promise
+    }
+    
+    public static func async<Result>(
+        on queue: DispatchQueue = .global(),
+        _ block: @escaping () -> Result
+    ) -> Promise<Result, Never> {
+        let promise = Promise<Result, Never>()
+
+        queue.async {
+            let value = block()
+            promise.resolve(value)
+        }
+        
+        return promise
+    }
+    
+    public static func async<Result, ResultFailure: Error>(
+        on queue: DispatchQueue = .global(),
+        _ block: @escaping () -> Promise<Result, ResultFailure>
+    ) -> Promise<Result, ResultFailure> {
+        let promise = Promise<Result, ResultFailure>()
+
+        queue.async {
+            let valuePromise = block()
+            valuePromise.subscribe(
+                queue: queue,
+                onResolved: { promise.resolve($0) },
+                onRejected: { promise.reject($0) },
+                onCanceled: { promise.cancel() }
+            )
+        }
+        
+        return promise
     }
 }
 

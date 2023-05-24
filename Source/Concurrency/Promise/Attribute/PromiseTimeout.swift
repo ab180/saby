@@ -8,14 +8,14 @@
 import Foundation
 
 extension Promise where
-    Value == Void,
-    Failure == Error
+    Value == Never,
+    Failure == Never
 {
     public static func timeout(
         on queue: DispatchQueue = .global(),
         _ interval: DispatchTimeInterval
     ) -> Promise<Void, Error> {
-        let promise = Promise(queue: queue)
+        let promise = Promise<Void, Error>(queue: queue)
         
         queue.asyncAfter(deadline: .now() + interval) {
             promise.reject(PromiseError.timeout)

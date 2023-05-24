@@ -7,15 +7,18 @@
 
 import Foundation
 
-extension Promise {
-    public static func from(
-        _ promise: Promise<Value, Failure>?
-    ) -> Promise<Value?, Failure> {
+extension Promise where
+    Value == Never,
+    Failure == Never
+{
+    public static func from<Result, ResultFailure>(
+        _ promise: Promise<Result, ResultFailure>?
+    ) -> Promise<Result?, ResultFailure> {
         if let promise = promise {
             return promise.toPromiseOptional()
         }
         else {
-            return Promise<Value?, Failure>.resolved(nil)
+            return Promise<Result?, ResultFailure>.resolved(nil)
         }
     }
 }

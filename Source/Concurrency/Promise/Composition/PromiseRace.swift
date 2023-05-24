@@ -7,12 +7,15 @@
 
 import Foundation
 
-extension Promise {
-    public static func race(
+extension Promise where
+    Value == Never,
+    Failure == Never
+{
+    public static func race<Result, ResultFailure>(
         on queue: DispatchQueue = .global(),
-        _ promises: [Promise<Value, Failure>]
-    ) -> Promise<Value, Failure> {
-        let promiseReturn = Promise<Value, Failure>(queue: queue)
+        _ promises: [Promise<Result, ResultFailure>]
+    ) -> Promise<Result, ResultFailure> {
+        let promiseReturn = Promise<Result, ResultFailure>(queue: queue)
         
         for promise in promises {
             promise.subscribe(

@@ -9,8 +9,6 @@ import XCTest
 import SabyConcurrency
 @testable import SabyAppleStorage
 
-private let directoryName = "saby.dictionary.storage"
-
 fileprivate struct DummyItem: Codable, Equatable {
     var key: UUID
 }
@@ -18,6 +16,7 @@ fileprivate struct DummyItem: Codable, Equatable {
 final class FileDictionaryStorageTest: XCTestCase {
     fileprivate let testCount = 500
     fileprivate var storage: FileDictionaryStorage<String, DummyItem>!
+    fileprivate var directoryName: String!
     
     fileprivate var testObjects: [(String, DummyItem)] {
         var result: [(String, DummyItem)] = []
@@ -29,6 +28,14 @@ final class FileDictionaryStorageTest: XCTestCase {
     }
     
     override func setUpWithError() throws {
+        directoryName = "saby.dictionary.storage.\(UUID())"
+        storage = FileDictionaryStorage<String, DummyItem>(
+            directoryName: directoryName,
+            fileName: String(describing: DummyItem.self)
+        )
+    }
+    
+    override func tearDownWithError() throws {
         let path = FileManager.default.urls(
             for: .libraryDirectory,
             in: .userDomainMask
@@ -36,11 +43,6 @@ final class FileDictionaryStorageTest: XCTestCase {
         if FileManager.default.fileExists(atPath: path) {
             try FileManager.default.removeItem(atPath: path)
         }
-        
-        storage = FileDictionaryStorage<String, DummyItem>(
-            directoryName: directoryName,
-            fileName: String(describing: DummyItem.self)
-        )
     }
     
     func test__insert() throws {
@@ -138,7 +140,7 @@ final class FileDictionaryStorageTest: XCTestCase {
         var entries = [(String, DummyItem)]()
         
         let setPromise: () -> Promise<Void, Error> = {
-            Promise {
+            Promise.async {
                 let key = UUID().uuidString
                 let value = DummyItem(key: UUID())
                 entries.append((key, value))
@@ -146,7 +148,8 @@ final class FileDictionaryStorageTest: XCTestCase {
             }
         }
         
-        Promise<Void, Error> { self.storage.save() }
+        Promise
+            .async { self.storage.save() }
             .then { setPromise() }
             .then { self.storage.save() }
             .then { setPromise() }

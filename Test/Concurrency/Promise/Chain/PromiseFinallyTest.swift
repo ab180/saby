@@ -13,7 +13,7 @@ final class PromiseFinallyTest: XCTestCase {
         let end = DispatchSemaphore(value: 0)
         
         let promise =
-        Promise {
+        Promise.async {
             10
         }.finally {
             end.signal()
@@ -27,7 +27,7 @@ final class PromiseFinallyTest: XCTestCase {
         let end = DispatchSemaphore(value: 0)
         
         let promise =
-        Promise<Int, Error> { () -> Int in
+        Promise.async { () -> Int in
             throw PromiseTest.SampleError.one
         }.finally {
             end.signal()

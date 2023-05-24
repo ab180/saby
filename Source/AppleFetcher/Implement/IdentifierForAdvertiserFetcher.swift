@@ -29,7 +29,7 @@ public final class IdentifierForAdvertiserFetcher: Fetcher {
     }
     
     public func fetch() -> Promise<IdentifierForAdvertiser, Error> {
-        Promise {
+        Promise.async {
             IdentifierForAdvertiser(
                 identifier: try self.instanceASIdentifierManager.advertisingIdentifier(),
                 limitAdTracking: try self.instanceASIdentifierManager.advertisingTrackingEnabled()

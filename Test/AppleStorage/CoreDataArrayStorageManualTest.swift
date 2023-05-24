@@ -23,7 +23,7 @@ class CoreDataArrayStorageManualTest: XCTestCase {
         let value = Value()
 
         var count = 0
-        Promise {
+        Promise.async {
             storage.get(limit: .unlimited)
         }.then {
             count = $0.count

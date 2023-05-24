@@ -13,7 +13,7 @@ final class PromiseThenTest: XCTestCase {
         let end = DispatchSemaphore(value: 0)
         
         let promise =
-        Promise {
+        Promise.async {
             10
         }.then { value in
             XCTAssertEqual(value, 10)
@@ -28,7 +28,7 @@ final class PromiseThenTest: XCTestCase {
         let end = DispatchSemaphore(value: 0)
         
         let promise =
-        Promise {
+        Promise.async {
             10
         }.then { value in
             XCTAssertEqual(value, 10)
@@ -43,7 +43,7 @@ final class PromiseThenTest: XCTestCase {
     
     func test__then_return_void_from_reject() {
         let promise =
-        Promise<Int, Error> { () -> Int in
+        Promise.async { () -> Int in
             throw PromiseTest.SampleError.one
         }.then { value in
             XCTFail()
@@ -56,7 +56,7 @@ final class PromiseThenTest: XCTestCase {
         let end = DispatchSemaphore(value: 0)
         
         let promise =
-        Promise {
+        Promise.async {
             10
         }.then { value -> Int in
             XCTAssertEqual(value, 10)
@@ -73,7 +73,7 @@ final class PromiseThenTest: XCTestCase {
         let end = DispatchSemaphore(value: 0)
         
         let promise =
-        Promise {
+        Promise.async {
             10
         }.then { value -> Int in
             XCTAssertEqual(value, 10)
@@ -88,7 +88,7 @@ final class PromiseThenTest: XCTestCase {
     
     func test__then_return_value_from_reject() {
         let promise =
-        Promise<Int, Error> { () -> Int in
+        Promise.async { () -> Int in
             throw PromiseTest.SampleError.one
         }.then { value -> Int in
             XCTFail()
@@ -103,13 +103,13 @@ final class PromiseThenTest: XCTestCase {
         let end = DispatchSemaphore(value: 0)
         
         let promise =
-        Promise {
+        Promise.async {
             10
         }.then { value -> Promise<Int, Error> in
             XCTAssertEqual(value, 10)
             end.signal()
             
-            return Promise {
+            return Promise.async {
                 20
             }
         }
@@ -122,7 +122,7 @@ final class PromiseThenTest: XCTestCase {
         let end = DispatchSemaphore(value: 0)
         
         let promise =
-        Promise {
+        Promise.async {
             10
         }.then { value -> Promise<Int, Error> in
             XCTAssertEqual(value, 10)
@@ -139,7 +139,7 @@ final class PromiseThenTest: XCTestCase {
         let end = DispatchSemaphore(value: 0)
         
         let promise =
-        Promise {
+        Promise.async {
             10
         }.then { value -> Promise<Int, Error> in
             XCTAssertEqual(value, 10)
@@ -176,12 +176,12 @@ final class PromiseThenTest: XCTestCase {
     
     func test__then_return_promise_from_reject() {
         let promise =
-        Promise<Int, Error> { () -> Int in
+        Promise.async { () -> Int in
             throw PromiseTest.SampleError.one
         }.then { value -> Promise<Int, Error> in
             XCTFail()
             
-            return Promise {
+            return Promise.async {
                 20
             }
         }
@@ -191,7 +191,7 @@ final class PromiseThenTest: XCTestCase {
     
     func test__never_then_return_value() {
         let promise =
-        Promise<Int, Never> {
+        Promise.async {
             10
         }.then {
             $0 + 10
@@ -202,7 +202,7 @@ final class PromiseThenTest: XCTestCase {
     
     func test__never_then_throw_error() {
         let promise =
-        Promise<Int, Never> {
+        Promise.async {
             10
         }.then { value -> Promise<Int, Error> in
             throw PromiseTest.SampleError.one
@@ -213,7 +213,7 @@ final class PromiseThenTest: XCTestCase {
     
     func test__never_then_return_resolved_promise() {
         let promise =
-        Promise<Int, Never> {
+        Promise.async {
             10
         }.then {
             Promise<Int, Error>.resolved($0 + 10)
@@ -224,7 +224,7 @@ final class PromiseThenTest: XCTestCase {
     
     func test__never_then_return_rejected_promise() {
         let promise =
-        Promise<Int, Never> {
+        Promise.async {
             10
         }.then { _ in
             Promise<Int, Error>.rejected(PromiseTest.SampleError.one)
@@ -236,7 +236,7 @@ final class PromiseThenTest: XCTestCase {
     
     func test__never_then_return_canceled_promise() {
         let promise =
-        Promise<Int, Never> {
+        Promise.async {
             10
         }.then { _ in
             Promise<Int, Never>.canceled()
@@ -248,7 +248,7 @@ final class PromiseThenTest: XCTestCase {
     
     func test__never_then_return_resolved_never_promise() {
         let promise =
-        Promise<Int, Never> {
+        Promise.async {
             10
         }.then {
             Promise<Int, Never>.resolved($0 + 10)
@@ -259,7 +259,7 @@ final class PromiseThenTest: XCTestCase {
     
     func test__never_then_return_canceled_never_promise() {
         let promise =
-        Promise<Int, Never> {
+        Promise.async {
             10
         }.then { _ in
             Promise<Int, Never>.canceled()

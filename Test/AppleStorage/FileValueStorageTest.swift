@@ -10,8 +10,6 @@ import SabyConcurrency
 import SabyTestExtension
 @testable import SabyAppleStorage
 
-private let directoryName = "saby.dictionary.value.storage"
-
 private struct DummyItem: Codable, Equatable {
     var key: UUID
 }
@@ -19,6 +17,7 @@ private struct DummyItem: Codable, Equatable {
 final class FileValueStorageTest: XCTestCase {
     fileprivate let testCount = 500
     fileprivate var storage: FileValueStorage<DummyItem>!
+    fileprivate var directoryName: String!
     
     fileprivate var testObjects: [DummyItem] {
         var result: [DummyItem] = []
@@ -30,6 +29,14 @@ final class FileValueStorageTest: XCTestCase {
     }
     
     override func setUpWithError() throws {
+        directoryName = "saby.dictionary.value.storage.\(UUID())"
+        storage = FileValueStorage<DummyItem>(
+            directoryName: directoryName,
+            fileName: String(describing: DummyItem.self)
+        )
+    }
+    
+    override func tearDownWithError() throws {
         let path = FileManager.default.urls(
             for: .libraryDirectory,
             in: .userDomainMask
@@ -37,11 +44,6 @@ final class FileValueStorageTest: XCTestCase {
         if FileManager.default.fileExists(atPath: path) {
             try FileManager.default.removeItem(atPath: path)
         }
-        
-        storage = FileValueStorage<DummyItem>(
-            directoryName: directoryName,
-            fileName: String(describing: DummyItem.self)
-        )
     }
     
     func test__set() throws {
@@ -107,7 +109,7 @@ final class FileValueStorageTest: XCTestCase {
         
         let value = DummyItem(key: UUID())
         
-        Promise { self.storage.set(value) }
+        Promise.async { self.storage.set(value) }
             .then { self.storage.save() }
             .then { self.storage.get() }
             .then { XCTAssertEqual($0, value) }

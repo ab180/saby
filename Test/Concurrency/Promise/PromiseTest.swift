@@ -58,7 +58,7 @@ final class PromiseTest: XCTestCase {
     }
     
     func test__init_with_return_value() {
-        let promise = Promise<Int, Error> {
+        let promise = Promise.async {
             10
         }
         
@@ -66,7 +66,7 @@ final class PromiseTest: XCTestCase {
     }
     
     func test__init_with_return_value_throw_error() {
-        let promise = Promise<Int, Error> { () -> Int in
+        let promise = Promise.async { () -> Int in
             throw PromiseTest.SampleError.one
         }
         
@@ -74,8 +74,8 @@ final class PromiseTest: XCTestCase {
     }
     
     func test__init_with_return_promise_resolve() {
-        let promise = Promise<Int, Error> {
-            Promise {
+        let promise = Promise.async {
+            Promise.async {
                 10
             }
         }
@@ -84,8 +84,8 @@ final class PromiseTest: XCTestCase {
     }
     
     func test__init_with_return_promise_reject() {
-        let promise = Promise<Int, Error> {
-            Promise<Int, Error> { () -> Int in
+        let promise = Promise.async {
+            Promise.async { () -> Int in
                 throw PromiseTest.SampleError.one
             }
         }
@@ -94,7 +94,7 @@ final class PromiseTest: XCTestCase {
     }
     
     func test__init_with_return_promise_throw_error() {
-        let promise = Promise<Int, Error> { () -> Promise<Int, Error> in
+        let promise = Promise.async { () -> Promise<Int, Error> in
             throw PromiseTest.SampleError.one
         }
         

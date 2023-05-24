@@ -13,10 +13,9 @@ fileprivate struct DummyItem: Codable {
     var key: UUID
 }
 
-private let directoryName = "saby.array.storage"
-
 final class FileArrayStorageTest: XCTestCase {
     fileprivate var storage: FileArrayStorage<DummyItem>!
+    private var directoryName: String!
     
     private struct TestItemGroup {
         private static let testCount = 100
@@ -36,6 +35,14 @@ final class FileArrayStorageTest: XCTestCase {
     }
     
     override func setUpWithError() throws {
+        directoryName = "saby.array.storage.\(UUID())"
+        storage = FileArrayStorage<DummyItem>(
+            directoryName: directoryName,
+            fileName: String(describing: DummyItem.self)
+        )
+    }
+    
+    override func tearDownWithError() throws {
         let path = FileManager.default.urls(
             for: .libraryDirectory,
             in: .userDomainMask
@@ -43,11 +50,6 @@ final class FileArrayStorageTest: XCTestCase {
         if FileManager.default.fileExists(atPath: path) {
             try FileManager.default.removeItem(atPath: path)
         }
-        
-        storage = FileArrayStorage<DummyItem>(
-            directoryName: directoryName,
-            fileName: String(describing: DummyItem.self)
-        )
     }
     
     func test__duplicated_key() throws {
@@ -61,7 +63,7 @@ final class FileArrayStorageTest: XCTestCase {
         _ = try storage.add(firstItem).wait()
         _ = try storage.add(secondItem).wait()
         
-        Promise {
+        Promise.async {
             self.storage.save()
         }.then {
             self.storage.get(limit: .unlimited)
@@ -83,7 +85,7 @@ final class FileArrayStorageTest: XCTestCase {
             _ = try storage.add(item).wait()
         }
         
-        Promise {
+        Promise.async {
             self.storage.save()
         }.then {
             self.storage.get(limit: .unlimited)
@@ -111,7 +113,7 @@ final class FileArrayStorageTest: XCTestCase {
         try testItems.pushItems.forEach { item in
             testKeys.append(try storage.add(item).wait())
         }
-        Promise<Void, Error> {
+        Promise.async {
             self.storage.save()
         }.then {
             self.storage.get(limit: .unlimited)

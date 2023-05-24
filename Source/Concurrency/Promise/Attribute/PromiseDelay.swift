@@ -7,12 +7,15 @@
 
 import Foundation
 
-extension Promise where Value == Void {
+extension Promise where
+    Value == Never,
+    Failure == Never
+{
     public static func delay(
         on queue: DispatchQueue = .global(),
         _ interval: DispatchTimeInterval
-    ) -> Promise<Void, Failure> {
-        Promise.resolved(()).delay(on: queue, interval)
+    ) -> Promise<Void, Never> {
+        Promise<Void, Never>.resolved(()).delay(on: queue, interval)
     }
 }
 

@@ -24,7 +24,7 @@ public final class AppleAdsAttributionTokenFetcher: Fetcher {
     }
     
     public func fetch() -> Promise<String, Error> {
-        Promise {
+        Promise.async {
             try self.classAAAttribution.attributionToken()
         }
     }

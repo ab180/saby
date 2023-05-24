@@ -24,7 +24,7 @@ public final class TrackingAuthorizationStatusFetcher: Fetcher {
     }
     
     public func fetch() -> Promise<TrackingAuthorizationStatus, Error> {
-        Promise {
+        Promise.async {
             try self.classATTrackingManager.trackingAuthorizationStatus()
         }
     }
