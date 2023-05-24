@@ -12,10 +12,10 @@ final class PromiseAllTest: XCTestCase {
     func test__all_same_2() {
         let promise =
         Promise.all([
-            Promise {
+            Promise<Int, Never> {
                 10
             },
-            Promise {
+            Promise<Int, Never> {
                 20
             }
         ])

@@ -45,6 +45,37 @@ public final class Promise<Value, Failure: Error> {
     }
 }
 
+extension Promise {
+    public convenience init(
+        on queue: DispatchQueue = .global(),
+        _ block: @escaping () -> Value
+    ) {
+        self.init(queue: queue)
+
+        queue.async {
+            let value = block()
+            self.resolve(value)
+        }
+    }
+    
+    public convenience init(
+        on queue: DispatchQueue = .global(),
+        _ block: @escaping () -> Promise<Value, Failure>
+    ) {
+        self.init(queue: queue)
+        
+        queue.async {
+            let promise = block()
+            promise.subscribe(
+                queue: queue,
+                onResolved: { self.resolve($0) },
+                onRejected: { self.reject($0) },
+                onCanceled: { self.cancel() }
+            )
+        }
+    }
+}
+
 extension Promise where Failure == Error {
     public convenience init(
         on queue: DispatchQueue = .global(),
@@ -159,35 +190,6 @@ extension Promise where Failure == Never {
                 { _ in },
                 { self.cancel() },
                 { self.subscribe(queue: queue, onCanceled: $0) }
-            )
-        }
-    }
-    
-    public convenience init(
-        on queue: DispatchQueue = .global(),
-        _ block: @escaping () -> Value
-    ) {
-        self.init(queue: queue)
-
-        queue.async {
-            let value = block()
-            self.resolve(value)
-        }
-    }
-    
-    public convenience init(
-        on queue: DispatchQueue = .global(),
-        _ block: @escaping () -> Promise<Value, Failure>
-    ) {
-        self.init(queue: queue)
-        
-        queue.async {
-            let promise = block()
-            promise.subscribe(
-                queue: queue,
-                onResolved: { self.resolve($0) },
-                onRejected: { _ in },
-                onCanceled: { self.cancel() }
             )
         }
     }
