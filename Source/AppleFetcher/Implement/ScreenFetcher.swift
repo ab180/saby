@@ -51,7 +51,7 @@ extension ScreenFetcher {
     }
     
     private func fetchOrientation() -> Promise<UIInterfaceOrientation, Error> {
-        Promise(on: DispatchQueue.main) { () -> UIInterfaceOrientation in
+        Promise.async(on: .main) { () -> UIInterfaceOrientation in
             if #available(iOS 13.0, macCatalyst 13.0, tvOS 13.0, *) {
                 return UIApplication.shared.connectedScenes
                     .filter { $0.activationState == .foregroundActive }
