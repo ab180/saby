@@ -187,11 +187,11 @@ extension Promise where
         return promise
     }
     
-    public static func async<Result, ResultFailure: Error>(
+    public static func async<Result>(
         on queue: DispatchQueue = .global(),
-        _ block: @escaping () -> Promise<Result, ResultFailure>
-    ) -> Promise<Result, ResultFailure> {
-        let promise = Promise<Result, ResultFailure>()
+        _ block: @escaping () -> Promise<Result, Error>
+    ) -> Promise<Result, Error> {
+        let promise = Promise<Result, Error>()
 
         queue.async {
             let valuePromise = block()
@@ -199,6 +199,25 @@ extension Promise where
                 queue: queue,
                 onResolved: { promise.resolve($0) },
                 onRejected: { promise.reject($0) },
+                onCanceled: { promise.cancel() }
+            )
+        }
+        
+        return promise
+    }
+    
+    public static func async<Result>(
+        on queue: DispatchQueue = .global(),
+        _ block: @escaping () -> Promise<Result, Never>
+    ) -> Promise<Result, Never> {
+        let promise = Promise<Result, Never>()
+
+        queue.async {
+            let valuePromise = block()
+            valuePromise.subscribe(
+                queue: queue,
+                onResolved: { promise.resolve($0) },
+                onRejected: { _ in },
                 onCanceled: { promise.cancel() }
             )
         }
