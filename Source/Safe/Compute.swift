@@ -14,7 +14,31 @@ public func compute<Result>(
 }
 
 public func compute<Value, Result>(
-    _ type: Value.Type,
+    _ option: ComputeOption.NonNull,
+    _ value: Value?,
+    _ block: (Value) -> Result
+) -> Result? {
+    if let value = value {
+        return block(value)
+    } else {
+        return nil
+    }
+}
+
+public func compute<Value, Result>(
+    _ option: ComputeOption.NonNull,
+    _ value: Value?,
+    _ block: (Value) -> Result?
+) -> Result? {
+    if let value = value {
+        return block(value)
+    } else {
+        return nil
+    }
+}
+
+public func compute<Value, Result>(
+    _ option: ComputeOption.`Type`<Value>,
     _ value: Any?,
     _ block: (Value) -> Result
 ) -> Result? {
@@ -26,7 +50,7 @@ public func compute<Value, Result>(
 }
 
 public func compute<Value, Result>(
-    _ type: Value.Type,
+    _ option: ComputeOption.`Type`<Value>,
     _ value: Any?,
     _ block: (Value) -> Result?
 ) -> Result? {
@@ -34,5 +58,14 @@ public func compute<Value, Result>(
         return block(value)
     } else {
         return nil
+    }
+}
+
+public enum ComputeOption {
+    public enum `Type`<Value> {
+        case type(Value.Type)
+    }
+    public enum NonNull {
+        case nonNull
     }
 }

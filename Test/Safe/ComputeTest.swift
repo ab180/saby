@@ -13,15 +13,15 @@ final class ComputeTest: XCTestCase {
         XCTAssertEqual(compute { 10 }, 10)
     }
     
-    func test__integer() {
-        XCTAssertEqual(compute(Int.self, 10) { "\($0)" }, "10")
+    func test__type_integer() {
+        XCTAssertEqual(compute(.type(Int.self), 10) { "\($0)" }, "10")
     }
     
-    func test__string() {
-        XCTAssertEqual(compute(Int.self, "10") { "\($0)" } , nil)
+    func test__type_string() {
+        XCTAssertEqual(compute(.type(Int.self), "10") { "\($0)" } , nil)
     }
     
-    func test__nullable_integer() {
-        XCTAssertEqual(compute(Int?.self, 10) { "\($0 ?? 0)" }, "10")
+    func test__non_null_integer() {
+        XCTAssertEqual(compute(.nonNull, 10) { "\($0)" }, "10")
     }
 }
