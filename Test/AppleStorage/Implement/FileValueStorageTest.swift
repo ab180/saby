@@ -7,7 +7,6 @@
 
 import XCTest
 import SabyConcurrency
-import SabyTestExtension
 @testable import SabyAppleStorage
 
 private struct DummyItem: Codable, Equatable {
@@ -47,19 +46,14 @@ final class FileValueStorageTest: XCTestCase {
     }
     
     func test__set() throws {
-        let expectation = expectation(description: "test__set")
-        expectation.expectedFulfillmentCount = 1
-        
         try testObjects.forEach {
             try storage.set($0).wait()
         }
         
-        storage.save()
-            .then { self.storage.get() }
-            .then { XCTAssertNotEqual($0, nil) }
-            .then { expectation.fulfill() }
+        try storage.save().wait()
         
-        wait(for: [expectation], timeout: 5)
+        let value = try storage.get().wait()
+        XCTAssertNotEqual(value, nil)
     }
     
     func test__delete() throws {

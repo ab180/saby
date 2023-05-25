@@ -72,7 +72,7 @@ final class FileArrayStorageTest: XCTestCase {
             return
         }
         
-        wait(for: [expectation], timeout: 5)
+        wait(for: [expectation], timeout: 3)
     }
     
     func test__push() throws {
@@ -100,7 +100,7 @@ final class FileArrayStorageTest: XCTestCase {
             expectation.fulfill()
         }
         
-        wait(for: [expectation], timeout: 5)
+        wait(for: [expectation], timeout: 3)
     }
     
     func test__remove() throws {
@@ -131,6 +131,6 @@ final class FileArrayStorageTest: XCTestCase {
             XCTFail("failed Promise chaining: \(error)")
         }
         
-        wait(for: [expectation], timeout: 5000)
+        wait(for: [expectation], timeout: 3)
     }
 }

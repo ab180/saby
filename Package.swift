@@ -55,9 +55,9 @@ var package = Package(
             dependencies: ["SabyConcurrency"],
             path: "Source/TestExpect"),
         .target(
-            name: "SabyTestExtension",
+            name: "SabyTestWait",
             dependencies: ["SabyConcurrency"],
-            path: "Source/TestExtension"),
+            path: "Source/TestWait"),
         .target(
             name: "SabyJSON",
             dependencies: [],
@@ -166,7 +166,7 @@ package
             path: "Test/AppleHash"),
         .testTarget(
             name: "SabyAppleStorageTest",
-            dependencies: ["SabyAppleStorage", "SabyTestExtension"],
+            dependencies: ["SabyAppleStorage", "SabyTestWait"],
             path: "Test/AppleStorage"),
         .testTarget(
             name: "SabyAppleLoggerTest",
