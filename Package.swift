@@ -23,6 +23,9 @@ var package = Package(
             name: "SabyTestMock",
             targets: ["SabyTestMock"]),
         .library(
+            name: "SabyTestWait",
+            targets: ["SabyTestWait"]),
+        .library(
             name: "SabyNetwork",
             targets: ["SabyNetwork"]),
         .library(
