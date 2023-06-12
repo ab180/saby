@@ -35,6 +35,9 @@ var package = Package(
             name: "SabySafe",
             targets: ["SabySafe"]),
         .library(
+            name: "SabySize",
+            targets: ["SabySize"]),
+        .library(
             name: "SabyTime",
             targets: ["SabyTime"]),
     ],
