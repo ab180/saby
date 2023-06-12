@@ -82,6 +82,10 @@ var package = Package(
             dependencies: [],
             path: "Source/Safe"),
         .target(
+            name: "SabySize",
+            dependencies: [],
+            path: "Source/Size"),
+        .target(
             name: "SabyTime",
             dependencies: [],
             path: "Source/Time"),
@@ -109,6 +113,10 @@ var package = Package(
             name: "SabySafeTest",
             dependencies: ["SabySafe"],
             path: "Test/Safe"),
+        .testTarget(
+            name: "SabySizeTest",
+            dependencies: ["SabySize"],
+            path: "Test/Size"),
         .testTarget(
             name: "SabyTimeTest",
             dependencies: ["SabyTime"],
