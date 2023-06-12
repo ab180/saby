@@ -164,7 +164,7 @@ package
             path: "Source/AppleHash"),
         .target(
             name: "SabyAppleStorage",
-            dependencies: ["SabyConcurrency"],
+            dependencies: ["SabyConcurrency", "SabySize"],
             path: "Source/AppleStorage"),
         .target(
             name: "SabyAppleLogger",

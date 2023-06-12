@@ -6,6 +6,7 @@
 //
 
 import SabyConcurrency
+import SabySize
 import Foundation
 
 public protocol ArrayStorage<Value> {
@@ -17,4 +18,7 @@ public protocol ArrayStorage<Value> {
     func get(key: UUID) -> Promise<Value?, Error>
     func get(limit: GetLimit) -> Promise<[Value], Error>
     func save() -> Promise<Void, Error>
+    
+    func count() -> Promise<Int64, Error>
+    func size() -> Promise<Volume, Error>
 }

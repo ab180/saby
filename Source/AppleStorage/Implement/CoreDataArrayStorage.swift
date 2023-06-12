@@ -9,6 +9,7 @@ import CoreData
 
 import SabyConcurrency
 import SabySafe
+import SabySize
 
 public final class CoreDataArrayStorage<Value: Codable>: ArrayStorage {
     typealias Context = NSManagedObjectContext
@@ -52,6 +53,7 @@ extension CoreDataArrayStorage {
             )
             item.key = key
             item.data = data
+            item.byte = Int64(data.count)
 
             return key
         }
@@ -99,12 +101,68 @@ extension CoreDataArrayStorage {
 
     public func save() -> Promise<Void, Error> {
         execute { context in
-            try context.save()
+            if context.hasChanges {
+                try context.save()
+            }
         }
     }
 }
 
 extension CoreDataArrayStorage {
+    public func count() -> Promise<Int64, Error> {
+        execute { context in
+            let request = self.createCountRequest()
+            let result = try context.fetch(request)
+            guard let count = result.first else {
+                throw CoreDataArrayStorageError.requestResultNotFound
+            }
+
+            return count.int64Value
+        }
+    }
+    
+    public func size() -> Promise<Volume, Error> {
+        execute { context in
+            if context.hasChanges {
+                try context.save()
+            }
+
+            let request = self.createSizeRequest()
+            let result = try context.fetch(request)
+            guard let byte = result.first?["result"] as? NSNumber else {
+                throw CoreDataArrayStorageError.requestResultNotFound
+            }
+
+            return Volume.byte(byte.doubleValue)
+        }
+    }
+}
+
+extension CoreDataArrayStorage {
+    fileprivate func createCountRequest() -> NSFetchRequest<NSNumber> {
+        let request = NSFetchRequest<NSNumber>()
+        request.entity = entity
+        request.resultType = .countResultType
+        
+        return request
+    }
+    
+    fileprivate func createSizeRequest() -> NSFetchRequest<NSDictionary> {
+        let byteExpression = NSExpression(forKeyPath: \SabyCoreDataArrayStorageItem.byte)
+        let sumExpression = NSExpression(forFunction: "sum:", arguments: [byteExpression])
+        let sumDescription = NSExpressionDescription()
+        sumDescription.expression = sumExpression
+        sumDescription.name = "result"
+        sumDescription.expressionResultType = .integer64AttributeType
+        
+        let request = NSFetchRequest<NSDictionary>()
+        request.entity = entity
+        request.propertiesToFetch = [sumDescription]
+        request.resultType = .dictionaryResultType
+        
+        return request
+    }
+    
     fileprivate func createRequest(key: UUID) -> NSFetchRequest<Item> {
         createActualRequest(key: key)
     }
@@ -210,12 +268,14 @@ extension NSManagedObjectContext {
 
 public enum CoreDataArrayStorageError: Error {
     case failedOnParsingDeleteResult
+    case requestResultNotFound
 }
 
 @objc(SabyCoreDataArrayStorageItem)
 final class SabyCoreDataArrayStorageItem: NSManagedObject {
     @NSManaged var key: UUID
     @NSManaged var data: Data
+    @NSManaged var byte: Int64
 }
 
 final class SabyCoreDataArrayStorageSchema {
@@ -239,12 +299,21 @@ final class SabyCoreDataArrayStorageSchema {
             dataAttribute.attributeType = .binaryDataAttributeType
         }
         
+        let byteAttribute = NSAttributeDescription()
+        byteAttribute.name = "byte"
+        if #available(iOS 15.0, macOS 12.0, macCatalyst 15.0, tvOS 15.0, watchOS 8.0, *) {
+            byteAttribute.type = .integer64
+        } else {
+            byteAttribute.attributeType = .integer64AttributeType
+        }
+        
         let itemEntity = NSEntityDescription()
         itemEntity.name = String(describing: SabyCoreDataArrayStorageItem.self)
         itemEntity.managedObjectClassName = String(describing: SabyCoreDataArrayStorageItem.self)
         itemEntity.properties = [
             keyAttribute,
-            dataAttribute
+            dataAttribute,
+            byteAttribute
         ]
         
         let model = NSManagedObjectModel()

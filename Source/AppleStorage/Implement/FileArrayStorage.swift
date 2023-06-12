@@ -7,6 +7,7 @@
 
 import Foundation
 import SabyConcurrency
+import SabySize
 
 public final class FileArrayStorage<Value: Codable>: ArrayStorage {
     typealias Context = FileArrayStorageContext
@@ -40,9 +41,13 @@ extension FileArrayStorage {
         execute { context in
             let key = UUID()
             
-            context.items.mutate { items in
+            try context.items.mutate { items in
                 items.filter { $0.key != key }
-                + [Item(key: key, value: value)]
+                + [Item(
+                    key: key,
+                    value: value,
+                    byte: Int64(try self.encoder.encode(value).count)
+                )]
             }
 
             return key
@@ -112,6 +117,22 @@ extension FileArrayStorage {
 }
 
 extension FileArrayStorage {
+    public func count() -> Promise<Int64, Error> {
+        execute { context in
+            return Int64(context.items.capture { $0.count })
+        }
+    }
+    
+    public func size() -> Promise<Volume, Error> {
+        execute { context in
+            return context.items.capture {
+                Volume.byte(Double($0.reduce(0) { result, item in result + item.byte }))
+            }
+        }
+    }
+}
+
+extension FileArrayStorage {
     fileprivate func execute<Result>(
         block: @escaping (Context<Value>) throws -> Result
     ) -> Promise<Result, Error> {
@@ -142,7 +163,10 @@ struct FileArrayStorageContext<Value: Codable> {
     let url: URL
     let items: Atomic<[FileArrayStorageItem<Value>]>
     
-    private init(url: URL, items: Atomic<[FileArrayStorageItem<Value>]>) {
+    private init(
+        url: URL,
+        items: Atomic<[FileArrayStorageItem<Value>]>
+    ) {
         self.url = url
         self.items = items
     }
@@ -204,4 +228,5 @@ public enum FileArrayStorageError: Error {
 struct FileArrayStorageItem<Value: Codable>: Codable {
     let key: UUID
     let value: Value
+    let byte: Int64
 }

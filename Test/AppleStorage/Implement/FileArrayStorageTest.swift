@@ -16,6 +16,7 @@ fileprivate struct DummyItem: Codable {
 final class FileArrayStorageTest: XCTestCase {
     fileprivate var storage: FileArrayStorage<DummyItem>!
     private var directoryName: String!
+    var encoder: PropertyListEncoder!
     
     private struct TestItemGroup {
         private static let testCount = 100
@@ -40,6 +41,7 @@ final class FileArrayStorageTest: XCTestCase {
             directoryName: directoryName,
             fileName: String(describing: DummyItem.self)
         )
+        encoder = PropertyListEncoder()
     }
     
     override func tearDownWithError() throws {
@@ -132,5 +134,37 @@ final class FileArrayStorageTest: XCTestCase {
         }
         
         wait(for: [expectation], timeout: 3)
+    }
+    
+    func test__length() throws {
+        let given = [
+            DummyItem(key: UUID()),
+            DummyItem(key: UUID()),
+            DummyItem(key: UUID())
+        ]
+        let expect = Int64(given.count)
+        
+        for value in given {
+            _ = try self.storage.add(value).wait()
+        }
+        let count = try self.storage.count().wait()
+        
+        XCTAssertEqual(count, expect)
+    }
+    
+    func test__size() throws {
+        let given = [
+            DummyItem(key: UUID()),
+            DummyItem(key: UUID()),
+            DummyItem(key: UUID())
+        ]
+        let expect = Double(given.reduce(0) { $0 + (try! encoder.encode($1).count) })
+        
+        for value in given {
+            _ = try self.storage.add(value).wait()
+        }
+        let size = try self.storage.size().wait()
+        
+        XCTAssertEqual(size.byte, expect)
     }
 }

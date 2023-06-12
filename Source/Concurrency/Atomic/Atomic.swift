@@ -36,11 +36,31 @@ public final class Atomic<Value> {
     
     @inline(__always) @inlinable
     @discardableResult
+    public func capture<Result>(_ block: (Value) throws -> Result) rethrows -> Result {
+        pthread_mutex_lock(lock)
+        defer { pthread_mutex_unlock(lock) }
+        
+        return try block(value)
+    }
+    
+    @inline(__always) @inlinable
+    @discardableResult
     public func mutate(_ block: (Value) -> Value) -> Value {
         pthread_mutex_lock(lock)
         defer { pthread_mutex_unlock(lock) }
         
         value = block(value)
+        
+        return value
+    }
+    
+    @inline(__always) @inlinable
+    @discardableResult
+    public func mutate(_ block: (Value) throws -> Value) rethrows -> Value {
+        pthread_mutex_lock(lock)
+        defer { pthread_mutex_unlock(lock) }
+        
+        value = try block(value)
         
         return value
     }
