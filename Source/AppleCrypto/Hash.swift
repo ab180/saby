@@ -1,6 +1,6 @@
 //
 //  Hash.swift
-//  SabyAppleHash
+//  SabyAppleCrypto
 //
 //  Created by WOF on 2023/02/17.
 //
@@ -10,7 +10,7 @@
 import Foundation
 
 public protocol Hash {
-    static func hash(string: String) -> String
+    static func hash(message: String) -> String
 }
 
 #endif

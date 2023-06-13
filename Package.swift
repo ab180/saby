@@ -139,8 +139,8 @@ package
             targets: ["SabyAppleFetcher"]
         ),
         .library(
-            name: "SabyAppleHash",
-            targets: ["SabyAppleHash"]
+            name: "SabyAppleCrypto",
+            targets: ["SabyAppleCrypto"]
         ),
         .library(
             name: "SabyAppleStorage",
@@ -159,9 +159,9 @@ package
             dependencies: ["SabyAppleObjectiveCReflection", "SabyConcurrency"],
             path: "Source/AppleFetcher"),
         .target(
-            name: "SabyAppleHash",
-            dependencies: [],
-            path: "Source/AppleHash"),
+            name: "SabyAppleCrypto",
+            dependencies: ["SabyTime"],
+            path: "Source/AppleCrypto"),
         .target(
             name: "SabyAppleStorage",
             dependencies: ["SabyConcurrency", "SabySize"],
@@ -175,9 +175,9 @@ package
             dependencies: [],
             path: "Source/AppleObjectiveCReflection"),
         .testTarget(
-            name: "SabyAppleHashTest",
-            dependencies: ["SabyAppleHash"],
-            path: "Test/AppleHash"),
+            name: "SabyAppleCryptoTest",
+            dependencies: ["SabyAppleCrypto"],
+            path: "Test/AppleCrypto"),
         .testTarget(
             name: "SabyAppleStorageTest",
             dependencies: ["SabyAppleStorage", "SabyTestWait"],
