@@ -11,7 +11,9 @@ import CoreData
 import SabyConcurrency
 @testable import SabyAppleStorage
 
-struct Value: Codable {}
+struct Value: Codable, KeyIdentifiable {
+    let key: UUID
+}
 
 class CoreDataArrayStorageTest: XCTestCase {
     var storage: CoreDataArrayStorage<Value>!
@@ -30,7 +32,7 @@ class CoreDataArrayStorageTest: XCTestCase {
         let expectation = self.expectation(description: "testManagingProgramically")
         expectation.expectedFulfillmentCount = 1
 
-        let value = Value()
+        let value = Value(key: UUID())
 
         var count = 0
         Promise.async {
@@ -52,9 +54,9 @@ class CoreDataArrayStorageTest: XCTestCase {
     
     func test__length() throws {
         let given = [
-            Value(),
-            Value(),
-            Value()
+            Value(key: UUID()),
+            Value(key: UUID()),
+            Value(key: UUID())
         ]
         let expect = Int64(given.count)
         
@@ -68,9 +70,9 @@ class CoreDataArrayStorageTest: XCTestCase {
     
     func test__size() throws {
         let given = [
-            Value(),
-            Value(),
-            Value()
+            Value(key: UUID()),
+            Value(key: UUID()),
+            Value(key: UUID())
         ]
         let expect = Double(given.reduce(0) { $0 + (try! encoder.encode($1).count) })
         

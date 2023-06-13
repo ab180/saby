@@ -11,7 +11,7 @@ import SabyConcurrency
 import SabySafe
 import SabySize
 
-public final class CoreDataArrayStorage<Value: Codable>: ArrayStorage {
+public final class CoreDataArrayStorage<Value: Codable & KeyIdentifiable>: ArrayStorage {
     typealias Context = NSManagedObjectContext
     typealias Item = SabyCoreDataArrayStorageItem
     
@@ -39,9 +39,9 @@ public final class CoreDataArrayStorage<Value: Codable>: ArrayStorage {
 }
 
 extension CoreDataArrayStorage {
-    public func add(_ value: Value) -> Promise<UUID, Error> {
+    public func add(_ value: Value) -> Promise<Void, Error> {
         execute { context in
-            let key = UUID()
+            let key = value.key
             let data = try self.encoder.encode(value)
             
             let request = self.createAnyRequest(key: key)
@@ -54,8 +54,6 @@ extension CoreDataArrayStorage {
             item.key = key
             item.data = data
             item.byte = Int64(data.count)
-
-            return key
         }
     }
     

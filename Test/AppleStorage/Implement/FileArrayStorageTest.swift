@@ -9,8 +9,8 @@ import XCTest
 import SabyConcurrency
 @testable import SabyAppleStorage
 
-fileprivate struct DummyItem: Codable {
-    var key: UUID
+fileprivate struct DummyItem: Codable, KeyIdentifiable {
+    let key: UUID
 }
 
 final class FileArrayStorageTest: XCTestCase {
@@ -113,7 +113,8 @@ final class FileArrayStorageTest: XCTestCase {
         var testKeys = [UUID]()
         
         try testItems.pushItems.forEach { item in
-            testKeys.append(try storage.add(item).wait())
+            try storage.add(item).wait()
+            testKeys.append(item.key)
         }
         Promise.async {
             self.storage.save()

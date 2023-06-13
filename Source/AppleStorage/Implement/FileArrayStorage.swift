@@ -9,7 +9,7 @@ import Foundation
 import SabyConcurrency
 import SabySize
 
-public final class FileArrayStorage<Value: Codable>: ArrayStorage {
+public final class FileArrayStorage<Value: Codable & KeyIdentifiable>: ArrayStorage {
     typealias Context = FileArrayStorageContext
     typealias Item = FileArrayStorageItem
     
@@ -37,9 +37,9 @@ public final class FileArrayStorage<Value: Codable>: ArrayStorage {
 }
 
 extension FileArrayStorage {
-    public func add(_ value: Value) -> Promise<UUID, Error> {
+    public func add(_ value: Value) -> Promise<Void, Error> {
         execute { context in
-            let key = UUID()
+            let key = value.key
             
             try context.items.mutate { items in
                 items.filter { $0.key != key }
@@ -49,8 +49,6 @@ extension FileArrayStorage {
                     byte: Int64(try self.encoder.encode(value).count)
                 )]
             }
-
-            return key
         }
     }
     
