@@ -60,6 +60,14 @@ extension FileArrayStorage {
         }
     }
     
+    public func delete(keys: [UUID]) -> Promise<Void, Error> {
+        execute { context in
+            context.items.mutate { items in
+                items.filter { !keys.contains($0.key) }
+            }
+        }
+    }
+    
     public func clear() -> Promise<Void, Error> {
         execute { context in
             context.items.mutate { _ in

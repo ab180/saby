@@ -45,7 +45,7 @@ extension CoreDataArrayStorage {
             let data = try self.encoder.encode(value)
             
             let request = self.createAnyRequest(key: key)
-            try context.executeDelete(request: request)
+            try context.executeDelete(request)
 
             let item = SabyCoreDataArrayStorageItem(
                 entity: self.entity,
@@ -60,14 +60,21 @@ extension CoreDataArrayStorage {
     public func delete(key: UUID) -> Promise<Void, Error> {
         execute { context in
             let request = self.createAnyRequest(key: key)
-            try context.executeDelete(request: request)
+            try context.executeDelete(request)
+        }
+    }
+    
+    public func delete(keys: [UUID]) -> Promise<Void, Error> {
+        execute { context in
+            let request = self.createAnyRequest(keys: keys)
+            try context.executeDelete(request)
         }
     }
     
     public func clear() -> Promise<Void, Error> {
         execute { context in
             let request = self.createAnyRequest(limit: .unlimited)
-            try context.executeDelete(request: request)
+            try context.executeDelete(request)
         }
     }
 
@@ -165,12 +172,20 @@ extension CoreDataArrayStorage {
         createActualRequest(key: key)
     }
     
+    fileprivate func createRequest(keys: [UUID]) -> NSFetchRequest<Item> {
+        createActualRequest(keys: keys)
+    }
+    
     fileprivate func createRequest(limit: GetLimit) -> NSFetchRequest<Item> {
         createActualRequest(limit: limit)
     }
     
     fileprivate func createAnyRequest(key: UUID) -> NSFetchRequest<any NSFetchRequestResult> {
         createActualRequest(key: key)
+    }
+    
+    fileprivate func createAnyRequest(keys: [UUID]) -> NSFetchRequest<any NSFetchRequestResult> {
+        createActualRequest(keys: keys)
     }
     
     fileprivate func createAnyRequest(limit: GetLimit) -> NSFetchRequest<any NSFetchRequestResult> {
@@ -181,6 +196,14 @@ extension CoreDataArrayStorage {
         let request = NSFetchRequest<Actual>()
         request.entity = self.entity
         request.predicate = NSPredicate(format: "key = %@", key.uuidString)
+        
+        return request
+    }
+    
+    private func createActualRequest<Actual>(keys: [UUID]) -> NSFetchRequest<Actual> {
+        let request = NSFetchRequest<Actual>()
+        request.entity = self.entity
+        request.predicate = NSPredicate(format: "key IN %@", keys.map(\.uuidString))
         
         return request
     }
@@ -224,7 +247,7 @@ extension CoreDataArrayStorage {
 }
 
 extension NSManagedObjectContext {
-    fileprivate func executeDelete(request: NSFetchRequest<any NSFetchRequestResult>) throws {
+    fileprivate func executeDelete(_ request: NSFetchRequest<any NSFetchRequestResult>) throws {
         let deleteRequest = NSBatchDeleteRequest(fetchRequest: request)
         deleteRequest.resultType = .resultTypeObjectIDs
         let result = try self.execute(deleteRequest)
