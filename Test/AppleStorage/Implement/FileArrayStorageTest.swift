@@ -143,7 +143,7 @@ final class FileArrayStorageTest: XCTestCase {
             DummyItem(key: UUID()),
             DummyItem(key: UUID())
         ]
-        let expect = Int64(given.count)
+        let expect = given.count
         
         for value in given {
             _ = try self.storage.add(value).wait()

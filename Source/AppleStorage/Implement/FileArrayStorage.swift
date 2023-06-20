@@ -46,7 +46,7 @@ extension FileArrayStorage {
                 + [Item(
                     key: key,
                     value: value,
-                    byte: Int64(try self.encoder.encode(value).count)
+                    byte: try self.encoder.encode(value).count
                 )]
             }
         }
@@ -123,9 +123,9 @@ extension FileArrayStorage {
 }
 
 extension FileArrayStorage {
-    public func count() -> Promise<Int64, Error> {
+    public func count() -> Promise<Int, Error> {
         execute { context in
-            return Int64(context.items.capture { $0.count })
+            return context.items.capture { $0.count }
         }
     }
     
@@ -234,5 +234,5 @@ public enum FileArrayStorageError: Error {
 struct FileArrayStorageItem<Value: Codable>: Codable {
     let key: UUID
     let value: Value
-    let byte: Int64
+    let byte: Int
 }

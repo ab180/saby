@@ -58,7 +58,7 @@ class CoreDataArrayStorageTest: XCTestCase {
             Value(key: UUID()),
             Value(key: UUID())
         ]
-        let expect = Int64(given.count)
+        let expect = given.count
         
         for value in given {
             _ = try self.storage.add(value).wait()

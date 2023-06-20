@@ -53,7 +53,7 @@ extension CoreDataArrayStorage {
             )
             item.key = key
             item.data = data
-            item.byte = Int64(data.count)
+            item.byte = data.count
         }
     }
     
@@ -114,7 +114,7 @@ extension CoreDataArrayStorage {
 }
 
 extension CoreDataArrayStorage {
-    public func count() -> Promise<Int64, Error> {
+    public func count() -> Promise<Int, Error> {
         execute { context in
             let request = self.createCountRequest()
             let result = try context.fetch(request)
@@ -122,7 +122,7 @@ extension CoreDataArrayStorage {
                 throw CoreDataArrayStorageError.requestResultNotFound
             }
 
-            return count.int64Value
+            return count.intValue
         }
     }
     
@@ -296,7 +296,7 @@ public enum CoreDataArrayStorageError: Error {
 final class SabyCoreDataArrayStorageItem: NSManagedObject {
     @NSManaged var key: UUID
     @NSManaged var data: Data
-    @NSManaged var byte: Int64
+    @NSManaged var byte: Int
 }
 
 final class SabyCoreDataArrayStorageSchema {

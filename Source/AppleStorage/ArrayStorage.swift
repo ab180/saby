@@ -20,6 +20,6 @@ public protocol ArrayStorage<Value> {
     func get(limit: GetLimit) -> Promise<[Value], Error>
     func save() -> Promise<Void, Error>
     
-    func count() -> Promise<Int64, Error>
+    func count() -> Promise<Int, Error>
     func size() -> Promise<Volume, Error>
 }
