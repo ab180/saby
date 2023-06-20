@@ -1,6 +1,6 @@
 //
 //  WaitContract.swift
-//  SabyTestExtension
+//  SabyTestWait
 //
 //  Created by WOF on 2023/05/22.
 //

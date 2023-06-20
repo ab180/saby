@@ -44,6 +44,11 @@ public struct MockFunction<Argument, Result> {
 public struct MockFunctionCall<Argument, Result> {
     public let argument: Argument
     public let result: Result
+    
+    public init(argument: Argument, result: Result) {
+        self.argument = argument
+        self.result = result
+    }
 }
 
 extension MockFunction {

@@ -62,7 +62,7 @@ var package = Package(
             path: "Source/TestExpect"),
         .target(
             name: "SabyTestWait",
-            dependencies: ["SabyConcurrency"],
+            dependencies: ["SabyConcurrency", "SabyTestMock"],
             path: "Source/TestWait"),
         .target(
             name: "SabyJSON",
