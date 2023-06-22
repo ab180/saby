@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct MockFunction<Argument, Result> {
+public final class MockFunction<Argument, Result> {
     public var implementation: (Argument) -> Result
     public var calls: [MockFunctionCall<Argument, Result>]
     
@@ -24,7 +24,7 @@ public struct MockFunction<Argument, Result> {
         self.calls = []
     }
     
-    public init(
+    public convenience init(
         _ original: (Argument) -> Result = { _ in
             fatalError()
         },
@@ -33,7 +33,7 @@ public struct MockFunction<Argument, Result> {
         self.init(original) { _ in result }
     }
     
-    public mutating func callAsFunction(_ argument: Argument) -> Result {
+    public func callAsFunction(_ argument: Argument) -> Result {
         let result = implementation(argument)
         calls.append(MockFunctionCall(argument: argument, result: result))
         
@@ -44,11 +44,6 @@ public struct MockFunction<Argument, Result> {
 public struct MockFunctionCall<Argument, Result> {
     public let argument: Argument
     public let result: Result
-    
-    public init(argument: Argument, result: Result) {
-        self.argument = argument
-        self.result = result
-    }
 }
 
 extension MockFunction {

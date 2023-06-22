@@ -16,9 +16,9 @@ public struct WaitMockFunction {
     }
 
     public func callAsFunction<Argument, Result>(
-        _ mock: inout MockFunction<Argument, Result>,
+        _ mock: MockFunction<Argument, Result>,
         _ block: () -> Void
-    ) throws -> MockFunctionCall<Argument, Result> {
+    ) throws -> (argument: Argument, result: Result) {
         var callArgument: Argument?
         var callResult: Result?
         
@@ -37,7 +37,7 @@ public struct WaitMockFunction {
             throw WaitMockFunctionError.timeout
         }
         
-        return MockFunctionCall<Argument, Result>(argument: callArgument!, result: callResult!)
+        return (argument: callArgument!, result: callResult!)
     }
 }
 
