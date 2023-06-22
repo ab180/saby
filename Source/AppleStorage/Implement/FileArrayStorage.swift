@@ -52,6 +52,23 @@ extension FileArrayStorage {
         }
     }
     
+    public func add(_ values: [Value]) -> Promise<Void, Error> {
+        execute { context in
+            let keys = values.map(\.key)
+            
+            try context.items.mutate { items in
+                items.filter { !keys.contains($0.key) }
+                + (try values.map {
+                    Item(
+                        key: $0.key,
+                        value: $0,
+                        byte: try self.encoder.encode($0).count
+                    )
+                })
+            }
+        }
+    }
+    
     public func delete(key: UUID) -> Promise<Void, Error> {
         execute { context in
             context.items.mutate { items in

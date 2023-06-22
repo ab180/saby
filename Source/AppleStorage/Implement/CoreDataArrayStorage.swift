@@ -57,6 +57,27 @@ extension CoreDataArrayStorage {
         }
     }
     
+    public func add(_ values: [Value]) -> Promise<Void, Error> {
+        execute { context in
+            let keys = values.map(\.key)
+            
+            let request = self.createAnyRequest(keys: keys)
+            try context.executeDelete(request)
+            
+            for value in values {
+                let item = SabyCoreDataArrayStorageItem(
+                    entity: self.entity,
+                    insertInto: context
+                )
+                let data = try self.encoder.encode(value)
+                
+                item.key = value.key
+                item.data = data
+                item.byte = data.count
+            }
+        }
+    }
+    
     public func delete(key: UUID) -> Promise<Void, Error> {
         execute { context in
             let request = self.createAnyRequest(key: key)
