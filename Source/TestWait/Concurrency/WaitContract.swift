@@ -17,7 +17,7 @@ public struct WaitContract {
 
     public func callAsFunction<Value, Failure>(
         _ contract: Contract<Value, Failure>,
-        _ block: () -> Void
+        _ block: () throws -> Void
     ) throws -> Value {
         var result: Value?
         var failure: Error?
@@ -30,7 +30,7 @@ public struct WaitContract {
             failure = error
             semaphore.signal()
         }
-        block()
+        try block()
 
         if case .timedOut = semaphore.wait(timeout: .now() + timeout) {
             throw WaitPromiseError.timeout

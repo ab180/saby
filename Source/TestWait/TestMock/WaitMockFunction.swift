@@ -17,7 +17,7 @@ public struct WaitMockFunction {
 
     public func callAsFunction<Argument, Result>(
         _ mock: MockFunction<Argument, Result>,
-        _ block: () -> Void
+        _ block: () throws -> Void
     ) throws -> (argument: Argument, result: Result) {
         var callArgument: Argument?
         var callResult: Result?
@@ -31,7 +31,7 @@ public struct WaitMockFunction {
             
             return callResult!
         }
-        block()
+        try block()
 
         if case .timedOut = semaphore.wait(timeout: .now() + timeout) {
             throw WaitMockFunctionError.timeout
