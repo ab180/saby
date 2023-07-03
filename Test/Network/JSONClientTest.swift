@@ -51,7 +51,7 @@ final class JSONClientTest: XCTestCase {
         
         Expect.promise(
             response,
-            state: .resolved([:]),
+            state: .resolved({ $0 == (200, [:]) }),
             timeout: .seconds(2)
         )
     }
@@ -77,7 +77,7 @@ final class JSONClientTest: XCTestCase {
         
         Expect.promise(
             response,
-            state: .rejected(JSONClient<JSON?, JSON>.InternalError.responseDataIsNotDecodable),
+            state: .rejected(JSONClientError.responseDataIsNotDecodable),
             timeout: .seconds(2)
         )
     }
@@ -103,7 +103,7 @@ final class JSONClientTest: XCTestCase {
         
         Expect.promise(
             response,
-            state: .rejected(DataClient.InternalError.responseCodeNot2XX),
+            state: .rejected(JSONClientError.responseDataIsNotDecodable),
             timeout: .seconds(2)
         )
     }
@@ -153,7 +153,7 @@ final class JSONClientTest: XCTestCase {
         
         Expect.promise(
             response,
-            state: .resolved(Data()),
+            state: .resolved({ $0 == (200, Data()) }),
             timeout: .seconds(2)
         )
     }
@@ -178,7 +178,7 @@ final class JSONClientTest: XCTestCase {
         
         Expect.promise(
             response,
-            state: .resolved(Data()),
+            state: .resolved({ $0 == (200, Data()) }),
             timeout: .seconds(2)
         )
     }

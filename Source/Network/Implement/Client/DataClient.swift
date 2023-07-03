@@ -38,8 +38,8 @@ extension DataClient {
         header: ClientHeader = [:],
         body: Data? = nil,
         optionBlock: (inout URLRequest) -> Void = { _ in }
-    ) -> Promise<Data?, Error> {
-        let pending = Promise<Data?, Error>.pending()
+    ) -> Promise<ClientResult<Data?>, Error> {
+        let pending = Promise<ClientResult<Data?>, Error>.pending()
         
         var request = URLRequest(url: url)
         optionBlock(&request)
@@ -57,15 +57,12 @@ extension DataClient {
                 return
             }
             
-            guard
-                let response = response as? HTTPURLResponse,
-                response.statusCode / 100 == 2
-            else {
-                pending.reject(InternalError.responseCodeNot2XX)
+            guard let response = response as? HTTPURLResponse else {
+                pending.reject(DataClientError.statusCodeNotFound)
                 return
             }
 
-            pending.resolve(data)
+            pending.resolve((code: response.statusCode, body: data))
         }
         pending.onCancel {
             task.cancel()
@@ -76,8 +73,6 @@ extension DataClient {
     }
 }
 
-extension DataClient {
-    public enum InternalError: Error {
-        case responseCodeNot2XX
-    }
+public enum DataClientError: Error {
+    case statusCodeNotFound
 }

@@ -41,7 +41,7 @@ extension JSONClient {
         method: ClientMethod = .get,
         header: ClientHeader = [:],
         optionBlock: (inout URLRequest) -> Void = { _ in }
-    ) -> Promise<Response, Error> where RequestValue? == Request {
+    ) -> Promise<ClientResult<Response>, Error> where RequestValue? == Request {
         request(url: url, method: method, header: header, body: nil, optionBlock: optionBlock)
     }
     
@@ -51,9 +51,9 @@ extension JSONClient {
         header: ClientHeader = [:],
         body: Request,
         optionBlock: (inout URLRequest) -> Void = { _ in }
-    ) -> Promise<Response, Error> {
+    ) -> Promise<ClientResult<Response>, Error> {
         guard let body = try? self.encoder.encode(body) else {
-            return Promise<Response, Error>.rejected(InternalError.bodyIsNotEncodable)
+            return Promise.rejected(JSONClientError.bodyIsNotEncodable)
         }
         
         return client.request(
@@ -62,29 +62,27 @@ extension JSONClient {
             header: header,
             body: body,
             optionBlock: optionBlock
-        ).then { data -> Response in
+        ).then { code, data -> ClientResult<Response> in
             if
                 (Response.self is Data.Type || Response.self is Data?.Type),
-                let result = data as? Response
+                let body = data as? Response
             {
-                return result
+                return (code, body)
             }
             
             guard
-                let data = data,
-                let result = try? self.decoder.decode(Response.self, from: data)
+                let data,
+                let body = try? self.decoder.decode(Response.self, from: data)
             else {
-                throw InternalError.responseDataIsNotDecodable
+                throw JSONClientError.responseDataIsNotDecodable
             }
             
-            return result
+            return (code, body)
         }
     }
 }
 
-extension JSONClient {
-    public enum InternalError: Error {
-        case responseDataIsNotDecodable
-        case bodyIsNotEncodable
-    }
+public enum JSONClientError: Error {
+    case responseDataIsNotDecodable
+    case bodyIsNotEncodable
 }
