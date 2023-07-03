@@ -103,7 +103,7 @@ final class JSONClientTest: XCTestCase {
         
         Expect.promise(
             response,
-            state: .rejected(JSONClientError.responseDataIsNotDecodable),
+            state: .rejected(ClientError<Data?>.statusCodeNot2XX(code: 200, body: Data())),
             timeout: .seconds(2)
         )
     }

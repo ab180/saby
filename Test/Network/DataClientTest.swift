@@ -64,7 +64,11 @@ final class DataClientTest: XCTestCase {
         
         let response = client.request(URL(string: "https://mock.api.ab180.co/request")!)
         
-        Expect.promise(response, state: .resolved({ $0 == (500, Data()) }), timeout: .seconds(2))
+        Expect.promise(
+            response,
+            state: .rejected(ClientError<Data?>.statusCodeNot2XX(code: 200, body: Data())),
+            timeout: .seconds(2)
+        )
     }
     
     func test__request_error() {

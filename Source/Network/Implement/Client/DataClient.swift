@@ -58,7 +58,13 @@ extension DataClient {
             }
             
             guard let response = response as? HTTPURLResponse else {
-                pending.reject(DataClientError.statusCodeNotFound)
+                pending.reject(ClientError<Data?>.statusCodeNotFound)
+                return
+            }
+            
+            let code = response.statusCode
+            guard code / 100 == 2 else {
+                pending.reject(ClientError<Data?>.statusCodeNot2XX(code: code, body: data))
                 return
             }
 
@@ -71,8 +77,4 @@ extension DataClient {
         
         return pending.promise
     }
-}
-
-public enum DataClientError: Error {
-    case statusCodeNotFound
 }
