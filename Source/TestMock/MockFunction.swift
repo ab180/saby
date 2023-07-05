@@ -30,10 +30,7 @@ extension MockFunction {
         _ original: (Argument) -> Result = { _ in
             fatalError()
         },
-        implementation: @escaping (Argument) -> Result = { _ in
-            if Result.self is Void.Type { return () as! Result }
-            fatalError("no implementation")
-        }
+        implementation: @escaping (Argument) -> Result
     ) {
         self.init(
             implementation: implementation,
@@ -50,18 +47,23 @@ extension MockFunction {
         self.init(original) { _ in expect }
         self.expect = expect
     }
-}
-
-extension MockFunction where Result: Mockable {
+    
     public convenience init(
         _ original: (Argument) -> Result = { _ in
             fatalError()
         }
     ) {
-        let expect = Result.mock()
-        
-        self.init(original) { _ in expect }
-        self.expect = expect
+        if let resultType = Result.self as? Mockable.Type {
+            let expect = resultType.mock() as! Result
+            self.init(original) { _ in expect }
+            self.expect = expect
+        }
+        else {
+            self.init(original) { _ in
+                if Result.self is Void.Type { return () as! Result }
+                fatalError("no implementation")
+            }
+        }
     }
 }
 
