@@ -9,6 +9,11 @@ import Foundation
 
 public final class MockFunction<Argument, Result> {
     public var implementation: (Argument) -> Result
+    public var expect: Result! {
+        willSet {
+            implementation = { _ in newValue }
+        }
+    }
     public var calls: [MockFunctionCall<Argument, Result>]
     
     public init(
@@ -28,9 +33,21 @@ public final class MockFunction<Argument, Result> {
         _ original: (Argument) -> Result = { _ in
             fatalError()
         },
-        result: Result
+        expect: Result
     ) {
-        self.init(original) { _ in result }
+        self.init(original) { _ in expect }
+        self.expect = expect
+    }
+    
+    public convenience init(
+        _ original: (Argument) -> Result = { _ in
+            fatalError()
+        }
+    ) where Result: Mockable {
+        let expect = Result.mock()
+        
+        self.init(original) { _ in expect }
+        self.expect = expect
     }
     
     public func callAsFunction(_ argument: Argument) -> Result {
