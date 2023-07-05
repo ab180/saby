@@ -103,7 +103,7 @@ private final class InstanceASIdentifierManager {
                 instanceASIdentifierManager.call(methodAdvertisingIdentifier) as? UUID
             )
         else {
-            throw InternalError.advertisingIdentifierIsNotUUID
+            throw IdentifierForAdvertiserFetcherError.advertisingIdentifierIsNotUUID
         }
         
         return result.uuidString
@@ -115,18 +115,16 @@ private final class InstanceASIdentifierManager {
                 instanceASIdentifierManager.call(methodAdvertisingTrackingEnabled) as? Bool
             )
         else {
-            throw InternalError.advertisingTrackingEnabledIsNotBool
+            throw IdentifierForAdvertiserFetcherError.advertisingTrackingEnabledIsNotBool
         }
         
         return enabled
     }
 }
 
-extension InstanceASIdentifierManager {
-    enum InternalError: Error {
-        case advertisingIdentifierIsNotUUID
-        case advertisingTrackingEnabledIsNotBool
-    }
+public enum IdentifierForAdvertiserFetcherError: Error {
+    case advertisingIdentifierIsNotUUID
+    case advertisingTrackingEnabledIsNotBool
 }
 
 #endif

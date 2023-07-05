@@ -13,7 +13,7 @@ import SabyAppleObjectiveCReflection
 import SabyConcurrency
 
 public final class AppleAdsAttributionTokenFetcher: Fetcher {
-    public typealias Value = Promise<String, Error>
+    public typealias Value = Promise<AppleAdsAttributionToken, Error>
     
     private let classAAAttribution: ClassAAAttribution
     
@@ -23,12 +23,14 @@ public final class AppleAdsAttributionTokenFetcher: Fetcher {
         self.classAAAttribution = classAAAttribution
     }
     
-    public func fetch() -> Promise<String, Error> {
+    public func fetch() -> Promise<AppleAdsAttributionToken, Error> {
         Promise.async {
             try self.classAAAttribution.attributionToken()
         }
     }
 }
+
+public typealias AppleAdsAttributionToken = String
 
 private final class ClassAAAttribution {
     private let classAAAttribution: NSObjectClass
@@ -62,17 +64,15 @@ private final class ClassAAAttribution {
             throw error
         }
         guard let result = result as? String else {
-            throw InternalError.attributionTokenIsNotString
+            throw AppleAdsAttributionTokenFetcherError.attributionTokenIsNotString
         }
         
         return result
     }
 }
 
-extension ClassAAAttribution {
-    enum InternalError: Error {
-        case attributionTokenIsNotString
-    }
+public enum AppleAdsAttributionTokenFetcherError: Error {
+    case attributionTokenIsNotString
 }
 
 #endif

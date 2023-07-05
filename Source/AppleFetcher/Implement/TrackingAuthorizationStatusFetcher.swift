@@ -63,17 +63,15 @@ private final class ClassATTrackingManager {
             let result = result as? UInt,
             let result = TrackingAuthorizationStatus(rawValue: result)
         else {
-            throw InternalError.trackingAuthorizationStatusIsNotType
+            throw TrackingAuthorizationStatusFetcherError.trackingAuthorizationStatusIsNotType
         }
         
         return result
     }
 }
 
-extension ClassATTrackingManager {
-    enum InternalError: Error {
-        case trackingAuthorizationStatusIsNotType
-    }
+public enum TrackingAuthorizationStatusFetcherError: Error {
+    case trackingAuthorizationStatusIsNotType
 }
 
 #endif

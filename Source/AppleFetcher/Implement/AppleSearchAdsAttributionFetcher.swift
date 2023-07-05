@@ -13,7 +13,7 @@ import SabyAppleObjectiveCReflection
 import SabyConcurrency
 
 public final class AppleSearchAdsAttributionFetcher: Fetcher {
-    public typealias Value = Promise<[String: NSObject], Error>
+    public typealias Value = Promise<AppleSearchAdsAttribution, Error>
     
     private let instanceADClient: InstanceADClient
     
@@ -28,7 +28,7 @@ public final class AppleSearchAdsAttributionFetcher: Fetcher {
         self.instanceADClient = instanceADClient
     }
     
-    public func fetch() -> Promise<[String: NSObject], Error> {
+    public func fetch() -> Promise<AppleSearchAdsAttribution, Error> {
         Promise { resolve, reject in
             self.instanceADClient.requestAttributionDetailsWithBlock { attribution, error in
                 if let attribution = attribution {
@@ -40,18 +40,14 @@ public final class AppleSearchAdsAttributionFetcher: Fetcher {
                     return
                 }
                 else {
-                    reject(InternalError.attributionAndErrorAreBothNil)
+                    reject(AppleSearchAdsAttributionFetcherError.attributionAndErrorAreBothNil)
                 }
             }
         }
     }
 }
 
-extension AppleSearchAdsAttributionFetcher {
-    enum InternalError: Error {
-        case attributionAndErrorAreBothNil
-    }
-}
+public typealias AppleSearchAdsAttribution = [String: AnyObject]
 
 private final class ClassADClient {
     private let classADClient: NSObjectClass
@@ -103,10 +99,10 @@ private final class InstanceADClient {
     }
     
     func requestAttributionDetailsWithBlock(
-        handler: @escaping ([String: NSObject]?, Error?) -> Void
+        handler: @escaping ([String: AnyObject]?, Error?) -> Void
     ) {
         let handler: @convention(block) (
-            [String: NSObject]?,
+            [String: AnyObject]?,
             Error?
         ) -> Void = handler
         
@@ -115,6 +111,10 @@ private final class InstanceADClient {
             with: handler
         )
     }
+}
+
+public enum AppleSearchAdsAttributionFetcherError: Error {
+    case attributionAndErrorAreBothNil
 }
 
 #endif
