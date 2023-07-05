@@ -16,7 +16,17 @@ public final class MockFunction<Argument, Result> {
     }
     public var calls: [MockFunctionCall<Argument, Result>]
     
-    public init(
+    init(
+        implementation: @escaping (Argument) -> Result,
+        calls: [MockFunctionCall<Argument, Result>]
+    ) {
+        self.implementation = implementation
+        self.calls = calls
+    }
+}
+
+extension MockFunction {
+    public convenience init(
         _ original: (Argument) -> Result = { _ in
             fatalError()
         },
@@ -25,8 +35,10 @@ public final class MockFunction<Argument, Result> {
             fatalError("no implementation")
         }
     ) {
-        self.implementation = implementation
-        self.calls = []
+        self.init(
+            implementation: implementation,
+            calls: []
+        )
     }
     
     public convenience init(
@@ -38,18 +50,22 @@ public final class MockFunction<Argument, Result> {
         self.init(original) { _ in expect }
         self.expect = expect
     }
-    
+}
+
+extension MockFunction where Result: Mockable {
     public convenience init(
         _ original: (Argument) -> Result = { _ in
             fatalError()
         }
-    ) where Result: Mockable {
+    ) {
         let expect = Result.mock()
         
         self.init(original) { _ in expect }
         self.expect = expect
     }
-    
+}
+
+extension MockFunction {
     public func callAsFunction(_ argument: Argument) -> Result {
         let result = implementation(argument)
         calls.append(MockFunctionCall(argument: argument, result: result))

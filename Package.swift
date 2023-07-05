@@ -70,7 +70,7 @@ var package = Package(
             path: "Source/JSON"),
         .target(
             name: "SabyTestMock",
-            dependencies: ["SabyJSON"],
+            dependencies: ["SabyConcurrency", "SabyJSON"],
             path: "Source/TestMock"),
         .target(
             name: "SabyNetwork",
