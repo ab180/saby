@@ -10,10 +10,16 @@ import Foundation
 import SabyConcurrency
 
 public final class MockFunction<Argument, Result> {
-    public var implementation: (Argument) -> Result
+    public var implementation: (Argument) -> Result {
+        willSet {
+            expect = nil
+        }
+    }
     public var expect: Result! {
         willSet {
-            implementation = { _ in newValue }
+            if newValue != nil {
+                implementation = { _ in self.expect }
+            }
         }
     }
     public var calls: [MockFunctionCall<Argument, Result>]
