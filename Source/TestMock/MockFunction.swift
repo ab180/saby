@@ -58,6 +58,11 @@ extension MockFunction {
             self.init(original) { _ in expect }
             self.expect = expect
         }
+        else if Result.self is Void.Type {
+            let expect = () as! Result
+            self.init(original) { _ in expect }
+            self.expect = expect
+        }
         else {
             self.init(original) { _ in
                 if Result.self is Void.Type { return () as! Result }
