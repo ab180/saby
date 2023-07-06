@@ -7,6 +7,8 @@
 
 import Foundation
 
+import SabyConcurrency
+
 public final class MockFunction<Argument, Result> {
     public var implementation: (Argument) -> Result
     public var expect: Result! {
@@ -60,6 +62,16 @@ extension MockFunction {
         }
         else if Result.self is Void.Type {
             let expect = () as! Result
+            self.init(original) { _ in expect }
+            self.expect = expect
+        }
+        else if Result.self is Promise<Void, Never>.Type {
+            let expect = Promise<Void, Never>.resolved(()) as! Result
+            self.init(original) { _ in expect }
+            self.expect = expect
+        }
+        else if Result.self is Promise<Void, Error>.Type {
+            let expect = Promise<Void, Error>.resolved(()) as! Result
             self.init(original) { _ in expect }
             self.expect = expect
         }
