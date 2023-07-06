@@ -14,6 +14,13 @@ public func compute<Result>(
 }
 
 public func compute<Value, Result>(
+    _ value: Value,
+    _ block: (Value) -> Result
+) -> Result {
+    return block(value)
+}
+
+public func compute<Value, Result>(
     _ option: ComputeOption.NonNull,
     _ value: Value?,
     _ block: (Value) -> Result
