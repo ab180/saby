@@ -9,10 +9,11 @@ import Foundation
 
 extension Optional: Mockable {
     public static func mock() -> Self {
-        nil
-    }
-    
-    public static func mock() -> Self where Wrapped: Mockable {
-        Wrapped.mock()
+        if let wrappedType = Wrapped.self as? Mockable.Type {
+            return (wrappedType.mock() as! Wrapped)
+        }
+        else {
+            return nil
+        }
     }
 }

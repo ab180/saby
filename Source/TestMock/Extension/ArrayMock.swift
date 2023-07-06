@@ -9,10 +9,11 @@ import Foundation
 
 extension Array: Mockable {
     public static func mock() -> Array {
-        []
-    }
-    
-    public static func mock() -> Array where Element: Mockable {
-        [Element.mock()]
+        if let elementType = Element.self as? Mockable.Type {
+            return [elementType.mock() as! Element]
+        }
+        else {
+            return []
+        }
     }
 }
