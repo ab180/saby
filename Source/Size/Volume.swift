@@ -10,7 +10,7 @@ import Foundation
 public struct Volume: Codable, Comparable, Equatable {
     public let byte: Double
     
-    init(byte: Double) {
+    public init(byte: Double) {
         self.byte = byte
     }
 }
