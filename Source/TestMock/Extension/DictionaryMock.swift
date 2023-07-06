@@ -11,4 +11,8 @@ extension Dictionary: Mockable {
     public static func mock() -> Dictionary {
         [:]
     }
+    
+    public static func mock() -> Dictionary where Key: Mockable, Value: Mockable {
+        [Key.mock(): Value.mock()]
+    }
 }

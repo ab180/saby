@@ -11,4 +11,8 @@ extension Array: Mockable {
     public static func mock() -> Array {
         []
     }
+    
+    public static func mock() -> Array where Element: Mockable {
+        [Element.mock()]
+    }
 }
