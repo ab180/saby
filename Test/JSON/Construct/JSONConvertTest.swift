@@ -110,6 +110,20 @@ final class JSONConvertTest: XCTestCase {
         )
     }
     
+    func test__from_dictionary_any_hashable_any() {
+        XCTAssertEqual(JSON.from(unsafe: [:] as [AnyHashable : Any]), [:])
+        XCTAssertEqual(JSON.from(unsafe: ["valid":"1","invalid":JSONEncoder(),0:"0"]), JSON.from(["valid":"1"]))
+        XCTAssertEqual(JSON.from(unsafe: ["valid":nil,"invalid":JSONEncoder(),1:"1"]), JSON.from(["valid":nil]))
+        XCTAssertEqual(
+            JSON.from(unsafe: [
+                "a":["a":nil,0:"0"] as [AnyHashable : Any?],
+                "b":["a":JSONEncoder(),1:"1"] as [AnyHashable : Any?],
+                2:"2"
+            ]),
+            JSON.from(["a":["a":nil],"b":[:]])
+        )
+    }
+    
     func test__from_array_any() {
         XCTAssertEqual(JSON.from(unsafe: []), [])
         XCTAssertEqual(JSON.from(unsafe: ["1",1,JSONEncoder()]), JSON.from(["1",1]))

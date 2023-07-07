@@ -93,6 +93,9 @@ extension JSON {
         else if let value = value as? [String: Any?] {
             return JSON.from(unsafe: value)
         }
+        else if let value = value as? [AnyHashable: Any?] {
+            return JSON.from(unsafe: value)
+        }
         else if let value = value as? [Any?] {
             return JSON.from(unsafe: value)
         }
@@ -110,6 +113,36 @@ extension JSON {
     
     public static func from(unsafe value: [String: Any?]) -> JSON {
         .object(value.compactMapValues { try? JSON.from(unsafe: $0) })
+    }
+    
+    public static func from(unsafe value: [AnyHashable: Any]) -> JSON {
+        .object(Dictionary(
+            value.compactMap { key, value in
+                guard
+                    let key = key as? String,
+                    let value = try? JSON.from(unsafe: value)
+                else {
+                    return nil
+                }
+                return (key, value)
+            },
+            uniquingKeysWith: { first, last in last }
+        ))
+    }
+    
+    public static func from(unsafe value: [AnyHashable: Any?]) -> JSON {
+        .object(Dictionary(
+            value.compactMap { key, value in
+                guard
+                    let key = key as? String,
+                    let value = try? JSON.from(unsafe: value)
+                else {
+                    return nil
+                }
+                return (key, value)
+            },
+            uniquingKeysWith: { first, last in last }
+        ))
     }
     
     public static func from(unsafe value: [Any]) -> JSON {
