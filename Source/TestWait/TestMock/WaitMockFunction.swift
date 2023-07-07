@@ -23,13 +23,12 @@ public struct WaitMockFunction {
         var callResult: Result?
         
         let semaphore = DispatchSemaphore(value: 0)
-        let implementation = mock.implementation
-        mock.implementation = { argument in
+        let callback = mock.callback
+        mock.callback = { argument, result in
             callArgument = argument
-            callResult = implementation(argument)
+            callResult = result
+            callback(argument, result)
             semaphore.signal()
-            
-            return callResult!
         }
         try block()
 

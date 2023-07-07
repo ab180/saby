@@ -16,6 +16,12 @@ public final class MockFunction<Argument, Result> {
                 expect = nil
                 mode = .implementation
             }
+            let implementation = self.implementation
+            self.implementation = { argument in
+                let result = implementation(argument)
+                self.callback(argument, result)
+                return result
+            }
         }
     }
     public var expect: Result! {
@@ -27,14 +33,37 @@ public final class MockFunction<Argument, Result> {
         }
     }
     public var calls: [MockFunctionCall<Argument, Result>]
-    var mode: Mode = .implementation
+    public var callback: (Argument, Result) -> Void
+    var mode: Mode
     
     init(
-        implementation: @escaping (Argument) -> Result,
-        calls: [MockFunctionCall<Argument, Result>]
+        implementation: @escaping (Argument) -> Result
     ) {
-        self.implementation = implementation
-        self.calls = calls
+        self.implementation = { _ in fatalError() }
+        self.calls = []
+        self.callback = { _, _ in }
+        self.mode = .implementation
+        
+        self.implementation = { argument in
+            let result = implementation(argument)
+            self.callback(argument, result)
+            return result
+        }
+    }
+    
+    init(
+        expect: Result
+    ) {
+        self.implementation = { _ in fatalError() }
+        self.expect = expect
+        self.calls = []
+        self.callback = { _, _ in }
+        self.mode = .expect
+        
+        self.implementation = { argument in
+            self.callback(argument, self.expect)
+            return self.expect
+        }
     }
 }
 
@@ -52,10 +81,7 @@ extension MockFunction {
         },
         implementation: @escaping (Argument) -> Result
     ) {
-        self.init(
-            implementation: implementation,
-            calls: []
-        )
+        self.init(implementation: implementation)
     }
     
     public convenience init(
@@ -64,8 +90,7 @@ extension MockFunction {
         },
         expect: Result
     ) {
-        self.init(original) { _ in expect }
-        self.expect = expect
+        self.init(expect: expect)
     }
     
     public convenience init(
@@ -73,32 +98,26 @@ extension MockFunction {
             fatalError()
         }
     ) {
-        let implementation: (Argument) -> Result = { _ in
-            fatalError("no implementation")
-        }
-        
         if let resultType = Result.self as? Mockable.Type {
             let expect = resultType.mock() as! Result
-            self.init(original, implementation: implementation)
-            self.expect = expect
+            self.init(expect: expect)
         }
         else if Result.self is Void.Type {
             let expect = () as! Result
-            self.init(original, implementation: implementation)
-            self.expect = expect
+            self.init(expect: expect)
         }
         else if Result.self is Promise<Void, Never>.Type {
             let expect = Promise<Void, Never>.resolved(()) as! Result
-            self.init(original, implementation: implementation)
-            self.expect = expect
+            self.init(expect: expect)
         }
         else if Result.self is Promise<Void, Error>.Type {
             let expect = Promise<Void, Error>.resolved(()) as! Result
-            self.init(original, implementation: implementation)
-            self.expect = expect
+            self.init(expect: expect)
         }
         else {
-            self.init(original, implementation: implementation)
+            self.init(implementation: { _ in
+                fatalError("no implementation")
+            })
         }
     }
 }
