@@ -11,18 +11,23 @@ import SabyConcurrency
 
 public final class MockFunction<Argument, Result> {
     public var implementation: (Argument) -> Result {
-        willSet {
-            expect = nil
+        didSet {
+            if mode == .expect {
+                expect = nil
+                mode = .implementation
+            }
         }
     }
     public var expect: Result! {
-        willSet {
-            if newValue != nil {
+        didSet {
+            if mode == .implementation {
                 implementation = { _ in self.expect }
+                mode = .expect
             }
         }
     }
     public var calls: [MockFunctionCall<Argument, Result>]
+    var mode: Mode = .implementation
     
     init(
         implementation: @escaping (Argument) -> Result,
@@ -30,6 +35,13 @@ public final class MockFunction<Argument, Result> {
     ) {
         self.implementation = implementation
         self.calls = calls
+    }
+}
+
+extension MockFunction {
+    enum Mode {
+        case implementation
+        case expect
     }
 }
 
@@ -61,31 +73,32 @@ extension MockFunction {
             fatalError()
         }
     ) {
+        let implementation: (Argument) -> Result = { _ in
+            fatalError("no implementation")
+        }
+        
         if let resultType = Result.self as? Mockable.Type {
             let expect = resultType.mock() as! Result
-            self.init(original) { _ in expect }
+            self.init(original, implementation: implementation)
             self.expect = expect
         }
         else if Result.self is Void.Type {
             let expect = () as! Result
-            self.init(original) { _ in expect }
+            self.init(original, implementation: implementation)
             self.expect = expect
         }
         else if Result.self is Promise<Void, Never>.Type {
             let expect = Promise<Void, Never>.resolved(()) as! Result
-            self.init(original) { _ in expect }
+            self.init(original, implementation: implementation)
             self.expect = expect
         }
         else if Result.self is Promise<Void, Error>.Type {
             let expect = Promise<Void, Error>.resolved(()) as! Result
-            self.init(original) { _ in expect }
+            self.init(original, implementation: implementation)
             self.expect = expect
         }
         else {
-            self.init(original) { _ in
-                if Result.self is Void.Type { return () as! Result }
-                fatalError("no implementation")
-            }
+            self.init(original, implementation: implementation)
         }
     }
 }
