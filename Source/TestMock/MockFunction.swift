@@ -34,7 +34,9 @@ public final class MockFunction<Argument, Result> {
     }
     public var calls: [MockFunctionCall<Argument, Result>]
     public var callback: (Argument, Result) -> Void
+    
     var mode: Mode
+    let lock: Lock
     
     init(
         implementation: @escaping (Argument) -> Result
@@ -43,6 +45,7 @@ public final class MockFunction<Argument, Result> {
         self.calls = []
         self.callback = { _, _ in }
         self.mode = .implementation
+        self.lock = Lock()
         
         self.implementation = { argument in
             let result = implementation(argument)
@@ -59,6 +62,7 @@ public final class MockFunction<Argument, Result> {
         self.calls = []
         self.callback = { _, _ in }
         self.mode = .expect
+        self.lock = Lock()
         
         self.implementation = { argument in
             self.callback(argument, self.expect)
@@ -124,6 +128,9 @@ extension MockFunction {
 
 extension MockFunction {
     public func callAsFunction(_ argument: Argument) -> Result {
+        defer { lock.unlock() }
+        lock.lock()
+        
         let result = implementation(argument)
         calls.append(MockFunctionCall(argument: argument, result: result))
         
@@ -142,6 +149,9 @@ extension MockFunction {
         argument: ((Argument) -> Bool)? = nil,
         result: ((Result) -> Bool)? = nil
     ) -> Bool {
+        defer { lock.unlock() }
+        lock.lock()
+        
         let isMatch = { (
             call: MockFunctionCall<Argument, Result>
         ) -> Bool in
