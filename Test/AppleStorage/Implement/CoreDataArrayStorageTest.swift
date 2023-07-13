@@ -20,7 +20,7 @@ class CoreDataArrayStorageTest: XCTestCase {
     var encoder: JSONEncoder!
     
     override func setUpWithError() throws {
-        storage = CoreDataArrayStorage(name: "saby.array.storage.\(UUID())")
+        storage = CoreDataArrayStorage(directoryName: "saby", fileName: "\(UUID())")
         encoder = JSONEncoder()
     }
     

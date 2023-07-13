@@ -16,7 +16,7 @@ fileprivate struct DummyItem: Codable, KeyIdentifiable {
 final class FileArrayStorageTest: XCTestCase {
     fileprivate var storage: FileArrayStorage<DummyItem>!
     private var directoryName: String!
-    var encoder: PropertyListEncoder!
+    var encoder: JSONEncoder!
     
     private struct TestItemGroup {
         private static let testCount = 100
@@ -41,7 +41,7 @@ final class FileArrayStorageTest: XCTestCase {
             directoryName: directoryName,
             fileName: String(describing: DummyItem.self)
         )
-        encoder = PropertyListEncoder()
+        encoder = JSONEncoder()
     }
     
     override func tearDownWithError() throws {
@@ -162,6 +162,7 @@ final class FileArrayStorageTest: XCTestCase {
         let expect = Double(given.reduce(0) { $0 + (try! encoder.encode($1).count) })
         
         for value in given {
+            print(try! encoder.encode(value).count)
             _ = try self.storage.add(value).wait()
         }
         let size = try self.storage.size().wait()

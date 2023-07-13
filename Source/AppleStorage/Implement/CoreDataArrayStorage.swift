@@ -15,26 +15,45 @@ public final class CoreDataArrayStorage<Value: Codable & KeyIdentifiable>: Array
     typealias Context = NSManagedObjectContext
     typealias Item = SabyCoreDataArrayStorageItem
     
-    let name: String
-    let model: NSManagedObjectModel
     let entity: NSEntityDescription
     
-    let loadPromise: Atomic<Promise<Context, Error>>
+    let contextLoad: () -> Promise<Context, Error>
+    let contextPromise: Atomic<Promise<Context, Error>>
     
     let encoder = JSONEncoder()
     let decoder = JSONDecoder()
     
-    public init(name: String) {
+    public init(directoryName: String, fileName: String, migrations: [() -> Promise<Void, Error>]) {
         let schema = SabyCoreDataArrayStorageSchema()
         
-        self.name = name
-        self.model = schema.model
         self.entity = schema.entity
         
-        self.loadPromise = Atomic(Context.load(
-            name: name,
-            model: model
-        ))
+        self.contextLoad = {
+            Context.load(
+                directoryName: directoryName,
+                fileName: fileName,
+                migrations: migrations,
+                model: schema.model
+            )
+        }
+        self.contextPromise = Atomic(contextLoad())
+    }
+    
+    public init(baseURL: URL, directoryName: String, fileName: String, migrations: [() -> Promise<Void, Error>]) {
+        let schema = SabyCoreDataArrayStorageSchema()
+        
+        self.entity = schema.entity
+        
+        self.contextLoad = {
+            Context.load(
+                baseURL: baseURL,
+                directoryName: directoryName,
+                fileName: fileName,
+                migrations: migrations,
+                model: schema.model
+            )
+        }
+        self.contextPromise = Atomic(contextLoad())
     }
 }
 
@@ -244,11 +263,8 @@ extension CoreDataArrayStorage {
     fileprivate func execute<Result>(
         block: @escaping (Context) throws -> Result
     ) -> Promise<Result, Error> {
-        let loadPromiseCapture = self.loadPromise.mutate {
-            let capture = !$0.isRejected ? $0 : Context.load(
-                name: self.name,
-                model: self.model
-            )
+        let loadPromiseCapture = self.contextPromise.mutate {
+            let capture = !$0.isRejected ? $0 : contextLoad()
             return capture
         }
         
@@ -288,21 +304,80 @@ extension NSManagedObjectContext {
 
 extension NSManagedObjectContext {
     static func load(
-        name: String,
+        directoryName: String,
+        fileName: String,
+        migrations: [() -> Promise<Void, Error>],
         model: NSManagedObjectModel
     ) -> Promise<NSManagedObjectContext, Error> {
-        Promise { resolve, reject in
+        Promise.async {
+            guard
+                let libraryDirectoryURL = FileManager.default.urls(
+                    for: .libraryDirectory,
+                    in: .userDomainMask
+                ).first
+            else {
+                throw StorageError.libraryDirectoryNotFound
+            }
+            
+            return load(
+                baseURL: libraryDirectoryURL,
+                directoryName: directoryName,
+                fileName: fileName,
+                migrations: migrations,
+                model: model
+            )
+        }
+    }
+    
+    static func load(
+        baseURL: URL,
+        directoryName: String,
+        fileName: String,
+        migrations: [() -> Promise<Void, Error>],
+        model: NSManagedObjectModel
+    ) -> Promise<NSManagedObjectContext, Error> {
+        var promise = Promise<Void, Error>.resolved(())
+        for migration in migrations {
+            promise = promise.then {
+                migration()
+            }
+        }
+        
+        return promise.then {
+            let fileManager = FileManager.default
+            
+            guard baseURL.isFileURL else {
+                throw StorageError.baseURLIsNotFileURL
+            }
+            guard fileManager.fileExists(atPath: baseURL.path) else {
+                throw StorageError.baseURLIsNotExist
+            }
+            
+            let directoryURL = baseURL.appendingPathComponent(directoryName)
+            if !fileManager.fileExists(atPath: directoryURL.path) {
+                try fileManager.createDirectory(
+                    at: directoryURL,
+                    withIntermediateDirectories: true
+                )
+            }
+            
+            let url = directoryURL.appendingPathComponent(fileName)
+
             let container = NSPersistentContainer(
-                name: name,
+                name: fileName,
                 managedObjectModel: model
             )
-
-            container.loadPersistentStores { _, error in
-                if let error {
-                    reject(error)
-                    return
+            let storeDescription = NSPersistentStoreDescription(url: url)
+            container.persistentStoreDescriptions = [storeDescription]
+            
+            return Promise { resolve, reject in
+                container.loadPersistentStores { _, error in
+                    if let error {
+                        reject(error)
+                        return
+                    }
+                    resolve(container.newBackgroundContext())
                 }
-                resolve(container.newBackgroundContext())
             }
         }
     }

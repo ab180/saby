@@ -7,7 +7,7 @@
 
 import SabyConcurrency
 
-public protocol DictionaryStorage<Key, Value> {
+public protocol DictionaryStorage<Key, Value>: Storage {
     associatedtype Key: Hashable
     associatedtype Value
     

@@ -13,27 +13,35 @@ public final class FileDictionaryStorage<
     Value: Codable
 >: DictionaryStorage {
     typealias Context = FileDictionaryStorageContext
-    
-    let directoryName: String
-    let fileName: String
+
     let fileLock = Lock()
     
+    let contextLoad: () -> Promise<Context<Key, Value>, Error>
     let contextPromise: Atomic<Promise<Context<Key, Value>, Error>>
     
-    let encoder = PropertyListEncoder()
-    let decoder = PropertyListDecoder()
-    let fileManager = FileManager.default
+    let encoder = JSONEncoder()
 
-    public init(directoryName: String, fileName: String) {
-        self.directoryName = directoryName
-        self.fileName = fileName
-        
-        self.contextPromise = Atomic(Context.load(
-            directoryName: directoryName,
-            fileName: fileName,
-            decoder: decoder,
-            fileManager: fileManager
-        ))
+    public init(directoryName: String, fileName: String, migrations: [() -> Promise<Void, Error>]) {
+        self.contextLoad = {
+            Context.load(
+                directoryName: directoryName,
+                fileName: fileName,
+                migrations: migrations
+            )
+        }
+        self.contextPromise = Atomic(contextLoad())
+    }
+    
+    public init(baseURL: URL, directoryName: String, fileName: String, migrations: [() -> Promise<Void, Error>]) {
+        self.contextLoad = {
+            Context.load(
+                baseURL: baseURL,
+                directoryName: directoryName,
+                fileName: fileName,
+                migrations: migrations
+            )
+        }
+        self.contextPromise = Atomic(contextLoad())
     }
 }
 
@@ -79,14 +87,6 @@ extension FileDictionaryStorage {
             let values = context.values.capture { $0 }
             let data = try self.encoder.encode(values)
             
-            let directoryURL = context.url.deletingLastPathComponent()
-            if !self.fileManager.fileExists(atPath: directoryURL.path) {
-                try self.fileManager.createDirectory(
-                    at: directoryURL,
-                    withIntermediateDirectories: true
-                )
-            }
-            
             self.fileLock.lock()
             try data.write(to: context.url)
             self.fileLock.unlock()
@@ -99,12 +99,7 @@ extension FileDictionaryStorage {
         block: @escaping (Context<Key, Value>) throws -> Result
     ) -> Promise<Result, Error> {
         let loadPromiseCapture = self.contextPromise.mutate {
-            let capture = !$0.isRejected ? $0 : Context.load(
-                directoryName: self.directoryName,
-                fileName: self.fileName,
-                decoder: self.decoder,
-                fileManager: self.fileManager
-            )
+            let capture = !$0.isRejected ? $0 : contextLoad()
             return capture
         }
         
@@ -133,29 +128,65 @@ struct FileDictionaryStorageContext<Key: Hashable & Codable, Value: Codable> {
     static func load(
         directoryName: String,
         fileName: String,
-        decoder: PropertyListDecoder,
-        fileManager: FileManager
+        migrations: [() -> Promise<Void, Error>]
     ) -> Promise<FileDictionaryStorageContext, Error> {
-        Promise { resolve, reject in
+        Promise.async {
             guard
                 let libraryDirectoryURL = FileManager.default.urls(
                     for: .libraryDirectory,
                     in: .userDomainMask
                 ).first
             else {
-                reject(FileDictionaryStorageError.libraryDirectoryNotFound)
-                return
+                throw StorageError.libraryDirectoryNotFound
             }
             
-            let url = libraryDirectoryURL
-                .appendingPathComponent(directoryName)
-                .appendingPathComponent(fileName)
+            return load(
+                baseURL: libraryDirectoryURL,
+                directoryName: directoryName,
+                fileName: fileName,
+                migrations: migrations
+            )
+        }
+    }
+    
+    static func load(
+        baseURL: URL,
+        directoryName: String,
+        fileName: String,
+        migrations: [() -> Promise<Void, Error>]
+    ) -> Promise<FileDictionaryStorageContext, Error> {
+        var promise = Promise<Void, Error>.resolved(())
+        for migration in migrations {
+            promise = promise.then {
+                migration()
+            }
+        }
+        
+        return promise.then {
+            let decoder = JSONDecoder()
+            let fileManager = FileManager.default
+            
+            guard baseURL.isFileURL else {
+                throw StorageError.baseURLIsNotFileURL
+            }
+            guard fileManager.fileExists(atPath: baseURL.path) else {
+                throw StorageError.baseURLIsNotExist
+            }
+            
+            let directoryURL = baseURL.appendingPathComponent(directoryName)
+            if !fileManager.fileExists(atPath: directoryURL.path) {
+                try fileManager.createDirectory(
+                    at: directoryURL,
+                    withIntermediateDirectories: true
+                )
+            }
+            
+            let url = directoryURL.appendingPathComponent(fileName)
             if !fileManager.fileExists(atPath: url.path) {
-                resolve(FileDictionaryStorageContext(
+                return FileDictionaryStorageContext(
                     url: url,
                     values: Atomic([:])
-                ))
-                return
+                )
             }
             
             guard
@@ -165,21 +196,16 @@ struct FileDictionaryStorageContext<Key: Hashable & Codable, Value: Codable> {
                     from: data
                 )
             else {
-                resolve(FileDictionaryStorageContext(
+                return FileDictionaryStorageContext(
                     url: url,
                     values: Atomic([:])
-                ))
-                return
+                )
             }
             
-            resolve(FileDictionaryStorageContext(
+            return FileDictionaryStorageContext(
                 url: url,
                 values: Atomic(values)
-            ))
+            )
         }
     }
-}
-
-public enum FileDictionaryStorageError: Error {
-    case libraryDirectoryNotFound
 }

@@ -7,7 +7,7 @@
 
 import SabyConcurrency
 
-public protocol ValueStorage<Value> {
+public protocol ValueStorage<Value>: Storage {
     associatedtype Value
     
     func set(_ value: Value) -> Promise<Void, Error>

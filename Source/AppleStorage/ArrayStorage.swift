@@ -9,7 +9,7 @@ import SabyConcurrency
 import SabySize
 import Foundation
 
-public protocol ArrayStorage<Value> {
+public protocol ArrayStorage<Value>: Storage {
     associatedtype Value: KeyIdentifiable
     
     func add(_ value: Value) -> Promise<Void, Error>
