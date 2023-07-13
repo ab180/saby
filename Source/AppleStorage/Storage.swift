@@ -22,12 +22,12 @@ public protocol Storage {
 extension Storage {
     /// ``init(directoryName:fileName:)`` create or load storage from
     /// `{Library directory}/{Directory name}/{File name}` path.
-    init(directoryName: String, fileName: String) {
+    public init(directoryName: String, fileName: String) {
         self.init(directoryName: directoryName, fileName: fileName, migrations: [])
     }
     /// ``init(baseURL:directoryName:fileName:)`` create or load storage from
     /// `{Base url}/{Directory name}/{File name}` path.
-    init(baseURL: URL, directoryName: String, fileName: String) {
+    public init(baseURL: URL, directoryName: String, fileName: String) {
         self.init(baseURL: baseURL, directoryName: directoryName, fileName: fileName, migrations: [])
     }
 }
