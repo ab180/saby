@@ -169,4 +169,36 @@ final class FileArrayStorageTest: XCTestCase {
         
         XCTAssertEqual(size.byte, expect)
     }
+    
+    func test__get_order_oldest() throws {
+        let givens = Array(repeating: 0, count: 100).map { _ in
+            DummyItem(key: UUID())
+        }
+        let expects = givens
+        
+        for value in givens {
+            _ = try storage.add(value).wait()
+        }
+        let values = try storage.get(limit: .unlimited, order: .oldest).wait()
+        
+        for (value, expect) in zip(values, expects) {
+            XCTAssertEqual(value.key, expect.key)
+        }
+    }
+    
+    func test__get_order_newest() throws {
+        let givens = Array(repeating: 0, count: 100).map { _ in
+            DummyItem(key: UUID())
+        }
+        let expects = givens.reversed()
+        
+        for value in givens {
+            _ = try storage.add(value).wait()
+        }
+        let values = try storage.get(limit: .unlimited, order: .newest).wait()
+        
+        for (value, expect) in zip(values, expects) {
+            XCTAssertEqual(value.key, expect.key)
+        }
+    }
 }

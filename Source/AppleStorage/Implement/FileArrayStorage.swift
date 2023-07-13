@@ -54,9 +54,12 @@ extension FileArrayStorage {
                 + [Item(
                     key: key,
                     value: value,
+                    date: Date(),
                     byte: try self.encoder.encode(value).count
                 )]
             }
+            
+            print(context.items.capture { $0 })
         }
     }
     
@@ -70,6 +73,7 @@ extension FileArrayStorage {
                     Item(
                         key: $0.key,
                         value: $0,
+                        date: Date(),
                         byte: try self.encoder.encode($0).count
                     )
                 })
@@ -110,8 +114,8 @@ extension FileArrayStorage {
             return item?.value
         }
     }
-
-    public func get(limit: GetLimit) -> Promise<[Value], Error> {
+    
+    public func get(limit: Limit) -> Promise<[Value], Error> {
         execute { context in
             let items = context.items.capture { items in
                 switch limit {
@@ -124,6 +128,25 @@ extension FileArrayStorage {
             }
 
             return items.map { $0.value }
+        }
+    }
+
+    public func get(limit: Limit, order: Order) -> Promise<[Value], Error> {
+        execute { context in
+            let items = context.items.capture { items in
+                switch limit {
+                case .unlimited:
+                    return items
+                case .count(let limit):
+                    let limit = min(items.count, limit)
+                    return Array(items[0 ..< limit])
+                }
+            }
+            let compare: (Item<Value>, Item<Value>) -> Bool = (
+                order == .oldest ? { $0.date < $1.date } : { $0.date >= $1.date }
+            )
+
+            return items.sorted(by: compare).map { $0.value }
         }
     }
 
@@ -281,5 +304,6 @@ public enum FileArrayStorageError: Error {
 struct FileArrayStorageItem<Value: Codable>: Codable {
     let key: UUID
     let value: Value
+    let date: Date
     let byte: Int
 }

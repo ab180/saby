@@ -70,8 +70,10 @@ extension CoreDataArrayStorage {
                 entity: self.entity,
                 insertInto: context
             )
+            
             item.key = key
             item.data = data
+            item.date = Date()
             item.byte = data.count
         }
     }
@@ -92,6 +94,7 @@ extension CoreDataArrayStorage {
                 
                 item.key = value.key
                 item.data = data
+                item.date = Date()
                 item.byte = data.count
             }
         }
@@ -113,7 +116,7 @@ extension CoreDataArrayStorage {
     
     public func clear() -> Promise<Void, Error> {
         execute { context in
-            let request = self.createAnyRequest(limit: .unlimited)
+            let request = self.createAnyRequest()
             try context.executeDelete(request)
         }
     }
@@ -128,10 +131,25 @@ extension CoreDataArrayStorage {
             return value
         }
     }
-
-    public func get(limit: GetLimit) -> Promise<[Value], Error> {
+    
+    public func get(limit: Limit) -> Promise<[Value], Error> {
         execute { context in
             let request = self.createRequest(limit: limit)
+            let items = try context.fetch(request)
+            var values: [Value] = []
+            
+            for item in items {
+                let value = try self.decoder.decode(Value.self, from: item.data)
+                values.append(value)
+            }
+
+            return values
+        }
+    }
+
+    public func get(limit: Limit, order: Order) -> Promise<[Value], Error> {
+        execute { context in
+            let request = self.createRequest(limit: limit, order: order)
             let items = try context.fetch(request)
             var values: [Value] = []
             
@@ -208,6 +226,10 @@ extension CoreDataArrayStorage {
         return request
     }
     
+    fileprivate func createRequest() -> NSFetchRequest<Item> {
+        createActualRequest()
+    }
+    
     fileprivate func createRequest(key: UUID) -> NSFetchRequest<Item> {
         createActualRequest(key: key)
     }
@@ -216,8 +238,16 @@ extension CoreDataArrayStorage {
         createActualRequest(keys: keys)
     }
     
-    fileprivate func createRequest(limit: GetLimit) -> NSFetchRequest<Item> {
+    fileprivate func createRequest(limit: Limit) -> NSFetchRequest<Item> {
         createActualRequest(limit: limit)
+    }
+    
+    fileprivate func createRequest(limit: Limit, order: Order) -> NSFetchRequest<Item> {
+        createActualRequest(limit: limit, order: order)
+    }
+    
+    fileprivate func createAnyRequest() -> NSFetchRequest<any NSFetchRequestResult> {
+        createActualRequest()
     }
     
     fileprivate func createAnyRequest(key: UUID) -> NSFetchRequest<any NSFetchRequestResult> {
@@ -228,32 +258,48 @@ extension CoreDataArrayStorage {
         createActualRequest(keys: keys)
     }
     
-    fileprivate func createAnyRequest(limit: GetLimit) -> NSFetchRequest<any NSFetchRequestResult> {
+    fileprivate func createAnyRequest(limit: Limit) -> NSFetchRequest<any NSFetchRequestResult> {
         createActualRequest(limit: limit)
     }
     
-    private func createActualRequest<Actual>(key: UUID) -> NSFetchRequest<Actual> {
+    fileprivate func createAnyRequest(limit: Limit, order: Order) -> NSFetchRequest<any NSFetchRequestResult> {
+        createActualRequest(limit: limit, order: order)
+    }
+    
+    private func createActualRequest<Actual>() -> NSFetchRequest<Actual> {
         let request = NSFetchRequest<Actual>()
         request.entity = self.entity
+        
+        return request
+    }
+    
+    private func createActualRequest<Actual>(key: UUID) -> NSFetchRequest<Actual> {
+        let request: NSFetchRequest<Actual> = createActualRequest()
         request.predicate = NSPredicate(format: "key = %@", key.uuidString)
         
         return request
     }
     
     private func createActualRequest<Actual>(keys: [UUID]) -> NSFetchRequest<Actual> {
-        let request = NSFetchRequest<Actual>()
-        request.entity = self.entity
+        let request: NSFetchRequest<Actual> = createActualRequest()
         request.predicate = NSPredicate(format: "key IN %@", keys.map(\.uuidString))
         
         return request
     }
     
-    private func createActualRequest<Actual>(limit: GetLimit) -> NSFetchRequest<Actual> {
-        let request = NSFetchRequest<Actual>()
-        request.entity = self.entity
+    private func createActualRequest<Actual>(limit: Limit) -> NSFetchRequest<Actual> {
+        let request: NSFetchRequest<Actual> = createActualRequest()
         if case .count(let count) = limit {
             request.fetchLimit = Int(count)
         }
+        
+        return request
+    }
+    
+    private func createActualRequest<Actual>(limit: Limit, order: Order) -> NSFetchRequest<Actual> {
+        let request: NSFetchRequest<Actual> = createActualRequest(limit: limit)
+        let sortDescriptor = NSSortDescriptor(key: "date", ascending: order == .oldest)
+        request.sortDescriptors = [sortDescriptor]
         
         return request
     }
@@ -392,6 +438,7 @@ public enum CoreDataArrayStorageError: Error {
 final class SabyCoreDataArrayStorageItem: NSManagedObject {
     @NSManaged var key: UUID
     @NSManaged var data: Data
+    @NSManaged var date: Date
     @NSManaged var byte: Int
 }
 
@@ -416,6 +463,14 @@ final class SabyCoreDataArrayStorageSchema {
             dataAttribute.attributeType = .binaryDataAttributeType
         }
         
+        let dateAttribute = NSAttributeDescription()
+        dateAttribute.name = "date"
+        if #available(iOS 15.0, macOS 12.0, macCatalyst 15.0, tvOS 15.0, watchOS 8.0, *) {
+            dateAttribute.type = .date
+        } else {
+            dateAttribute.attributeType = .dateAttributeType
+        }
+        
         let byteAttribute = NSAttributeDescription()
         byteAttribute.name = "byte"
         if #available(iOS 15.0, macOS 12.0, macCatalyst 15.0, tvOS 15.0, watchOS 8.0, *) {
@@ -430,6 +485,7 @@ final class SabyCoreDataArrayStorageSchema {
         itemEntity.properties = [
             keyAttribute,
             dataAttribute,
+            dateAttribute,
             byteAttribute
         ]
         

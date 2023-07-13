@@ -18,7 +18,8 @@ public protocol ArrayStorage<Value>: Storage {
     func delete(keys: [UUID]) -> Promise<Void, Error>
     func clear() -> Promise<Void, Error>
     func get(key: UUID) -> Promise<Value?, Error>
-    func get(limit: GetLimit) -> Promise<[Value], Error>
+    func get(limit: Limit) -> Promise<[Value], Error>
+    func get(limit: Limit, order: Order) -> Promise<[Value], Error>
     func save() -> Promise<Void, Error>
     
     func count() -> Promise<Int, Error>
