@@ -103,7 +103,7 @@ final class JSONClientTest: XCTestCase {
         
         Expect.promise(
             response,
-            state: .rejected(JSONClientError.statusCodeNot2XX(code: 500, body: [])),
+            state: .rejected(JSONClientError.statusCodeNot2XX(codeNot2XX: 500, body: [])),
             timeout: .seconds(2)
         )
     }

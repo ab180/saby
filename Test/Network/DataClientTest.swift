@@ -66,7 +66,7 @@ final class DataClientTest: XCTestCase {
         
         Expect.promise(
             response,
-            state: .rejected(DataClientError.statusCodeNot2XX(code: 200, body: Data())),
+            state: .rejected(DataClientError.statusCodeNot2XX(codeNot2XX: 200, body: Data())),
             timeout: .seconds(2)
         )
     }

@@ -50,4 +50,4 @@ public enum ClientMethod: String {
 
 public typealias ClientHeader = Dictionary<String, String>
 
-public typealias ClientResult<Response> = (code: Int, body: Response)
+public typealias ClientResult<Response> = (code2XX: Int, body: Response)

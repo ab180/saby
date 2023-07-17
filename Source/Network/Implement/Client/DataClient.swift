@@ -64,11 +64,11 @@ extension DataClient {
             
             let code = response.statusCode
             guard code / 100 == 2 else {
-                pending.reject(DataClientError.statusCodeNot2XX(code: code, body: data))
+                pending.reject(DataClientError.statusCodeNot2XX(codeNot2XX: code, body: data))
                 return
             }
 
-            pending.resolve((code: response.statusCode, body: data))
+            pending.resolve((code2XX: code, body: data))
         }
         pending.onCancel {
             task.cancel()
@@ -81,5 +81,5 @@ extension DataClient {
 
 public enum DataClientError: Error {
     case statusCodeNotFound
-    case statusCodeNot2XX(code: Int, body: Data?)
+    case statusCodeNot2XX(codeNot2XX: Int, body: Data?)
 }

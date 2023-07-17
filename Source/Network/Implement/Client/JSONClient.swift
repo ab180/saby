@@ -55,23 +55,23 @@ extension JSONClient {
             body: body,
             optionBlock: optionBlock
         )
-        .then { code, data -> ClientResult<JSON> in
+        .then { code2XX, data -> ClientResult<JSON> in
             guard let data, let body = try? JSON.parse(data) else {
                 throw JSONClientError.responseDataIsNotDecodable
             }
             
             
-            return (code, body)
+            return (code2XX, body)
         }
         .catch { error in
             if case DataClientError.statusCodeNotFound = error {
                 throw JSONClientError.statusCodeNotFound
             }
-            else if case DataClientError.statusCodeNot2XX(let code, let data) = error {
+            else if case DataClientError.statusCodeNot2XX(let codeNot2XX, let data) = error {
                 guard let data, let body = try? JSON.parse(data) else {
                     throw JSONClientError.responseDataIsNotDecodable
                 }
-                throw JSONClientError.statusCodeNot2XX(code: code, body: body)
+                throw JSONClientError.statusCodeNot2XX(codeNot2XX: codeNot2XX, body: body)
             }
         }
     }
@@ -79,7 +79,7 @@ extension JSONClient {
 
 public enum JSONClientError: Error {
     case statusCodeNotFound
-    case statusCodeNot2XX(code: Int, body: JSON)
+    case statusCodeNot2XX(codeNot2XX: Int, body: JSON)
     case bodyIsNotEncodable
     case responseDataIsNotDecodable
 }
