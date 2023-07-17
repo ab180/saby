@@ -9,8 +9,9 @@ import Foundation
 
 import SabyConcurrency
 import SabySafe
+import SabyJSON
 
-public final class JSONClient<Request: Encodable, Response: Decodable>: Client {
+public final class JSONClient: Client {
     let client: DataClient
     let encoder: JSONEncoder
     let decoder: JSONDecoder
@@ -36,22 +37,13 @@ extension JSONClient {
 }
     
 extension JSONClient {
-    public func request<RequestValue>(
-        url: URL,
-        method: ClientMethod = .get,
-        header: ClientHeader = [:],
-        optionBlock: (inout URLRequest) -> Void = { _ in }
-    ) -> Promise<ClientResult<Response>, Error> where RequestValue? == Request {
-        request(url: url, method: method, header: header, body: nil, optionBlock: optionBlock)
-    }
-    
     public func request(
         url: URL,
         method: ClientMethod = .get,
         header: ClientHeader = [:],
-        body: Request,
+        body: JSON? = nil,
         optionBlock: (inout URLRequest) -> Void = { _ in }
-    ) -> Promise<ClientResult<Response>, Error> {
+    ) -> Promise<ClientResult<JSON>, Error> {
         guard let body = try? self.encoder.encode(body) else {
             return Promise.rejected(JSONClientError.bodyIsNotEncodable)
         }
@@ -62,27 +54,32 @@ extension JSONClient {
             header: header,
             body: body,
             optionBlock: optionBlock
-        ).then { code, data -> ClientResult<Response> in
-            if
-                (Response.self is Data.Type || Response.self is Data?.Type),
-                let body = data as? Response
-            {
-                return (code, body)
-            }
-            
-            guard
-                let data,
-                let body = try? self.decoder.decode(Response.self, from: data)
-            else {
+        )
+        .then { code, data -> ClientResult<JSON> in
+            guard let data, let body = try? JSON.parse(data) else {
                 throw JSONClientError.responseDataIsNotDecodable
             }
             
+            
             return (code, body)
+        }
+        .catch { error in
+            if case DataClientError.statusCodeNotFound = error {
+                throw JSONClientError.statusCodeNotFound
+            }
+            else if case DataClientError.statusCodeNot2XX(let code, let data) = error {
+                guard let data, let body = try? JSON.parse(data) else {
+                    throw JSONClientError.responseDataIsNotDecodable
+                }
+                throw JSONClientError.statusCodeNot2XX(code: code, body: body)
+            }
         }
     }
 }
 
 public enum JSONClientError: Error {
-    case responseDataIsNotDecodable
+    case statusCodeNotFound
+    case statusCodeNot2XX(code: Int, body: JSON)
     case bodyIsNotEncodable
+    case responseDataIsNotDecodable
 }

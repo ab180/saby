@@ -51,8 +51,3 @@ public enum ClientMethod: String {
 public typealias ClientHeader = Dictionary<String, String>
 
 public typealias ClientResult<Response> = (code: Int, body: Response)
-
-public enum ClientError<Response>: Error {
-    case statusCodeNotFound
-    case statusCodeNot2XX(code: Int, body: Response)
-}

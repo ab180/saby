@@ -14,14 +14,14 @@ import SabyTestExpect
 
 final class JSONClientTest: XCTestCase {
     func test__init() {
-        let client = JSONClient<JSON, JSON>()
+        let client = JSONClient()
         let configuration = URLSessionConfiguration.default
         
         XCTAssertEqual(client.client.session.configuration, configuration)
     }
     
     func test__init_option_block() {
-        let client = JSONClient<JSON, JSON>() {
+        let client = JSONClient() {
             $0.timeoutIntervalForRequest = 3000
         }
         let configuration = URLSessionConfiguration.default
@@ -40,7 +40,7 @@ final class JSONClientTest: XCTestCase {
                 )
             ]
         }
-        let client = JSONClient<JSON?, JSON>() {
+        let client = JSONClient() {
             $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
         
@@ -66,7 +66,7 @@ final class JSONClientTest: XCTestCase {
                 )
             ]
         }
-        let client = JSONClient<JSON?, JSON>() {
+        let client = JSONClient() {
             $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
         
@@ -88,22 +88,22 @@ final class JSONClientTest: XCTestCase {
                 URLResult(
                     url: URL(string: "https://mock.api.ab180.co/request")!,
                     code: 500,
-                    data: Data()
+                    data: try? JSON.from([]).datafy()
                 )
             ]
         }
-        let client = JSONClient<JSON?, JSON>() {
+        let client = JSONClient() {
             $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
         
         let response = client.request(
             URL(string: "https://mock.api.ab180.co/request")!,
             body: nil
-        )
+        )h
         
         Expect.promise(
             response,
-            state: .rejected(ClientError<Data?>.statusCodeNot2XX(code: 200, body: Data())),
+            state: .rejected(JSONClientError.statusCodeNot2XX(code: 500, body: [])),
             timeout: .seconds(2)
         )
     }
@@ -117,7 +117,7 @@ final class JSONClientTest: XCTestCase {
                 )
             ]
         }
-        let client = JSONClient<JSON?, JSON>() {
+        let client = JSONClient() {
             $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
         
@@ -143,7 +143,7 @@ final class JSONClientTest: XCTestCase {
                 )
             ]
         }
-        let client = JSONClient<JSON?, Data?>() {
+        let client = JSONClient() {
             $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
         
@@ -153,7 +153,7 @@ final class JSONClientTest: XCTestCase {
         
         Expect.promise(
             response,
-            state: .resolved({ $0 == (200, Data()) }),
+            state: .rejected(JSONClientError.responseDataIsNotDecodable),
             timeout: .seconds(2)
         )
     }
@@ -168,7 +168,7 @@ final class JSONClientTest: XCTestCase {
                 )
             ]
         }
-        let client = JSONClient<JSON?, Data>() {
+        let client = JSONClient() {
             $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
         
@@ -178,7 +178,7 @@ final class JSONClientTest: XCTestCase {
         
         Expect.promise(
             response,
-            state: .resolved({ $0 == (200, Data()) }),
+            state: .rejected(JSONClientError.responseDataIsNotDecodable),
             timeout: .seconds(2)
         )
     }
