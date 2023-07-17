@@ -99,7 +99,7 @@ final class JSONClientTest: XCTestCase {
         let response = client.request(
             URL(string: "https://mock.api.ab180.co/request")!,
             body: nil
-        )h
+        )
         
         Expect.promise(
             response,
