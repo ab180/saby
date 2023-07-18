@@ -8,6 +8,16 @@
 import Foundation
 
 public func mockCall<
+    Result
+>(
+    _ function: (
+    ) -> Result
+) -> Result {
+    function(
+    )
+}
+
+public func mockCall<
     Argument0: Mockable,
     Result
 >(
