@@ -23,13 +23,17 @@ public struct WaitContract {
         var failure: Error?
         
         let semaphore = DispatchSemaphore(value: 0)
-        contract.next().then { value in
-            result = value
-            semaphore.signal()
-        }.catch { error in
-            failure = error
-            semaphore.signal()
-        }
+        contract.subscribe(
+            onResolved: {
+                result = $0
+                semaphore.signal()
+            },
+            onRejected: {
+                failure = $0
+                semaphore.signal()
+            },
+            onCanceled: {}
+        )
         try block()
 
         if case .timedOut = semaphore.wait(timeout: .now() + timeout) {
