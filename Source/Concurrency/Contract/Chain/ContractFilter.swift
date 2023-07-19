@@ -53,17 +53,26 @@ extension Contract {
         on queue: DispatchQueue? = nil,
         _ block: @escaping (Value) -> Promise<Result?, Never>
     ) -> Contract<Result, Failure> {
+        filter(on: queue, schedule: .async, block)
+    }
+    
+    public func filter<Result>(
+        on queue: DispatchQueue? = nil,
+        schedule: ContractSchedule = .async,
+        _ block: @escaping (Value) -> Promise<Result?, Never>
+    ) -> Contract<Result, Failure> {
         let queue = queue ?? self.queue
         
         let contract = Contract<Result, Failure>(queue: queue)
         
         subscribe(
             queue: queue,
-            onResolved: { value in
+            onResolved: schedule { value, finish in
                 let promise = block(value)
                 promise.subscribe(
                     queue: queue,
                     onResolved: { result in
+                        defer { finish() }
                         guard let result else { return }
                         contract.resolve(result)
                     },
@@ -86,17 +95,28 @@ extension Contract {
         on queue: DispatchQueue? = nil,
         _ block: @escaping (Value) -> Promise<Result, Never>?
     ) -> Contract<Result, Failure> {
+        filter(on: queue, schedule: .async, block)
+    }
+    
+    public func filter<Result>(
+        on queue: DispatchQueue? = nil,
+        schedule: ContractSchedule = .async,
+        _ block: @escaping (Value) -> Promise<Result, Never>?
+    ) -> Contract<Result, Failure> {
         let queue = queue ?? self.queue
         
         let contract = Contract<Result, Failure>(queue: queue)
         
         subscribe(
             queue: queue,
-            onResolved: { value in
+            onResolved: schedule { value, finish in
                 guard let promise = block(value) else { return }
                 promise.subscribe(
                     queue: queue,
-                    onResolved: { contract.resolve($0) },
+                    onResolved: {
+                        defer { finish() }
+                        contract.resolve($0)
+                    },
                     onRejected: { _ in },
                     onCanceled: { contract.cancel() }
                 )

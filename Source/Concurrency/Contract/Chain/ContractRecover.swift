@@ -40,6 +40,15 @@ extension Contract {
         on queue: DispatchQueue? = nil,
         _ block: @escaping (Failure) throws -> Promise<Value, ResultFailure>
     ) -> Contract<Value, Error> {
+        recover(on: queue, schedule: .async, block)
+    }
+    
+    @discardableResult
+    public func recover<ResultFailure>(
+        on queue: DispatchQueue? = nil,
+        schedule: ContractSchedule = .async,
+        _ block: @escaping (Failure) throws -> Promise<Value, ResultFailure>
+    ) -> Contract<Value, Error> {
         let queue = queue ?? self.queue
         
         let contract = Contract<Value, Error>(queue: self.queue)
@@ -47,13 +56,19 @@ extension Contract {
         subscribe(
             queue: queue,
             onResolved: { value in contract.resolve(value) },
-            onRejected: { error in
+            onRejected: schedule { error, finish in
                 do {
                     let promise = try block(error)
                     promise.subscribe(
                         queue: queue,
-                        onResolved: { contract.resolve($0) },
-                        onRejected: { contract.reject($0) },
+                        onResolved: {
+                            defer { finish() }
+                            contract.resolve($0)
+                        },
+                        onRejected: {
+                            defer { finish() }
+                            contract.reject($0)
+                        },
                         onCanceled: { contract.cancel() }
                     )
                     self.subscribe(
@@ -62,6 +77,7 @@ extension Contract {
                     )
                 }
                 catch let error {
+                    defer { finish() }
                     contract.reject(error)
                 }
             },
@@ -100,6 +116,15 @@ extension Contract {
         on queue: DispatchQueue? = nil,
         _ block: @escaping (Failure) -> Promise<Value, ResultFailure>
     ) -> Contract<Value, ResultFailure> {
+        recover(on: queue, schedule: .async, block)
+    }
+    
+    @discardableResult
+    public func recover<ResultFailure>(
+        on queue: DispatchQueue? = nil,
+        schedule: ContractSchedule = .async,
+        _ block: @escaping (Failure) -> Promise<Value, ResultFailure>
+    ) -> Contract<Value, ResultFailure> {
         let queue = queue ?? self.queue
         
         let contract = Contract<Value, ResultFailure>(queue: self.queue)
@@ -107,12 +132,18 @@ extension Contract {
         subscribe(
             queue: queue,
             onResolved: { value in contract.resolve(value) },
-            onRejected: { error in
+            onRejected: schedule { error, finish in
                 let promise = block(error)
                 promise.subscribe(
                     queue: queue,
-                    onResolved: { contract.resolve($0) },
-                    onRejected: { contract.reject($0) },
+                    onResolved: {
+                        defer { finish() }
+                        contract.resolve($0)
+                    },
+                    onRejected: {
+                        defer { finish() }
+                        contract.reject($0)
+                    },
                     onCanceled: { contract.cancel() }
                 )
                 self.subscribe(

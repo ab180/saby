@@ -112,8 +112,8 @@ extension Contract {
         subscribers.append(ContractSubscriber(
             queue: queue,
             onResolved: onResolved,
-            onRejected: onRejected)
-        )
+            onRejected: onRejected
+        ))
         
         pthread_mutex_unlock(lock)
         
@@ -261,4 +261,49 @@ struct ContractSubscriber<Value, Failure: Error> {
     let queue: DispatchQueue
     let onResolved: (Value) -> Void
     let onRejected: (Failure) -> Void
+}
+
+public final class ContractSchedule {
+    private let mode: Mode
+    
+    private init(mode: Mode) {
+        self.mode = mode
+    }
+    
+    func callAsFunction<Value>(
+        block: @escaping (
+            Value,
+            @escaping () -> Void
+        ) -> Void
+    ) -> (Value) -> Void {
+        switch mode {
+        case .async:
+            return { value in
+                block(value, {})
+            }
+        case .sync(let next):
+            return { value in
+                next.mutate { promise in
+                    promise.then { _ in
+                        Promise { resolve, _ in
+                            block(value, { resolve(()) })
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    public static var async: ContractSchedule {
+        self.init(mode: .async)
+    }
+    
+    public static var sync: ContractSchedule {
+        self.init(mode: .sync(next: Atomic(.resolved(()))))
+    }
+    
+    private enum Mode {
+        case async
+        case sync(next: Atomic<Promise<Void, Never>>)
+    }
 }
