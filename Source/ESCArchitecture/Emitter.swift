@@ -7,7 +7,7 @@
 
 import SabyConcurrency
 
-public protocol Emitter<Value> {
+public protocol Emitter<Value, Failure> {
     associatedtype Value
     associatedtype Failure: Error
     
