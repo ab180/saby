@@ -79,4 +79,80 @@ final class ContractRecoverTest: XCTestCase {
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
         PromiseTest.expect(promise: recoverPromise, state: .canceled, timeout: .seconds(1))
     }
+    
+    func test__recover_schedule_sync() throws {
+        struct IntError: Error {
+            let value: Int
+        }
+        
+        let expect = (0...10000).map { $0 }
+        
+        let contract0 = Contract<Int, Never>()
+        let promise0 = Promise<Void, Never>()
+        
+        var actual = [Int]()
+        let contract = contract0
+            .then { value -> Int in
+                throw IntError(value: value)
+            }
+            .recover(schedule: .sync) { error in
+                let error = error as! IntError
+                return promise0.then { _ in error.value }
+            }
+            .then {
+                actual.append($0)
+                return $0
+            }
+        
+        try contract.wait(until: { $0 == 10000 }) {
+            (0...10000).forEach {
+                contract0.resolve($0)
+            }
+            promise0.resolve(())
+        }
+        
+        XCTAssertEqual(actual, expect)
+    }
+    
+    func test__recover_schedule_sync_throw() throws {
+        struct IntError: Error {
+            let value: Int
+        }
+        
+        let expect = (0...10000).compactMap { $0 % 2 == 0 ? $0 : nil }
+        
+        let contract0 = Contract<Int, Never>()
+        let promise0 = Promise<Void, Never>()
+        
+        var actual = [Int]()
+        let contract = contract0
+            .then { value -> Int in
+                throw IntError(value: value)
+            }
+            .recover(schedule: .sync) { error in
+                let value = (error as! IntError).value
+                return promise0.then {
+                    if value % 2 == 0 {
+                        return value
+                    }
+                    else {
+                        throw ContractTest.SampleError.one
+                    }
+                }
+            }
+            .then {
+                actual.append($0)
+                return $0
+            }
+            .recover { _ in 0 }
+        
+        try contract.wait(until: { $0 == 10000 }) {
+            (0...10000).forEach {
+                contract0.resolve($0)
+            }
+            promise0.resolve(())
+        }
+        
+        XCTAssertEqual(actual, expect)
+    }
 }

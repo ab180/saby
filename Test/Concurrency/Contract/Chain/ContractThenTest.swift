@@ -463,4 +463,64 @@ final class ContractThenTest: XCTestCase {
             contract0.resolve(20)
         }
     }
+    
+    func test__then_schedule_sync() throws {
+        let expect = (0...10000).map { $0 }
+        
+        let contract0 = Contract<Int, Never>()
+        let promise0 = Promise<Void, Never>()
+        
+        var actual = [Int]()
+        let contract = contract0
+            .then(schedule: .sync) { value in
+                promise0.then { _ in value }
+            }
+            .then {
+                actual.append($0)
+                return $0
+            }
+        
+        try contract.wait(until: { $0 == 10000 }) {
+            (0...10000).forEach {
+                contract0.resolve($0)
+            }
+            promise0.resolve(())
+        }
+        
+        XCTAssertEqual(actual, expect)
+    }
+    
+    func test__then_schedule_sync_throw() throws {
+        let expect = (0...10000).compactMap { $0 % 2 == 0 ? $0 : nil }
+        
+        let contract0 = Contract<Int, Never>()
+        let promise0 = Promise<Void, Never>()
+        
+        var actual = [Int]()
+        let contract = contract0
+            .then(schedule: .sync) { value in
+                promise0.then { _ in
+                    if value % 2 == 0 {
+                        return value
+                    }
+                    else {
+                        throw ContractTest.SampleError.one
+                    }
+                }
+            }
+            .then {
+                actual.append($0)
+                return $0
+            }
+            .recover { _ in 0 }
+        
+        try contract.wait(until: { $0 == 10000 }) {
+            (0...10000).forEach {
+                contract0.resolve($0)
+            }
+            promise0.resolve(())
+        }
+        
+        XCTAssertEqual(actual, expect)
+    }
 }

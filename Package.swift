@@ -94,7 +94,7 @@ var package = Package(
             path: "Source/Time"),
         .testTarget(
             name: "SabyConcurrencyTest",
-            dependencies: ["SabyConcurrency"],
+            dependencies: ["SabyConcurrency", "SabyTestWait"],
             path: "Test/Concurrency"),
         .testTarget(
             name: "SabyEncodeTest",

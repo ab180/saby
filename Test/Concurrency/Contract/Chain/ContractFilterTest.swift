@@ -144,4 +144,38 @@ final class ContractFilterTest: XCTestCase {
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
         PromiseTest.expect(promise: filterPromise, state: .canceled, timeout: .seconds(1))
     }
+    
+    func test__filter_schedule_sync() throws {
+        let expect = (0...10000)
+            .compactMap { $0 % 2 == 0 ? $0 : nil }
+        
+        let contract0 = Contract<Int, Never>()
+        let promise0 = Promise<Void, Never>()
+        
+        var actual = [Int]()
+        let contract = contract0
+            .filter(schedule: .sync) { value in
+                promise0.then { _ in
+                    if value % 2 == 0 {
+                        return value
+                    }
+                    else {
+                        return nil
+                    }
+                }
+            }
+            .then {
+                actual.append($0)
+                return $0
+            }
+        
+        try contract.wait(until: { $0 == 10000 }) {
+            (0...10000).forEach {
+                contract0.resolve($0)
+            }
+            promise0.resolve(())
+        }
+        
+        XCTAssertEqual(actual, expect)
+    }
 }
