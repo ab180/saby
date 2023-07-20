@@ -17,6 +17,7 @@ public struct WaitMockFunction {
 
     public func callAsFunction<Argument, Result>(
         _ mock: MockFunction<Argument, Result>,
+        until: @escaping (Argument, Result) -> Bool = { _, _ in true },
         _ block: () throws -> Void
     ) throws -> (argument: Argument, result: Result) {
         var callArgument: Argument?
@@ -25,10 +26,12 @@ public struct WaitMockFunction {
         let semaphore = DispatchSemaphore(value: 0)
         let callback = mock.callback
         mock.callback = { argument, result in
-            callArgument = argument
-            callResult = result
-            callback(argument, result)
-            semaphore.signal()
+            if until(argument, result) {
+                callArgument = argument
+                callResult = result
+                callback(argument, result)
+                semaphore.signal()
+            }
         }
         try block()
 

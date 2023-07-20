@@ -17,6 +17,7 @@ public struct WaitContract {
 
     public func callAsFunction<Value, Failure>(
         _ contract: Contract<Value, Failure>,
+        until: @escaping (Value) -> Bool = { _ in true },
         _ block: () throws -> Void
     ) throws -> Value {
         var result: Value?
@@ -25,8 +26,10 @@ public struct WaitContract {
         let semaphore = DispatchSemaphore(value: 0)
         contract.subscribe(
             onResolved: {
-                result = $0
-                semaphore.signal()
+                if until($0) {
+                    result = $0
+                    semaphore.signal()
+                }
             },
             onRejected: {
                 failure = $0
