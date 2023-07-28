@@ -67,7 +67,7 @@ extension Contract {
         
         subscribe(
             queue: queue,
-            onResolved: schedule { value, finish in
+            onResolved: schedule { [weak self] value, finish in
                 let promise = block(value)
                 promise.subscribe(
                     queue: queue,
@@ -79,7 +79,7 @@ extension Contract {
                     onRejected: { _ in },
                     onCanceled: { contract.cancel() }
                 )
-                self.subscribe(
+                self?.subscribe(
                     queue: queue,
                     onCanceled: { promise.cancel() }
                 )
@@ -109,7 +109,7 @@ extension Contract {
         
         subscribe(
             queue: queue,
-            onResolved: schedule { value, finish in
+            onResolved: schedule { [weak self] value, finish in
                 guard let promise = block(value) else { return }
                 promise.subscribe(
                     queue: queue,
@@ -120,7 +120,7 @@ extension Contract {
                     onRejected: { _ in },
                     onCanceled: { contract.cancel() }
                 )
-                self.subscribe(
+                self?.subscribe(
                     queue: queue,
                     onCanceled: { promise.cancel() }
                 )

@@ -130,4 +130,22 @@ final class PromiseFilterTest: XCTestCase {
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
         PromiseTest.expect(promise: filterPromise, state: .canceled, timeout: .seconds(1))
     }
+    
+    func test__filter_deinit() throws {
+        weak var promise0: Promise<Int, Never>?
+        weak var promise1: Promise<Int, Never>?
+        
+        try Promise.async {
+            let promise00 = Promise.async { 10 }.filter { $0 == 10 }.then { $0 }
+            let promise11 = Promise.async { 10 }.filter { $0 == 20 }.then { $0 }
+            
+            promise0 = promise00
+            promise1 = promise11
+            
+            return promise00
+        }.wait()
+    
+        XCTAssertNil(promise0)
+        XCTAssertNil(promise1)
+    }
 }

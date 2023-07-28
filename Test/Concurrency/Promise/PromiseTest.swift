@@ -12,7 +12,7 @@ final class PromiseTest: XCTestCase {
     func test__init() {
         let promise = Promise<Int, Error>()
         
-        guard case .pending = promise.state else {
+        guard case .pending = promise.state.capture({ $0 }) else {
             XCTFail("Promise is not pending")
             return
         }
@@ -165,5 +165,30 @@ final class PromiseTest: XCTestCase {
         let promise = Promise<Int, Error>.canceled()
         
         PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
+    }
+    
+    func test__cancel_deinit() throws {
+        weak var promise0: Promise<Void, Never>?
+        weak var promise1: Promise<Void, Never>?
+        let result = Atomic(false)
+        
+        try Promise<Void, Never> { resolve, reject in
+            defer { resolve(()) }
+            
+            let promise00 = Promise<Void, Never>.resolved(())
+            let promise11 = promise00.delay(.milliseconds(10)).then {
+                result.mutate { _ in true }
+                return ()
+            }
+            
+            promise0 = promise00
+            promise1 = promise11
+        }.wait()
+    
+        XCTAssertNil(promise0)
+        XCTAssertNotNil(promise1)
+        
+        try promise1!.wait()
+        XCTAssertEqual(result.capture { $0 }, true)
     }
 }

@@ -66,7 +66,7 @@ extension PromiseTest {
                 }
             )
         case .pending:
-            if case .pending = promise.state {} else {
+            if case .pending = promise.state.capture({ $0 }) {} else {
                 XCTFail(message, file: file, line: line)
             }
             
@@ -143,7 +143,7 @@ extension PromiseTest {
                 }
             )
         case .pending:
-            if case .pending = promise.state {} else {
+            if case .pending = promise.state.capture({ $0 }) {} else {
                 XCTFail(message, file: file, line: line)
             }
             

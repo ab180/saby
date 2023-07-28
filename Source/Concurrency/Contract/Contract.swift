@@ -8,8 +8,7 @@
 import Foundation
 
 public final class Contract<Value, Failure: Error> {
-    var lock: UnsafeMutablePointer<pthread_mutex_t>
-    var state: ContractState
+    var state: Atomic<ContractState>
     
     let queue: DispatchQueue
     var executeGroup: DispatchGroup
@@ -18,9 +17,7 @@ public final class Contract<Value, Failure: Error> {
     var subscribers: [ContractSubscriber<Value, Failure>]
     
     init(queue: DispatchQueue = .global()) {
-        self.lock = UnsafeMutablePointer.allocate(capacity: 1)
-        lock.initialize(to: pthread_mutex_t())
-        self.state = .executing
+        self.state = Atomic(.executing)
         
         self.queue = queue
         self.executeGroup = DispatchGroup()
@@ -29,76 +26,67 @@ public final class Contract<Value, Failure: Error> {
         self.subscribers = []
         
         cancelGroup.enter()
-        
-        pthread_mutex_init(lock, nil)
     }
     
     deinit {
-        pthread_mutex_lock(lock)
-        if case .canceled = state {} else {
-            cancelGroup.leave()
+        state.capture { state in
+            if case .canceled = state {} else {
+                cancelGroup.leave()
+            }
         }
-        pthread_mutex_unlock(lock)
-        
-        pthread_mutex_destroy(lock)
-        lock.deallocate()
     }
 }
 
 extension Contract {
     func resolve(_ value: Value) {
-        pthread_mutex_lock(lock)
-        
-        if case .executing = state {
-            let current = executeGroup
-            let next = DispatchGroup()
-            let subscribers = subscribers
-            
-            subscribers.forEach { subscriber in
-                next.enter()
-                current.notify(queue: subscriber.queue) {
-                    subscriber.onResolved(value)
-                    next.leave()
+        state.capture { state in
+            if case .executing = state {
+                let current = executeGroup
+                let next = DispatchGroup()
+                let subscribers = subscribers
+                
+                subscribers.forEach { subscriber in
+                    next.enter()
+                    current.notify(queue: subscriber.queue) {
+                        subscriber.onResolved(value)
+                        next.leave()
+                    }
                 }
+                
+                executeGroup = next
             }
-            
-            executeGroup = next
         }
-        
-        pthread_mutex_unlock(lock)
     }
 
     func reject(_ error: Failure) {
-        pthread_mutex_lock(lock)
-        
-        if case .executing = state {
-            let current = executeGroup
-            let next = DispatchGroup()
-            let subscribers = subscribers
-            
-            subscribers.forEach { subscriber in
-                next.enter()
-                current.notify(queue: subscriber.queue) {
-                    subscriber.onRejected(error)
-                    next.leave()
+        state.capture { state in
+            if case .executing = state {
+                let current = executeGroup
+                let next = DispatchGroup()
+                let subscribers = subscribers
+                
+                subscribers.forEach { subscriber in
+                    next.enter()
+                    current.notify(queue: subscriber.queue) {
+                        subscriber.onRejected(error)
+                        next.leave()
+                    }
                 }
+                
+                executeGroup = next
             }
-            
-            executeGroup = next
         }
-        
-        pthread_mutex_unlock(lock)
     }
     
     func cancel() {
-        pthread_mutex_lock(lock)
-        
-        if case .canceled = state {} else {
-            state = .canceled
-            cancelGroup.leave()
+        state.mutate { state in
+            if case .canceled = state {} else {
+                cancelGroup.leave()
+                return .canceled
+            }
+            
+            return state
         }
-        
-        pthread_mutex_unlock(lock)
     }
 
     func subscribe(
@@ -107,20 +95,17 @@ extension Contract {
         onRejected: @escaping (Failure) -> Void,
         onCanceled: @escaping () -> Void
     ) {
-        pthread_mutex_lock(lock)
+        state.capture { state in
+            subscribers.append(ContractSubscriber(
+                queue: queue,
+                onResolved: onResolved,
+                onRejected: onRejected
+            ))
+        }
         
-        subscribers.append(ContractSubscriber(
-            queue: queue,
-            onResolved: onResolved,
-            onRejected: onRejected
-        ))
-        
-        pthread_mutex_unlock(lock)
-        
+        let state = self.state
         cancelGroup.notify(queue: queue) {
-            pthread_mutex_lock(self.lock)
-            let state = self.state
-            pthread_mutex_unlock(self.lock)
+            let state = state.capture { $0 }
             
             if case .canceled = state {
                 onCanceled()
@@ -132,10 +117,9 @@ extension Contract {
         queue: DispatchQueue,
         onCanceled: @escaping () -> Void
     ) {
+        let state = self.state
         cancelGroup.notify(queue: queue) {
-            pthread_mutex_lock(self.lock)
-            let state = self.state
-            pthread_mutex_unlock(self.lock)
+            let state = state.capture { $0 }
             
             if case .canceled = state {
                 onCanceled()
@@ -176,18 +160,14 @@ extension Contract {
 
 extension Contract {
     public var isExecuting: Bool {
-        pthread_mutex_lock(self.lock)
-        let state = self.state
-        pthread_mutex_unlock(self.lock)
+        let state = state.capture { $0 }
 
         guard case .executing = state else { return false }
         return true
     }
     
     public var isCanceled: Bool {
-        pthread_mutex_lock(self.lock)
-        let state = self.state
-        pthread_mutex_unlock(self.lock)
+        let state = state.capture { $0 }
 
         guard case .canceled = state else { return false }
         return true
@@ -209,7 +189,7 @@ extension Contract {
         on queue: DispatchQueue = .global()
     ) -> Contract<Value, Failure> {
         let contract = Contract(queue: queue)
-        contract.state = .canceled
+        contract.state = Atomic(.canceled)
         contract.cancelGroup.leave()
         
         return contract

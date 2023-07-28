@@ -8,17 +8,14 @@
 import Foundation
 
 public final class Promise<Value, Failure: Error> {
-    var lock: UnsafeMutablePointer<pthread_mutex_t>
-    var state: PromiseState<Value, Failure>
+    var state: Atomic<PromiseState<Value, Failure>>
     
     let queue: DispatchQueue
     let executeGroup: DispatchGroup
     let cancelGroup: DispatchGroup
     
     init(queue: DispatchQueue = .global()) {
-        self.lock = UnsafeMutablePointer.allocate(capacity: 1)
-        lock.initialize(to: pthread_mutex_t())
-        self.state = .pending
+        self.state = Atomic(.pending)
         
         self.queue = queue
         self.executeGroup = DispatchGroup()
@@ -26,22 +23,17 @@ public final class Promise<Value, Failure: Error> {
         
         executeGroup.enter()
         cancelGroup.enter()
-        
-        pthread_mutex_init(lock, nil)
     }
     
     deinit {
-        pthread_mutex_lock(lock)
-        if case .canceled = state {} else {
-            cancelGroup.leave()
-            if case .pending = state {
-                executeGroup.leave()
+        state.capture { state in
+            if case .canceled = state {} else {
+                cancelGroup.leave()
+                if case .pending = state {
+                    executeGroup.leave()
+                }
             }
         }
-        pthread_mutex_unlock(lock)
-
-        pthread_mutex_destroy(lock)
-        lock.deallocate()
     }
 }
 
@@ -228,39 +220,39 @@ extension Promise where
 
 extension Promise {
     func resolve(_ value: Value) {
-        pthread_mutex_lock(lock)
-        
-        if case .pending = state {
-            state = .resolved(value)
-            executeGroup.leave()
+        state.mutate { state in
+            if case .pending = state {
+                executeGroup.leave()
+                return .resolved(value)
+            }
+            
+            return state
         }
-        
-        pthread_mutex_unlock(lock)
     }
     
     func reject(_ error: Failure) {
-        pthread_mutex_lock(lock)
-        
-        if case .pending = state {
-            state = .rejected(error)
-            executeGroup.leave()
+        state.mutate { state in
+            if case .pending = state {
+                executeGroup.leave()
+                return .rejected(error)
+            }
+            
+            return state
         }
-        
-        pthread_mutex_unlock(lock)
     }
     
     func cancel() {
-        pthread_mutex_lock(lock)
-        
-        if case .canceled = state {} else {
-            state = .canceled
-            cancelGroup.leave()
-            if case .pending = state {
-                executeGroup.leave()
+        state.mutate { state in
+            if case .canceled = state {} else {
+                cancelGroup.leave()
+                if case .pending = state {
+                    executeGroup.leave()
+                }
+                return .canceled
             }
+            
+            return state
         }
-        
-        pthread_mutex_unlock(lock)
     }
     
     func subscribe(
@@ -269,10 +261,9 @@ extension Promise {
         onRejected: @escaping (Failure) -> Void,
         onCanceled: @escaping () -> Void
     ) {
+        let state = self.state
         executeGroup.notify(queue: queue) {
-            pthread_mutex_lock(self.lock)
-            let state = self.state
-            pthread_mutex_unlock(self.lock)
+            let state = state.capture { $0 }
             
             if case .resolved(let value) = state {
                 onResolved(value)
@@ -282,9 +273,7 @@ extension Promise {
             }
         }
         cancelGroup.notify(queue: queue) {
-            pthread_mutex_lock(self.lock)
-            let state = self.state
-            pthread_mutex_unlock(self.lock)
+            let state = state.capture { $0 }
             
             if case .canceled = state {
                 onCanceled()
@@ -296,10 +285,9 @@ extension Promise {
         queue: DispatchQueue,
         onCanceled: @escaping () -> Void
     ) {
+        let state = self.state
         cancelGroup.notify(queue: queue) {
-            pthread_mutex_lock(self.lock)
-            let state = self.state
-            pthread_mutex_unlock(self.lock)
+            let state = state.capture { $0 }
             
             if case .canceled = state {
                 onCanceled()
@@ -340,36 +328,28 @@ extension Promise {
 
 extension Promise {
     public var isPending: Bool {
-        pthread_mutex_lock(self.lock)
-        let state = self.state
-        pthread_mutex_unlock(self.lock)
+        let state = state.capture { $0 }
 
         guard case .pending = state else { return false }
         return true
     }
     
     public var isResolved: Bool {
-        pthread_mutex_lock(self.lock)
-        let state = self.state
-        pthread_mutex_unlock(self.lock)
+        let state = state.capture { $0 }
 
         guard case .resolved(_) = state else { return false }
         return true
     }
     
     public var isRejected: Bool {
-        pthread_mutex_lock(self.lock)
-        let state = self.state
-        pthread_mutex_unlock(self.lock)
+        let state = state.capture { $0 }
 
         guard case .rejected(_) = state else { return false }
         return true
     }
     
     public var isCanceled: Bool {
-        pthread_mutex_lock(self.lock)
-        let state = self.state
-        pthread_mutex_unlock(self.lock)
+        let state = state.capture { $0 }
 
         guard case .canceled = state else { return false }
         return true
@@ -392,7 +372,7 @@ extension Promise {
         _ value: Value
     ) -> Promise<Value, Failure> {
         let promise = Promise(queue: queue)
-        promise.state = .resolved(value)
+        promise.state = Atomic(.resolved(value))
         promise.executeGroup.leave()
         
         return promise
@@ -403,7 +383,7 @@ extension Promise {
         _ error: Error
     ) -> Promise<Value, Error> where Failure == Error {
         let promise = Promise<Value, Error>(queue: queue)
-        promise.state = .rejected(error)
+        promise.state = Atomic(.rejected(error))
         promise.executeGroup.leave()
         
         return promise
@@ -413,7 +393,7 @@ extension Promise {
         on queue: DispatchQueue = .global()
     ) -> Promise<Value, Failure> {
         let promise = Promise(queue: queue)
-        promise.state = .canceled
+        promise.state = Atomic(.canceled)
         promise.executeGroup.leave()
         promise.cancelGroup.leave()
         

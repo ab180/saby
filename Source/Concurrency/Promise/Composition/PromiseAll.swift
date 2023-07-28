@@ -31,7 +31,7 @@ extension Promise where
         group.notify(queue: queue) {
             var values = [Value0]()
             promises.forEach { promise in
-                if case .resolved(let value) = promise.state {
+                if case .resolved(let value) = promise.state.capture({ $0 }) {
                     values.append(value)
                 }
             }
@@ -71,8 +71,8 @@ extension Promise where
         
         group.notify(queue: queue) {
             guard
-                case .resolved(let value0) = promise0.state,
-                case .resolved(let value1) = promise1.state
+                case .resolved(let value0) = promise0.state.capture({ $0 }),
+                case .resolved(let value1) = promise1.state.capture({ $0 })
             else {
                 return
             }
@@ -116,9 +116,9 @@ extension Promise where
         
         group.notify(queue: queue) {
             guard
-                case .resolved(let value0) = promise0.state,
-                case .resolved(let value1) = promise1.state,
-                case .resolved(let value2) = promise2.state
+                case .resolved(let value0) = promise0.state.capture({ $0 }),
+                case .resolved(let value1) = promise1.state.capture({ $0 }),
+                case .resolved(let value2) = promise2.state.capture({ $0 })
             else {
                 return
             }
@@ -170,10 +170,10 @@ extension Promise where
         
         group.notify(queue: queue) {
             guard
-                case .resolved(let value0) = promise0.state,
-                case .resolved(let value1) = promise1.state,
-                case .resolved(let value2) = promise2.state,
-                case .resolved(let value3) = promise3.state
+                case .resolved(let value0) = promise0.state.capture({ $0 }),
+                case .resolved(let value1) = promise1.state.capture({ $0 }),
+                case .resolved(let value2) = promise2.state.capture({ $0 }),
+                case .resolved(let value3) = promise3.state.capture({ $0 })
             else {
                 return
             }
@@ -233,11 +233,11 @@ extension Promise where
         
         group.notify(queue: queue) {
             guard
-                case .resolved(let value0) = promise0.state,
-                case .resolved(let value1) = promise1.state,
-                case .resolved(let value2) = promise2.state,
-                case .resolved(let value3) = promise3.state,
-                case .resolved(let value4) = promise4.state
+                case .resolved(let value0) = promise0.state.capture({ $0 }),
+                case .resolved(let value1) = promise1.state.capture({ $0 }),
+                case .resolved(let value2) = promise2.state.capture({ $0 }),
+                case .resolved(let value3) = promise3.state.capture({ $0 }),
+                case .resolved(let value4) = promise4.state.capture({ $0 })
             else {
                 return
             }
@@ -278,8 +278,8 @@ extension Promise where
         
         group.notify(queue: queue) {
             guard
-                case .resolved(let value0) = promise0.state,
-                case .resolved(let value1) = promise1.state
+                case .resolved(let value0) = promise0.state.capture({ $0 }),
+                case .resolved(let value1) = promise1.state.capture({ $0 })
             else {
                 return
             }
@@ -323,9 +323,9 @@ extension Promise where
         
         group.notify(queue: queue) {
             guard
-                case .resolved(let value0) = promise0.state,
-                case .resolved(let value1) = promise1.state,
-                case .resolved(let value2) = promise2.state
+                case .resolved(let value0) = promise0.state.capture({ $0 }),
+                case .resolved(let value1) = promise1.state.capture({ $0 }),
+                case .resolved(let value2) = promise2.state.capture({ $0 })
             else {
                 return
             }
@@ -377,10 +377,10 @@ extension Promise where
         
         group.notify(queue: queue) {
             guard
-                case .resolved(let value0) = promise0.state,
-                case .resolved(let value1) = promise1.state,
-                case .resolved(let value2) = promise2.state,
-                case .resolved(let value3) = promise3.state
+                case .resolved(let value0) = promise0.state.capture({ $0 }),
+                case .resolved(let value1) = promise1.state.capture({ $0 }),
+                case .resolved(let value2) = promise2.state.capture({ $0 }),
+                case .resolved(let value3) = promise3.state.capture({ $0 })
             else {
                 return
             }
@@ -440,11 +440,11 @@ extension Promise where
         
         group.notify(queue: queue) {
             guard
-                case .resolved(let value0) = promise0.state,
-                case .resolved(let value1) = promise1.state,
-                case .resolved(let value2) = promise2.state,
-                case .resolved(let value3) = promise3.state,
-                case .resolved(let value4) = promise4.state
+                case .resolved(let value0) = promise0.state.capture({ $0 }),
+                case .resolved(let value1) = promise1.state.capture({ $0 }),
+                case .resolved(let value2) = promise2.state.capture({ $0 }),
+                case .resolved(let value3) = promise3.state.capture({ $0 }),
+                case .resolved(let value4) = promise4.state.capture({ $0 })
             else {
                 return
             }

@@ -46,7 +46,7 @@ extension Promise {
         subscribe(
             queue: queue,
             onResolved: { promiseReturn.resolve($0) },
-            onRejected: {
+            onRejected: { [weak self] in
                 do {
                     let promise = try block($0)
                     promise.subscribe(
@@ -55,7 +55,7 @@ extension Promise {
                         onRejected: { promiseReturn.reject($0) },
                         onCanceled: { promiseReturn.cancel() }
                     )
-                    self.subscribe(
+                    self?.subscribe(
                         queue: queue,
                         onCanceled: { promise.cancel() }
                     )
@@ -105,7 +105,7 @@ extension Promise {
         subscribe(
             queue: queue,
             onResolved: { promiseReturn.resolve($0) },
-            onRejected: {
+            onRejected: { [weak self] in
                 let promise = block($0)
                 promise.subscribe(
                     queue: queue,
@@ -113,7 +113,7 @@ extension Promise {
                     onRejected: { promiseReturn.reject($0) },
                     onCanceled: { promiseReturn.cancel() }
                 )
-                self.subscribe(
+                self?.subscribe(
                     queue: queue,
                     onCanceled: { promise.cancel() }
                 )
