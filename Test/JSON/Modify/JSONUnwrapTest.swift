@@ -34,6 +34,25 @@ final class JSONUnwrapTest: XCTestCase {
         XCTAssertEqual(json.rawArray, [])
     }
     
+    func test__raw() {
+        let json = JSON.from([
+            "a": "a",
+            "b": 1,
+            "c": [
+                "a": "a",
+                "b": 1,
+                "c": true
+            ],
+            "d": [
+                "a",
+                1,
+                true
+            ],
+            "e": nil
+        ])
+        XCTAssertEqual(try JSON.from(unsafe: json.raw), json)
+    }
+    
     func test__is_string() {
         let json = JSON.from("string")
         XCTAssertTrue(json.isString)

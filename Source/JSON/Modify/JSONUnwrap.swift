@@ -32,6 +32,19 @@ extension JSON {
         guard case .array(let value) = self else { return nil }
         return value
     }
+    
+    public var raw: Any? {
+        if case .string(let value) = self { return value }
+        if case .number(let value) = self { return value }
+        if case .boolean(let value) = self { return value }
+        if case .object(let value) = self {
+            return value.mapValues { $0.raw }
+        }
+        if case .array(let value) = self {
+            return value.map { $0.raw }
+        }
+        return nil
+    }
 }
 
 extension JSON {
