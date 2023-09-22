@@ -20,11 +20,12 @@ extension Promise where
         
         promises.forEach { promise in
             group.enter()
+            var leave = Once { group.leave() }
             promise.subscribe(
                 queue: promise.queue,
-                onResolved: { _ in group.leave() },
-                onRejected: { promiseReturn.reject($0); group.leave() },
-                onCanceled: { promiseReturn.cancel(); group.leave() }
+                onResolved: { _ in leave() },
+                onRejected: { promiseReturn.reject($0); leave() },
+                onCanceled: { promiseReturn.cancel(); leave() }
             )
         }
         
@@ -55,18 +56,20 @@ extension Promise where
         let group = DispatchGroup()
         
         group.enter()
+        var leave0 = Once { group.leave() }
         promise0.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onResolved: { _ in leave0() },
+            onRejected: { promiseReturn.reject($0); leave0() },
+            onCanceled: { promiseReturn.cancel(); leave0() }
         )
         group.enter()
+        var leave1 = Once { group.leave() }
         promise1.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onResolved: { _ in leave1() },
+            onRejected: { promiseReturn.reject($0); leave1() },
+            onCanceled: { promiseReturn.cancel(); leave1() }
         )
         
         group.notify(queue: queue) {
@@ -93,25 +96,28 @@ extension Promise where
         let group = DispatchGroup()
 
         group.enter()
+        var leave0 = Once { group.leave() }
         promise0.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onResolved: { _ in leave0() },
+            onRejected: { promiseReturn.reject($0); leave0() },
+            onCanceled: { promiseReturn.cancel(); leave0() }
         )
         group.enter()
+        var leave1 = Once { group.leave() }
         promise1.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onResolved: { _ in leave1() },
+            onRejected: { promiseReturn.reject($0); leave1() },
+            onCanceled: { promiseReturn.cancel(); leave1() }
         )
         group.enter()
+        var leave2 = Once { group.leave() }
         promise2.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onResolved: { _ in leave2() },
+            onRejected: { promiseReturn.reject($0); leave2() },
+            onCanceled: { promiseReturn.cancel(); leave2() }
         )
         
         group.notify(queue: queue) {
@@ -140,32 +146,36 @@ extension Promise where
         let group = DispatchGroup()
 
         group.enter()
+        var leave0 = Once { group.leave() }
         promise0.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onResolved: { _ in leave0() },
+            onRejected: { promiseReturn.reject($0); leave0() },
+            onCanceled: { promiseReturn.cancel(); leave0() }
         )
         group.enter()
+        var leave1 = Once { group.leave() }
         promise1.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onResolved: { _ in leave1() },
+            onRejected: { promiseReturn.reject($0); leave1() },
+            onCanceled: { promiseReturn.cancel(); leave1() }
         )
         group.enter()
+        var leave2 = Once { group.leave() }
         promise2.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onResolved: { _ in leave2() },
+            onRejected: { promiseReturn.reject($0); leave2() },
+            onCanceled: { promiseReturn.cancel(); leave2() }
         )
         group.enter()
+        var leave3 = Once { group.leave() }
         promise3.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onResolved: { _ in leave3() },
+            onRejected: { promiseReturn.reject($0); leave3() },
+            onCanceled: { promiseReturn.cancel(); leave3() }
         )
         
         group.notify(queue: queue) {
@@ -196,39 +206,44 @@ extension Promise where
         let group = DispatchGroup()
 
         group.enter()
+        var leave0 = Once { group.leave() }
         promise0.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onResolved: { _ in leave0() },
+            onRejected: { promiseReturn.reject($0); leave0() },
+            onCanceled: { promiseReturn.cancel(); leave0() }
         )
         group.enter()
+        var leave1 = Once { group.leave() }
         promise1.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onResolved: { _ in leave1() },
+            onRejected: { promiseReturn.reject($0); leave1() },
+            onCanceled: { promiseReturn.cancel(); leave1() }
         )
         group.enter()
+        var leave2 = Once { group.leave() }
         promise2.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onResolved: { _ in leave2() },
+            onRejected: { promiseReturn.reject($0); leave2() },
+            onCanceled: { promiseReturn.cancel(); leave2() }
         )
         group.enter()
+        var leave3 = Once { group.leave() }
         promise3.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onResolved: { _ in leave3() },
+            onRejected: { promiseReturn.reject($0); leave3() },
+            onCanceled: { promiseReturn.cancel(); leave3() }
         )
         group.enter()
+        var leave4 = Once { group.leave() }
         promise4.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
-            onRejected: { promiseReturn.reject($0); group.leave() },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onResolved: { _ in leave4() },
+            onRejected: { promiseReturn.reject($0); leave4() },
+            onCanceled: { promiseReturn.cancel(); leave4() }
         )
         
         group.notify(queue: queue) {
@@ -262,18 +277,20 @@ extension Promise where
         let group = DispatchGroup()
         
         group.enter()
+        var leave0 = Once { group.leave() }
         promise0.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
+            onResolved: { _ in leave0() },
             onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onCanceled: { promiseReturn.cancel(); leave0() }
         )
         group.enter()
+        var leave1 = Once { group.leave() }
         promise1.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
+            onResolved: { _ in leave1() },
             onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onCanceled: { promiseReturn.cancel(); leave1() }
         )
         
         group.notify(queue: queue) {
@@ -300,25 +317,28 @@ extension Promise where
         let group = DispatchGroup()
 
         group.enter()
+        var leave0 = Once { group.leave() }
         promise0.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
+            onResolved: { _ in leave0() },
             onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onCanceled: { promiseReturn.cancel(); leave0() }
         )
         group.enter()
+        var leave1 = Once { group.leave() }
         promise1.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
+            onResolved: { _ in leave1() },
             onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onCanceled: { promiseReturn.cancel(); leave1() }
         )
         group.enter()
+        var leave2 = Once { group.leave() }
         promise2.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
+            onResolved: { _ in leave2() },
             onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onCanceled: { promiseReturn.cancel(); leave2() }
         )
         
         group.notify(queue: queue) {
@@ -347,32 +367,36 @@ extension Promise where
         let group = DispatchGroup()
 
         group.enter()
+        var leave0 = Once { group.leave() }
         promise0.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
+            onResolved: { _ in leave0() },
             onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onCanceled: { promiseReturn.cancel(); leave0() }
         )
         group.enter()
+        var leave1 = Once { group.leave() }
         promise1.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
+            onResolved: { _ in leave1() },
             onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onCanceled: { promiseReturn.cancel(); leave1() }
         )
         group.enter()
+        var leave2 = Once { group.leave() }
         promise2.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
+            onResolved: { _ in leave2() },
             onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onCanceled: { promiseReturn.cancel(); leave2() }
         )
         group.enter()
+        var leave3 = Once { group.leave() }
         promise3.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
+            onResolved: { _ in leave3() },
             onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onCanceled: { promiseReturn.cancel(); leave3() }
         )
         
         group.notify(queue: queue) {
@@ -403,39 +427,44 @@ extension Promise where
         let group = DispatchGroup()
 
         group.enter()
+        var leave0 = Once { group.leave() }
         promise0.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
+            onResolved: { _ in leave0() },
             onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onCanceled: { promiseReturn.cancel(); leave0() }
         )
         group.enter()
+        var leave1 = Once { group.leave() }
         promise1.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
+            onResolved: { _ in leave1() },
             onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onCanceled: { promiseReturn.cancel(); leave1() }
         )
         group.enter()
+        var leave2 = Once { group.leave() }
         promise2.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
+            onResolved: { _ in leave2() },
             onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onCanceled: { promiseReturn.cancel(); leave2() }
         )
         group.enter()
+        var leave3 = Once { group.leave() }
         promise3.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
+            onResolved: { _ in leave3() },
             onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onCanceled: { promiseReturn.cancel(); leave3() }
         )
         group.enter()
+        var leave4 = Once { group.leave() }
         promise4.subscribe(
             queue: queue,
-            onResolved: { _ in group.leave() },
+            onResolved: { _ in leave4() },
             onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); group.leave() }
+            onCanceled: { promiseReturn.cancel(); leave4() }
         )
         
         group.notify(queue: queue) {
@@ -453,5 +482,18 @@ extension Promise where
         }
         
         return promiseReturn
+    }
+}
+
+private struct Once {
+    var isCalled = false
+    let block: () -> Void
+    
+    mutating func callAsFunction() {
+        if !isCalled {
+            block()
+        }
+        
+        isCalled = true
     }
 }
