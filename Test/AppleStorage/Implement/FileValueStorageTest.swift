@@ -16,7 +16,8 @@ private struct DummyItem: Codable, Equatable {
 final class FileValueStorageTest: XCTestCase {
     fileprivate let testCount = 500
     fileprivate var storage: FileValueStorage<DummyItem>!
-    fileprivate var directoryName: String!
+    fileprivate let directoryURL = FileManager.default.temporaryDirectory
+    fileprivate var fileName: String!
     
     fileprivate var testObjects: [DummyItem] {
         var result: [DummyItem] = []
@@ -28,20 +29,18 @@ final class FileValueStorageTest: XCTestCase {
     }
     
     override func setUpWithError() throws {
-        directoryName = "saby.dictionary.value.storage.\(UUID())"
+        fileName = UUID().uuidString
         storage = FileValueStorage<DummyItem>(
-            directoryName: directoryName,
-            fileName: String(describing: DummyItem.self)
+            directoryURL: directoryURL,
+            fileName: fileName
         )
     }
     
     override func tearDownWithError() throws {
-        let path = FileManager.default.urls(
-            for: .libraryDirectory,
-            in: .userDomainMask
-        ).first!.appendingPathComponent(directoryName).path
-        if FileManager.default.fileExists(atPath: path) {
-            try FileManager.default.removeItem(atPath: path)
+        let fileURL = directoryURL.appendingPathComponent(fileName)
+        
+        if FileManager.default.fileExists(atPath: fileURL.absoluteString) {
+            try FileManager.default.removeItem(at: fileURL)
         }
     }
     

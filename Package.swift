@@ -167,6 +167,10 @@ package
             dependencies: ["SabyConcurrency", "SabySize"],
             path: "Source/AppleStorage"),
         .target(
+            name: "SabyApplePreference",
+            dependencies: ["SabyConcurrency"],
+            path: "Source/ApplePreference"),
+        .target(
             name: "SabyAppleLogger",
             dependencies: [],
             path: "Source/AppleLogger"),
@@ -182,6 +186,10 @@ package
             name: "SabyAppleStorageTest",
             dependencies: ["SabyAppleStorage", "SabyTestWait"],
             path: "Test/AppleStorage"),
+        .testTarget(
+            name: "SabyApplePreferenceTest",
+            dependencies: ["SabyApplePreference"],
+            path: "Test/ApplePreference"),
         .testTarget(
             name: "SabyAppleLoggerTest",
             dependencies: ["SabyAppleLogger"],

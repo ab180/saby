@@ -23,33 +23,16 @@ public final class CoreDataArrayStorage<Value: Codable & KeyIdentifiable>: Array
     let encoder = JSONEncoder()
     let decoder = JSONDecoder()
     
-    public init(directoryName: String, fileName: String, migrations: [() -> Promise<Void, Error>]) {
+    public init(directoryURL: URL, fileName: String, migration: @escaping () -> Promise<Void, Error>) {
         let schema = SabyCoreDataArrayStorageSchema()
         
         self.entity = schema.entity
         
         self.contextLoad = {
             Context.load(
-                directoryName: directoryName,
+                directoryURL: directoryURL,
                 fileName: fileName,
-                migrations: migrations,
-                model: schema.model
-            )
-        }
-        self.contextPromise = Atomic(contextLoad())
-    }
-    
-    public init(baseURL: URL, directoryName: String, fileName: String, migrations: [() -> Promise<Void, Error>]) {
-        let schema = SabyCoreDataArrayStorageSchema()
-        
-        self.entity = schema.entity
-        
-        self.contextLoad = {
-            Context.load(
-                baseURL: baseURL,
-                directoryName: directoryName,
-                fileName: fileName,
-                migrations: migrations,
+                migration: migration,
                 model: schema.model
             )
         }
@@ -350,56 +333,18 @@ extension NSManagedObjectContext {
 
 extension NSManagedObjectContext {
     static func load(
-        directoryName: String,
+        directoryURL: URL,
         fileName: String,
-        migrations: [() -> Promise<Void, Error>],
+        migration: @escaping () -> Promise<Void, Error>,
         model: NSManagedObjectModel
     ) -> Promise<NSManagedObjectContext, Error> {
-        Promise.async {
-            guard
-                let libraryDirectoryURL = FileManager.default.urls(
-                    for: .libraryDirectory,
-                    in: .userDomainMask
-                ).first
-            else {
-                throw StorageError.libraryDirectoryNotFound
-            }
-            
-            return load(
-                baseURL: libraryDirectoryURL,
-                directoryName: directoryName,
-                fileName: fileName,
-                migrations: migrations,
-                model: model
-            )
-        }
-    }
-    
-    static func load(
-        baseURL: URL,
-        directoryName: String,
-        fileName: String,
-        migrations: [() -> Promise<Void, Error>],
-        model: NSManagedObjectModel
-    ) -> Promise<NSManagedObjectContext, Error> {
-        var promise = Promise<Void, Error>.resolved(())
-        for migration in migrations {
-            promise = promise.then {
-                migration()
-            }
-        }
-        
-        return promise.then {
+        migration().then {
             let fileManager = FileManager.default
             
-            guard baseURL.isFileURL else {
-                throw StorageError.baseURLIsNotFileURL
-            }
-            guard fileManager.fileExists(atPath: baseURL.path) else {
-                throw StorageError.baseURLIsNotExist
+            guard directoryURL.isFileURL else {
+                throw StorageError.directoryURLIsNotFileURL
             }
             
-            let directoryURL = baseURL.appendingPathComponent(directoryName)
             if !fileManager.fileExists(atPath: directoryURL.path) {
                 try fileManager.createDirectory(
                     at: directoryURL,

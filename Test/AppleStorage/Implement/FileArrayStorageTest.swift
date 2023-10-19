@@ -15,8 +15,9 @@ fileprivate struct DummyItem: Codable, KeyIdentifiable {
 
 final class FileArrayStorageTest: XCTestCase {
     fileprivate var storage: FileArrayStorage<DummyItem>!
-    private var directoryName: String!
-    var encoder: JSONEncoder!
+    fileprivate var encoder: JSONEncoder!
+    fileprivate let directoryURL = FileManager.default.temporaryDirectory
+    fileprivate var fileName: String!
     
     private struct TestItemGroup {
         private static let testCount = 100
@@ -36,21 +37,19 @@ final class FileArrayStorageTest: XCTestCase {
     }
     
     override func setUpWithError() throws {
-        directoryName = "saby.array.storage.\(UUID())"
+        fileName = UUID().uuidString
         storage = FileArrayStorage<DummyItem>(
-            directoryName: directoryName,
-            fileName: String(describing: DummyItem.self)
+            directoryURL: directoryURL,
+            fileName: fileName
         )
         encoder = JSONEncoder()
     }
     
     override func tearDownWithError() throws {
-        let path = FileManager.default.urls(
-            for: .libraryDirectory,
-            in: .userDomainMask
-        ).first!.appendingPathComponent(directoryName).path
-        if FileManager.default.fileExists(atPath: path) {
-            try FileManager.default.removeItem(atPath: path)
+        let fileURL = directoryURL.appendingPathComponent(fileName)
+        
+        if FileManager.default.fileExists(atPath: fileURL.absoluteString) {
+            try FileManager.default.removeItem(at: fileURL)
         }
     }
     

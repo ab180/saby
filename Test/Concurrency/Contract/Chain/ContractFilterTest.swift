@@ -34,7 +34,7 @@ final class ContractFilterTest: XCTestCase {
             state: .resolved(URL(string: "https://a.example")!),
             timeout: .seconds(1)
         ) {
-            contract0.resolve("%")
+            contract0.resolve("")
             contract0.resolve("https://a.example")
         }
     }
@@ -49,7 +49,7 @@ final class ContractFilterTest: XCTestCase {
             state: .resolved(URL(string: "https://a.example")!),
             timeout: .seconds(1)
         ) {
-            contract0.resolve("%")
+            contract0.resolve("")
             contract0.resolve("https://a.example")
         }
     }
@@ -102,7 +102,7 @@ final class ContractFilterTest: XCTestCase {
             state: .resolved(URL(string: "https://a.example")!),
             timeout: .seconds(1)
         ) {
-            contract0.resolve("%")
+            contract0.resolve("")
             contract0.resolve("https://a.example")
         }
     }
@@ -117,7 +117,7 @@ final class ContractFilterTest: XCTestCase {
             state: .resolved(URL(string: "https://a.example")!),
             timeout: .seconds(1)
         ) {
-            contract0.resolve("%")
+            contract0.resolve("")
             contract0.resolve("https://a.example")
         }
     }

@@ -1,28 +1,27 @@
 //
-//  Storage.swift
-//  SabyAppleStorage
+//  Preference.swift
+//  SabyApplePreference
 //
-//  Created by WOF on 2023/07/12.
+//  Created by WOF on 2023/10/12.
 //
 
 import Foundation
-import SabyConcurrency
 
-public protocol Storage {
+public protocol Preference {
     /// ``init(directoryURL:fileName:migration:)``
     /// execute migration and then create or load preference from
     /// `{Directory url}/{File name}` path.
-    init(directoryURL: URL, fileName: String, migration: @escaping () -> Promise<Void, Error>)
+    init(directoryURL: URL, fileName: String, migration: @escaping () throws -> Void)
 }
 
-extension Storage {
+extension Preference {
     /// ``init(directoryName:fileName:)`` create or load storage from
     /// `{Directory url}/{File name}` path.
     public init(directoryURL: URL, fileName: String) {
-        self.init(directoryURL: directoryURL, fileName: fileName, migration: { .resolved(()) })
+        self.init(directoryURL: directoryURL, fileName: fileName, migration: {})
     }
 }
 
-public enum StorageError: Error {
+public enum PreferenceError: Error {
     case directoryURLIsNotFileURL
 }
