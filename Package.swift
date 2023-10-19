@@ -147,6 +147,10 @@ package
             targets: ["SabyAppleStorage"]
         ),
         .library(
+            name: "SabyApplePreference",
+            targets: ["SabyApplePreference"]
+        ),
+        .library(
             name: "SabyAppleLogger",
             targets: ["SabyAppleLogger"]
         )
