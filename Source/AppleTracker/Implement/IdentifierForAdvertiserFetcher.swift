@@ -1,6 +1,6 @@
 //
 //  IdentifierForAdvertiserTracker.swift
-//  SabyAppleFetcher
+//  SabyAppleTracker
 //
 //  Created by WOF on 2022/08/23.
 //
@@ -81,7 +81,7 @@ private final class TrackerReflection {
                 instanceTracker.call(methodTrackLimitAdTracking) as? Bool
             )
         else {
-            throw IdentifierForAdvertiserFetcherError.unmatchedType
+            throw IdentifierForAdvertiserTrackerError.unmatchedType
         }
         
         return IdentifierForAdvertiser(
@@ -91,7 +91,7 @@ private final class TrackerReflection {
     }
 }
 
-public enum IdentifierForAdvertiserFetcherError: Error {
+public enum IdentifierForAdvertiserTrackerError: Error {
     case unmatchedType
 }
 

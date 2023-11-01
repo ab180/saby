@@ -1,6 +1,6 @@
 //
-//  TrackingAuthorizationFetcher.swift
-//  SabyAppleFetcher
+//  TrackingAuthorizationTracker.swift
+//  SabyAppleTracker
 //
 //  Created by WOF on 2022/08/23.
 //
@@ -12,7 +12,7 @@ import Foundation
 import SabyAppleObjectiveCReflection
 import SabyConcurrency
 
-public final class TrackingAuthorizationFetcher: Tracker {
+public final class TrackingAuthorizationTracker: Tracker {
     public typealias Value = Promise<TrackingAuthorization, Error>
     
     private let tracker: TrackerReflection
@@ -64,14 +64,14 @@ private final class TrackerReflection {
             let code = classTracker.call(methodTrackCode) as? UInt,
             let trackingAuthorization = TrackingAuthorization(rawValue: code)
         else {
-            throw TrackingAuthorizationFetcherError.unmatchedType
+            throw TrackingAuthorizationTrackerError.unmatchedType
         }
         
         return trackingAuthorization
     }
 }
 
-public enum TrackingAuthorizationFetcherError: Error {
+public enum TrackingAuthorizationTrackerError: Error {
     case unmatchedType
 }
 
