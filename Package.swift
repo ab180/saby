@@ -153,6 +153,10 @@ package
         .library(
             name: "SabyAppleLogger",
             targets: ["SabyAppleLogger"]
+        ),
+        .library(
+            name: "SabyAppleTracker",
+            targets: ["SabyAppleTracker"]
         )
     ])
 
@@ -174,6 +178,10 @@ package
             name: "SabyApplePreference",
             dependencies: ["SabyConcurrency"],
             path: "Source/ApplePreference"),
+        .target(
+            name: "SabyAppleTracker",
+            dependencies: ["SabyAppleObjectiveCReflection", "SabyConcurrency"],
+            path: "Source/AppleTracker"),
         .target(
             name: "SabyAppleLogger",
             dependencies: [],
