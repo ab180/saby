@@ -49,7 +49,7 @@ private final class TrackerReflection {
                 NSObjectClass(name: "ATTrackingManager")
             ),
             let methodTrackCode = (
-                classTracker.method(name: "TrackingAuthorizationStatus")
+                classTracker.method(name: "trackingAuthorizationStatus")
             )
         else {
             return nil
