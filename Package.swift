@@ -23,6 +23,9 @@ var package = Package(
             name: "SabyTestMock",
             targets: ["SabyTestMock"]),
         .library(
+            name: "SabyTestFake",
+            targets: ["SabyTestFake"]),
+        .library(
             name: "SabyTestWait",
             targets: ["SabyTestWait"]),
         .library(
@@ -72,6 +75,10 @@ var package = Package(
             name: "SabyTestMock",
             dependencies: ["SabyConcurrency", "SabyJSON"],
             path: "Source/TestMock"),
+        .target(
+            name: "SabyTestFake",
+            dependencies: [],
+            path: "Source/TestFake"),
         .target(
             name: "SabyNetwork",
             dependencies: ["SabyConcurrency", "SabyJSON", "SabySafe"],
