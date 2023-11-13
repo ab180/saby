@@ -7,19 +7,6 @@
 
 import Foundation
 
-public protocol Fakeable<Dependency> {
-    associatedtype Dependency: FakeDependency
-    
-    init(dependency: Dependency)
-}
-
-extension Fakeable {
-    static func fake(apply: (inout Dependency) -> Void) -> (Self, Dependency) {
-        var dependency = Dependency()
-        apply(&dependency)
-        
-        let instance = Self(dependency: dependency)
-        
-        return (instance, dependency)
-    }
+public protocol Fakeable {
+    static func fake() -> Self
 }
