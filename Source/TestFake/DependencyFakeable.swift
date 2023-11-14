@@ -14,7 +14,7 @@ public protocol DependencyFakeable<Dependency> {
 }
 
 extension DependencyFakeable {
-    static func fake(apply: (inout Dependency) -> Void) -> (Self, Dependency) {
+    public static func fake(apply: (inout Dependency) -> Void) -> (Self, Dependency) {
         var dependency = Dependency.fake()
         apply(&dependency)
         
