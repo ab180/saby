@@ -81,7 +81,7 @@ var package = Package(
             path: "Source/TestFake"),
         .target(
             name: "SabyNetwork",
-            dependencies: ["SabyConcurrency", "SabyJSON", "SabySafe"],
+            dependencies: ["SabyConcurrency", "SabyJSON", "SabySafe", "SabyTime"],
             path: "Source/Network"),
         .target(
             name: "SabyNumeric",

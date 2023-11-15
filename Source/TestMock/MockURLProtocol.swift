@@ -8,6 +8,7 @@
 import Foundation
 
 import SabyJSON
+import SabyConcurrency
 
 public protocol URLResultStorage {
     static var results: [URLResult] { get }
@@ -43,15 +44,16 @@ public final class MockURLProtocol<Storage: URLResultStorage>: URLProtocol {
             client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         }
 
-        if let data = result.data {
-            client?.urlProtocol(self, didLoad: data)
-        }
-
         if let error = result.error {
             client?.urlProtocol(self, didFailWithError: error)
         }
-        else {
-            client?.urlProtocolDidFinishLoading(self)
+        
+        result.data.then { data in
+            guard let data else { return }
+            self.client?.urlProtocol(self, didLoad: data)
+        }
+        .then {
+            self.client?.urlProtocolDidFinishLoading(self)
         }
     }
     
@@ -67,10 +69,14 @@ extension MockURLProtocol {
 public struct URLResult {
     let url: URL?
     let response: URLResponse?
-    let data: Data?
+    let data: Promise<Data?, Never>
     let error: Error?
     
     public init(url: URL, code: Int, data: Data?) {
+        self.init(url: url, code: code, data: .resolved(data))
+    }
+    
+    public init(url: URL, code: Int, data: Promise<Data?, Never>) {
         let response = HTTPURLResponse(url: url, statusCode: code, httpVersion: nil, headerFields: nil)
         
         self.url = url
@@ -80,26 +86,22 @@ public struct URLResult {
     }
     
     public init(url: URL, code: Int, json: JSON) {
+        self.init(url: url, code: code, json: .resolved(json))
+    }
+    
+    public init(url: URL, code: Int, json: Promise<JSON, Never>) {
         let response = HTTPURLResponse(url: url, statusCode: code, httpVersion: nil, headerFields: nil)
-        let (data, error) = { () -> (Data?, Error?) in
-            do {
-                return (try json.datafy(), nil)
-            }
-            catch {
-                return (nil, error)
-            }
-        }()
         
         self.url = url
         self.response = response
-        self.data = data
-        self.error = error
+        self.data = json.then { try? $0.datafy() }
+        self.error = nil
     }
     
     public init(url: URL, error: Error) {
         self.url = url
         self.response = nil
-        self.data = nil
+        self.data = .resolved(nil)
         self.error = error
     }
 }

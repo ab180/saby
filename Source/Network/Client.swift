@@ -7,6 +7,7 @@
 
 import Foundation
 
+import SabyTime
 import SabyConcurrency
 
 public protocol Client<Request, Response> {
@@ -18,6 +19,7 @@ public protocol Client<Request, Response> {
         method: ClientMethod,
         header: ClientHeader,
         body: Request,
+        timeout: Interval?,
         optionBlock: (inout URLRequest) -> Void
     ) -> Promise<ClientResult<Response>, Error>
 }
@@ -27,9 +29,17 @@ extension Client {
         _ url: URL,
         method: ClientMethod = .get,
         header: ClientHeader = [:],
+        timeout: Interval? = nil,
         optionBlock: (inout URLRequest) -> Void = { _ in }
     ) -> Promise<ClientResult<Response>, Error> where RequestValue? == Request {
-        request(url: url, method: method, header: header, body: nil, optionBlock: optionBlock)
+        request(
+            url: url,
+            method: method,
+            header: header,
+            body: nil,
+            timeout: timeout,
+            optionBlock: optionBlock
+        )
     }
     
     public func request(
@@ -37,9 +47,17 @@ extension Client {
         method: ClientMethod = .get,
         header: ClientHeader = [:],
         body: Request,
+        timeout: Interval? = nil,
         optionBlock: (inout URLRequest) -> Void = { _ in }
     ) -> Promise<ClientResult<Response>, Error> {
-        request(url: url, method: method, header: header, body: body, optionBlock: optionBlock)
+        request(
+            url: url,
+            method: method,
+            header: header,
+            body: body,
+            timeout: timeout,
+            optionBlock: optionBlock
+        )
     }
 }
 

@@ -11,6 +11,7 @@ import XCTest
 import SabyJSON
 import SabyTestMock
 import SabyTestExpect
+import SabyConcurrency
 
 final class JSONClientTest: XCTestCase {
     func test__init() {
@@ -181,5 +182,34 @@ final class JSONClientTest: XCTestCase {
             state: .rejected(JSONClientError.responseDataIsNotDecodable),
             timeout: .seconds(2)
         )
+    }
+    
+    func test__request_timeout() {
+        final class MockURLResultStorage: URLResultStorage {
+            static var results: [URLResult] = [
+                URLResult(
+                    url: URL(string: "https://mock.api.ab180.co/request")!,
+                    code: 200,
+                    data: Promise.delay(.milliseconds(2000)).then { try! JSON.from([:]).datafy() }
+                )
+            ]
+        }
+        let client = JSONClient() {
+            $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
+        }
+        
+        let response = client.request(
+            URL(string: "https://mock.api.ab180.co/request")!,
+            timeout: .millisecond(50)
+        )
+        
+        response.then { data in
+            print(data)
+        }
+        .catch { error in
+            print(error)
+        }
+        
+        Expect.promise(response, state: .rejected(JSONClientError.timeout), timeout: .seconds(2))
     }
 }

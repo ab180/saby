@@ -10,6 +10,7 @@ import Foundation
 import SabyConcurrency
 import SabySafe
 import SabyJSON
+import SabyTime
 
 public final class JSONClient: Client {
     let client: DataClient
@@ -42,6 +43,7 @@ extension JSONClient {
         method: ClientMethod = .get,
         header: ClientHeader = [:],
         body: JSON? = nil,
+        timeout: Interval? = nil,
         optionBlock: (inout URLRequest) -> Void = { _ in }
     ) -> Promise<ClientResult<JSON>, Error> {
         guard let body = try? self.encoder.encode(body) else {
@@ -53,6 +55,7 @@ extension JSONClient {
             method: method,
             header: header,
             body: body,
+            timeout: timeout,
             optionBlock: optionBlock
         )
         .then { code2XX, data -> ClientResult<JSON> in
@@ -64,7 +67,10 @@ extension JSONClient {
             return (code2XX, body)
         }
         .catch { error in
-            if case DataClientError.statusCodeNotFound = error {
+            if case DataClientError.timeout = error {
+                throw JSONClientError.timeout
+            }
+            else if case DataClientError.statusCodeNotFound = error {
                 throw JSONClientError.statusCodeNotFound
             }
             else if case DataClientError.statusCodeNot2XX(let codeNot2XX, let data) = error {
@@ -78,6 +84,7 @@ extension JSONClient {
 }
 
 public enum JSONClientError: Error {
+    case timeout
     case statusCodeNotFound
     case statusCodeNot2XX(codeNot2XX: Int, body: JSON)
     case bodyIsNotEncodable

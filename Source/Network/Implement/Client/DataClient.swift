@@ -9,6 +9,7 @@ import Foundation
 
 import SabyConcurrency
 import SabyJSON
+import SabyTime
 
 public final class DataClient: Client {
     public typealias Request = Data?
@@ -37,6 +38,7 @@ extension DataClient {
         method: ClientMethod = .get,
         header: ClientHeader = [:],
         body: Data? = nil,
+        timeout: Interval? = nil,
         optionBlock: (inout URLRequest) -> Void = { _ in }
     ) -> Promise<ClientResult<Data?>, Error> {
         let pending = Promise<ClientResult<Data?>, Error>.pending()
@@ -73,6 +75,23 @@ extension DataClient {
         pending.onCancel {
             task.cancel()
         }
+        if let timeout {
+            let item = DispatchWorkItem {
+                pending.reject(DataClientError.timeout)
+                task.cancel()
+            }
+            DispatchQueue.global().asyncAfter(
+                deadline: .now() + timeout.dispatchTime,
+                execute: item
+            )
+            pending.promise.finally {
+                item.cancel()
+            }
+            pending.onCancel {
+                item.cancel()
+            }
+        }
+        
         task.resume()
         
         return pending.promise
@@ -80,6 +99,7 @@ extension DataClient {
 }
 
 public enum DataClientError: Error {
+    case timeout
     case statusCodeNotFound
     case statusCodeNot2XX(codeNot2XX: Int, body: Data?)
 }

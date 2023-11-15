@@ -10,6 +10,7 @@ import XCTest
 
 import SabyTestMock
 import SabyTestExpect
+import SabyConcurrency
 
 final class DataClientTest: XCTestCase {
     func test__init() {
@@ -87,5 +88,34 @@ final class DataClientTest: XCTestCase {
         let response = client.request(URL(string: "https://mock.api.ab180.co/request")!)
         
         Expect.promise(response, state: .rejected(Expect.SampleError.one), timeout: .seconds(2))
+    }
+    
+    func test__request_timeout() {
+        final class MockURLResultStorage: URLResultStorage {
+            static var results: [URLResult] = [
+                URLResult(
+                    url: URL(string: "https://mock.api.ab180.co/request")!,
+                    code: 200,
+                    data: Promise.delay(.milliseconds(2000)).then { Data() }
+                )
+            ]
+        }
+        let client = DataClient() {
+            $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
+        }
+        
+        let response = client.request(
+            URL(string: "https://mock.api.ab180.co/request")!,
+            timeout: .millisecond(50)
+        )
+        
+        response.then { data in
+            print(data)
+        }
+        .catch { error in
+            print(error)
+        }
+        
+        Expect.promise(response, state: .rejected(DataClientError.timeout), timeout: .seconds(2))
     }
 }
