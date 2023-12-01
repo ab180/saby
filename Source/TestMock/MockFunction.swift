@@ -16,12 +16,6 @@ public final class MockFunction<Argument, Result> {
                 expect = nil
                 mode = .implementation
             }
-            let implementation = self.implementation
-            self.implementation = { argument in
-                let result = implementation(argument)
-                self.callback(argument, result)
-                return result
-            }
         }
     }
     public var expect: Result! {
@@ -47,11 +41,7 @@ public final class MockFunction<Argument, Result> {
         self.mode = .implementation
         self.lock = Lock()
         
-        self.implementation = { argument in
-            let result = implementation(argument)
-            self.callback(argument, result)
-            return result
-        }
+        self.implementation = implementation
     }
     
     init(
@@ -65,7 +55,6 @@ public final class MockFunction<Argument, Result> {
         self.lock = Lock()
         
         self.implementation = { argument in
-            self.callback(argument, self.expect)
             return self.expect
         }
     }
@@ -133,6 +122,7 @@ extension MockFunction {
         
         let result = implementation(argument)
         calls.append(MockFunctionCall(argument: argument, result: result))
+        self.callback(argument, result)
         
         return result
     }
