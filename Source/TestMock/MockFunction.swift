@@ -117,11 +117,10 @@ extension MockFunction {
 
 extension MockFunction {
     public func callAsFunction(_ argument: Argument) -> Result {
-        defer { lock.unlock() }
-        lock.lock()
-        
         let result = implementation(argument)
+        lock.lock()
         calls.append(MockFunctionCall(argument: argument, result: result))
+        lock.unlock()
         self.callback(argument, result)
         
         return result
