@@ -9,7 +9,7 @@ import XCTest
 @testable import SabyJSON
 
 final class JSONFilterTest: XCTestCase {
-    func test__filter() {
+    func test__deep_filter() {
         let json = JSON.from([
             "a": nil,
             "b": 1,
@@ -32,9 +32,9 @@ final class JSONFilterTest: XCTestCase {
         ])
         
         let filtered = json
-            .filter { $0 != .null }!
-            .filter { $0 != [:] }!
-            .filter { $0 != [] }!
+            .deepFilter { $0 != .null }!
+            .deepFilter { $0 != [:] }!
+            .deepFilter { $0 != [] }!
         
         XCTAssertEqual(filtered, [
             "b": 1,
