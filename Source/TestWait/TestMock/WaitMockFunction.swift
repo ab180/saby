@@ -29,9 +29,10 @@ public struct WaitMockFunction {
             if until(argument, result) {
                 callArgument = argument
                 callResult = result
-                callback(argument, result)
                 semaphore.signal()
+                mock.callback = callback
             }
+            callback(argument, result)
         }
         try block()
 
