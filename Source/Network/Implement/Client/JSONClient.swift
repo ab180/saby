@@ -14,26 +14,18 @@ import SabyTime
 
 public final class JSONClient: Client {
     let client: DataClient
-    let encoder: JSONEncoder
-    let decoder: JSONDecoder
     
     init(
-        client: DataClient,
-        encoder: JSONEncoder,
-        decoder: JSONDecoder
+        client: DataClient
     ) {
         self.client = client
-        self.encoder = encoder
-        self.decoder = decoder
     }
 }
 
 extension JSONClient {
     public convenience init(optionBlock: (inout URLSessionConfiguration) -> Void = { _ in }) {
         let client = DataClient(optionBlock: optionBlock)
-        let encoder = JSONEncoder()
-        let decoder = JSONDecoder()
-        self.init(client: client, encoder: encoder, decoder: decoder)
+        self.init(client: client)
     }
 }
     
@@ -46,7 +38,7 @@ extension JSONClient {
         timeout: Interval? = nil,
         optionBlock: (inout URLRequest) -> Void = { _ in }
     ) -> Promise<ClientResult<JSON>, Error> {
-        guard let body = try? self.encoder.encode(body) else {
+        guard let body = try? body?.datafy() else {
             return Promise.rejected(JSONClientError.bodyIsNotEncodable)
         }
         
