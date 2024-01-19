@@ -38,15 +38,19 @@ extension JSONClient {
         timeout: Interval? = nil,
         optionBlock: (inout URLRequest) -> Void = { _ in }
     ) -> Promise<ClientResult<JSON>, Error> {
-        guard let body = try? body?.datafy() else {
-            return Promise.rejected(JSONClientError.bodyIsNotEncodable)
+        var bodyData: Data? = nil
+        if let body {
+            guard let body = try? body.datafy() else {
+                return Promise.rejected(JSONClientError.bodyIsNotEncodable)
+            }
+            bodyData = body
         }
         
         return client.request(
             url: url,
             method: method,
             header: header,
-            body: body,
+            body: bodyData,
             timeout: timeout,
             optionBlock: optionBlock
         )
