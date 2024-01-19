@@ -60,8 +60,9 @@ private final class TrackerReflection {
     }
     
     func track() throws -> TrackingAuthorization {
+        let code = classTracker.call(methodTrackCode) as? UInt ?? 0
+        
         guard
-            let code = classTracker.call(methodTrackCode) as? UInt,
             let trackingAuthorization = TrackingAuthorization(rawValue: code)
         else {
             throw TrackingAuthorizationTrackerError.unmatchedType

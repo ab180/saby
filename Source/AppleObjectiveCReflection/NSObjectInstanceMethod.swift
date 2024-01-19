@@ -31,6 +31,8 @@ public final class NSObjectInstanceMethod {
 }
 
 extension NSObjectInstance {
+    /// Call class method with reflection
+    /// - Warning: 0 value of non-class type will be returned as nil
     @discardableResult
     public func call(
         _ instanceMethod: NSObjectInstanceMethod
@@ -44,6 +46,8 @@ extension NSObjectInstance {
         return function(object, instanceMethod.selector)
     }
     
+    /// Call class method with reflection
+    /// - Warning: 0 value of non-class type will be returned as nil
     @discardableResult
     public func call(
         _ instanceMethod: NSObjectInstanceMethod,
@@ -58,6 +62,8 @@ extension NSObjectInstance {
         return function(object, instanceMethod.selector, argument0)
     }
     
+    /// Call class method with reflection
+    /// - Warning: 0 value of non-class type will be returned as nil
     @discardableResult
     public func call(
         _ instanceMethod: NSObjectInstanceMethod,
@@ -73,6 +79,8 @@ extension NSObjectInstance {
         return function(object, instanceMethod.selector, argument0, argument1)
     }
     
+    /// Call class method with reflection
+    /// - Warning: 0 value of non-class type will be returned as nil
     @discardableResult
     public func call(
         _ instanceMethod: NSObjectInstanceMethod,
@@ -89,6 +97,8 @@ extension NSObjectInstance {
         return function(object, instanceMethod.selector, argument0, argument1, argument2)
     }
     
+    /// Call class method with reflection
+    /// - Warning: 0 value of non-class type will be returned as nil
     @discardableResult
     public func call(
         _ instanceMethod: NSObjectInstanceMethod,
@@ -106,6 +116,8 @@ extension NSObjectInstance {
         return function(object, instanceMethod.selector, argument0, argument1, argument2, argument3)
     }
     
+    /// Call class method with reflection
+    /// - Warning: 0 value of non-class type will be returned as nil
     @discardableResult
     public func call(
         _ instanceMethod: NSObjectInstanceMethod,

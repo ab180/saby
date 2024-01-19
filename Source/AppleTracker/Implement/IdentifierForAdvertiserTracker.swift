@@ -73,12 +73,11 @@ private final class TrackerReflection {
     }
     
     func track() throws -> IdentifierForAdvertiser {
+        let limitAdTracking = instanceTracker.call(methodTrackLimitAdTracking) as? Bool ?? false
+        
         guard
             let identifier = (
                 instanceTracker.call(methodTrackIdentifier) as? UUID
-            ),
-            let limitAdTracking = (
-                instanceTracker.call(methodTrackLimitAdTracking) as? Bool
             )
         else {
             throw IdentifierForAdvertiserTrackerError.unmatchedType
