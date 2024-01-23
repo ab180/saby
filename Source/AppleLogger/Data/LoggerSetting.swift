@@ -11,14 +11,14 @@ public struct LoggerSetting {
     /// A variable indicating logger's logging level. Set  to `.none` to not show logs.
     public var logLevel: LogLevel? = .debug
     
+    /// A variable indicating logger paginate log or not. Because of `os_log`'s 1024 length limit.
+    public var isPaginateLogEnabled: Bool
+    
     /// A variable used for displaying `subsystem` value in console
     public let subsystem: String
     
     /// A variable used for displaying `category` value in console
     public let category: String
-    
-    /// A variable used for paginate log because of `os_log`'s 1024 length limit
-    public let isPaginateLogEnabled: Bool
     
     /// An internal variable used to execute `os_log`
     let osLog: OSLog
