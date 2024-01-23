@@ -12,7 +12,7 @@ public struct LoggerSetting {
     public var logLevel: LogLevel? = .debug
     
     /// A variable indicating logger paginate log or not. Because of `os_log`'s 1024 length limit.
-    public var isPaginateLogEnabled: Bool
+    public var isPaginateLogEnabled: Bool = false
     
     /// A variable used for displaying `subsystem` value in console
     public let subsystem: String
@@ -25,12 +25,10 @@ public struct LoggerSetting {
     
     public init(
         subsystem: String,
-        category: String,
-        isPaginateLogEnabled: Bool = false
+        category: String
     ) {
         self.subsystem = subsystem
         self.category = category
-        self.isPaginateLogEnabled = isPaginateLogEnabled
         
         self.osLog = OSLog(subsystem: subsystem, category: category)
     }
