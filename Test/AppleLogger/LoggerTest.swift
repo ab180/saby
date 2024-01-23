@@ -83,6 +83,8 @@ fileprivate var defaultSetting: LoggerSetting {
 
 // MARK: - Mocks for test
 fileprivate class MockLogService: LogService {
+    let setting = defaultSetting
+    
     let expectation: XCTestExpectation?
     
     func log(level: SabyAppleLogger.LogLevel, _ message: String) {

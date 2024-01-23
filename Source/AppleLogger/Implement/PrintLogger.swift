@@ -13,12 +13,12 @@ public final class PrintLogger: LoggerType {
     
     public init(_ subsystem: String, category: String) {
         self.loggerSetting = LoggerSetting(subsystem: subsystem, category: category)
-        self.logService = PrintLogService()
+        self.logService = PrintLogService(setting: loggerSetting)
     }
     
     public init(setting: LoggerSetting) {
         self.loggerSetting = setting
-        self.logService = PrintLogService()
+        self.logService = PrintLogService(setting: loggerSetting)
     }
 }
 

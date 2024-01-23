@@ -15,12 +15,12 @@ public final class OSLogger: LoggerType {
     public init(_ subsystem: String, category: String) {
         let setting = LoggerSetting(subsystem: subsystem, category: category)
         self.loggerSetting = setting
-        self.logService = OSLogService(setting.osLog)
+        self.logService = OSLogService(setting: setting)
     }
     
     public init(setting: LoggerSetting) {
         self.loggerSetting = setting
-        self.logService = OSLogService(setting.osLog)
+        self.logService = OSLogService(setting: setting)
     }
 }
 

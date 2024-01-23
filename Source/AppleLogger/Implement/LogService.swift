@@ -8,27 +8,50 @@
 import OSLog
 
 public protocol LogService {
+    var setting: LoggerSetting { get }
     func log(level: LogLevel, _ message: String)
 }
 
+extension LogService {
+    fileprivate func log(
+        level: LogLevel, 
+        _ message: String,
+        _ printBlock: (String) -> Void
+    ) {
+        if setting.isPaginateLogEnabled {
+            let logs = LoggerConstant.paginatedLog(message)
+            let id = arc4random() % 1000000000
+            
+            logs.enumerated().forEach { (index, log) in
+                printBlock(
+                    "\(log)"
+                    + "\nlog={page=\(index + 1)/\(logs.count), id=\(id)}"
+                )
+            }
+            return
+        }
+        
+        printBlock(message)
+    }
+}
+
 public struct OSLogService: LogService {
-    let osLog: OSLog
+    public let setting: LoggerSetting
     
     public func log(level: LogLevel, _ message: String) {
-        self.sendLog("%s", log: self.osLog, type: level.osLogType, message)
-    }
-    
-    private func sendLog(_ message: StaticString, log: OSLog, type: OSLogType, _ args: CVarArg) {
-        os_log(message, log: log, type: type, args)
-    }
-
-    init(_ osLog: OSLog) {
-        self.osLog = osLog
+        log(level: level, message) {
+            os_log("%{public}s", log: setting.osLog, type: level.osLogType, $0)
+        }
     }
 }
 
 public struct PrintLogService: LogService {
+    public let setting: LoggerSetting
+    
     public func log(level: LogLevel, _ message: String) {
-        print("[AirBridge : \(level.name)] \(message)")
+        let message = "[\(setting.subsystem)/\(setting.category)/\(level.name)] \(message)"
+        log(level: level, message) {
+            print($0)
+        }
     }
 }

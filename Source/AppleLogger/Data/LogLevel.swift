@@ -21,15 +21,15 @@ public enum LogLevel: Comparable, CaseIterable {
     public var name: String {
         switch self {
         case .debug:
-            return "DEBUG"
+            return "Debug"
         case .info:
-            return "INFO"
+            return "Info"
         case .warning:
-            return "WARNING"
+            return "Warning"
         case .error:
-            return "ERROR"
+            return "Error"
         case .fault:
-            return "FAULT"
+            return "Fault"
         }
     }
     

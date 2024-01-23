@@ -17,12 +17,20 @@ public struct LoggerSetting {
     /// A variable used for displaying `category` value in console
     public let category: String
     
-    /// An internal variable used to execute `os_log`
-    var osLog: OSLog
+    /// A variable used for paginate log because of `os_log`'s 1024 length limit
+    public let isPaginateLogEnabled: Bool
     
-    public init(subsystem: String, category: String) {
+    /// An internal variable used to execute `os_log`
+    let osLog: OSLog
+    
+    public init(
+        subsystem: String,
+        category: String,
+        isPaginateLogEnabled: Bool = false
+    ) {
         self.subsystem = subsystem
         self.category = category
+        self.isPaginateLogEnabled = isPaginateLogEnabled
         
         self.osLog = OSLog(subsystem: subsystem, category: category)
     }
