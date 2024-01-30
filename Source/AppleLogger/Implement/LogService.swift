@@ -18,7 +18,7 @@ extension LogService {
         _ message: String,
         _ printBlock: (String) -> Void
     ) {
-        if setting.isPaginateLogEnabled {
+        if setting.isPaginateLogEnabled, message.count > LoggerConstant.paginateSize {
             let logs = LoggerConstant.paginatedLog(message)
             let id = arc4random() % 1000000000
             

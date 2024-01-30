@@ -8,7 +8,7 @@
 import Foundation
 
 struct LoggerConstant {
-    private static let paginateSize = 900
+    static let paginateSize = 900
     
     static let paginatedLog = { (message: String) in
         stride(from: 0, to: message.count, by: paginateSize).map { point in
