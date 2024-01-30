@@ -53,7 +53,7 @@ private final class TrackerReflection {
                 classTracker.method(name: "sharedManager")
             ),
             let instanceTracker = (
-                classTracker.instance(object: classTracker.call(methodShared))
+                classTracker.instance(object: classTracker.call(methodShared, return: .reference))
             ),
             let methodTrackIdentifier = (
                 instanceTracker.method(name: "advertisingIdentifier")
@@ -73,12 +73,9 @@ private final class TrackerReflection {
     }
     
     func track() throws -> IdentifierForAdvertiser {
-        let limitAdTracking = instanceTracker.call(methodTrackLimitAdTracking) as? Bool ?? false
-        
         guard
-            let identifier = (
-                instanceTracker.call(methodTrackIdentifier) as? UUID
-            )
+            let limitAdTracking = instanceTracker.call(methodTrackLimitAdTracking, return: .value(Bool.self)),
+            let identifier = instanceTracker.call(methodTrackIdentifier, return: .reference(UUID.self))
         else {
             throw IdentifierForAdvertiserTrackerError.unmatchedType
         }

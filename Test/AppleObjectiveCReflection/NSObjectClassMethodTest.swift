@@ -10,23 +10,36 @@ import XCTest
 
 final class NSObjectClassMethodTest: XCTestCase {
     func test__init_class_method() {
-        let NSDictionary = NSObjectClass(name: "NSDictionary")!
+        let classNSDictionary = NSObjectClass(name: "NSDictionary")!
         
-        XCTAssertNotNil(NSDictionary.method(name: "dictionaryWithObjects:forKeys:"))
-        XCTAssertNil(NSDictionary.method(name: "1234567890"))
-        XCTAssertNil(NSDictionary.method(name: ""))
+        XCTAssertNotNil(classNSDictionary.method(name: "dictionaryWithObjects:forKeys:"))
+        XCTAssertNil(classNSDictionary.method(name: "1234567890"))
+        XCTAssertNil(classNSDictionary.method(name: ""))
     }
     
-    func test__call() {
-        let NSDictionary = NSObjectClass(name: "NSDictionary")!
-        let dictionaryWithValuesForKeys = NSDictionary.method(name: "dictionaryWithObjects:forKeys:")!
+    func test__call_return_reference() {
+        let classNSDictionary = NSObjectClass(name: "NSDictionary")!
+        let methodDictionaryWithValuesForKeys = classNSDictionary.method(name: "dictionaryWithObjects:forKeys:")!
         
-        let dictionary = NSDictionary.call(
-            dictionaryWithValuesForKeys,
+        let dictionary = classNSDictionary.call(
+            methodDictionaryWithValuesForKeys,
             with: ["1", "2", "3"],
-            with: ["a", "b", "c"]
-        ) as! NSDictionary
+            with: ["a", "b", "c"],
+            return: .reference(NSDictionary.self)
+        )!
         
         XCTAssertEqual(dictionary, ["a":"1","b":"2","c":"3"])
+    }
+    
+    func test__call_return_value() {
+        let classNSDictionary = NSObjectClass(name: "NSDictionary")!
+        let methodIsProxy = classNSDictionary.method(name: "isProxy")!
+        
+        let isProxy = classNSDictionary.call(
+            methodIsProxy,
+            return: .value(Bool.self)
+        )!
+        
+        XCTAssertEqual(isProxy, false)
     }
 }

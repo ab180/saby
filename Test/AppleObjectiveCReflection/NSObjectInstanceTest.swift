@@ -13,7 +13,7 @@ final class NSObjectInstanceTest: XCTestCase {
         let NSDictionary = NSObjectClass(name: "NSDictionary")!
         let dictionaryWithValuesForKeys = NSDictionary.method(name: "dictionaryWithObjects:forKeys:")!
         let instance = NSDictionary.instance(
-            object: NSDictionary.call(dictionaryWithValuesForKeys, with: ["1"], with: ["a"])
+            object: NSDictionary.call(dictionaryWithValuesForKeys, with: ["1"], with: ["a"], return: .reference)
         )!
         
         XCTAssertTrue(instance.object.isKind(of: NSDictionary.anyClass))

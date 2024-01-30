@@ -58,7 +58,8 @@ private final class ClassAAAttribution {
         
         let result = classAAAttribution.call(
             methodAttributionTokenWithError,
-            with: OpaquePointer(error)
+            with: OpaquePointer(error),
+            return: .reference
         )
         if let error = error.pointee {
             throw error

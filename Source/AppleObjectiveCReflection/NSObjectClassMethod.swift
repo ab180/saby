@@ -32,108 +32,182 @@ public final class NSObjectClassMethod {
 
 extension NSObjectClass {
     /// Call class method with reflection
-    /// - Warning: 0 value of non-class type will be returned as nil
     @discardableResult
-    public func call(
-        _ classMethod: NSObjectClassMethod
-    ) -> Any? {
-        guard anyClass == classMethod.anyClass else { return nil }
-        
-        typealias Function = @convention(c)(AnyClass, Selector)->Any?
-        let implementation = method_getImplementation(classMethod.method)
-        let function = unsafeBitCast(implementation, to: Function.self)
-        
-        return function(anyClass, classMethod.selector)
-    }
-    
-    /// Call class method with reflection
-    /// - Warning: 0 value of non-class type will be returned as nil
-    @discardableResult
-    public func call(
+    public func call<Return>(
         _ classMethod: NSObjectClassMethod,
-        with argument0: Any?
-    ) -> Any? {
+        return: NSObjectReturn<Return>
+    ) -> Return? {
         guard anyClass == classMethod.anyClass else { return nil }
         
-        typealias Function = @convention(c)(AnyClass, Selector, Any?)->Any?
         let implementation = method_getImplementation(classMethod.method)
-        let function = unsafeBitCast(implementation, to: Function.self)
         
-        return function(anyClass, classMethod.selector, argument0)
+        switch `return` {
+        case .reference:
+            typealias Function = @convention(c)(AnyClass, Selector)->Any?
+            let function = unsafeBitCast(implementation, to: Function.self)
+            let result = function(anyClass, classMethod.selector)
+            return result as? Return
+        case .value(let type):
+            typealias Function = @convention(c)(AnyClass, Selector)->Unmanaged<AnyObject>
+            let function = unsafeBitCast(implementation, to: Function.self)
+            let result = function(anyClass, classMethod.selector)
+            return cast(result, to: type)
+        }
     }
     
     /// Call class method with reflection
-    /// - Warning: 0 value of non-class type will be returned as nil
     @discardableResult
-    public func call(
+    public func call<Return>(
         _ classMethod: NSObjectClassMethod,
         with argument0: Any?,
-        with argument1: Any?
-    ) -> Any? {
+        return: NSObjectReturn<Return>
+    ) -> Return? {
         guard anyClass == classMethod.anyClass else { return nil }
         
-        typealias Function = @convention(c)(AnyClass, Selector, Any?, Any?)->Any?
         let implementation = method_getImplementation(classMethod.method)
-        let function = unsafeBitCast(implementation, to: Function.self)
         
-        return function(anyClass, classMethod.selector, argument0, argument1)
+        switch `return` {
+        case .reference:
+            typealias Function = @convention(c)(AnyClass, Selector, Any?)->Any?
+            let function = unsafeBitCast(implementation, to: Function.self)
+            let result = function(anyClass, classMethod.selector, argument0)
+            return result as? Return
+        case .value(let type):
+            typealias Function = @convention(c)(AnyClass, Selector, Any?)->Unmanaged<AnyObject>
+            let function = unsafeBitCast(implementation, to: Function.self)
+            let result = function(anyClass, classMethod.selector, argument0)
+            return cast(result, to: type)
+        }
     }
     
     /// Call class method with reflection
-    /// - Warning: 0 value of non-class type will be returned as nil
     @discardableResult
-    public func call(
+    public func call<Return>(
         _ classMethod: NSObjectClassMethod,
         with argument0: Any?,
         with argument1: Any?,
-        with argument2: Any?
-    ) -> Any? {
+        return: NSObjectReturn<Return>
+    ) -> Return? {
         guard anyClass == classMethod.anyClass else { return nil }
         
-        typealias Function = @convention(c)(AnyClass, Selector, Any?, Any?, Any?)->Any?
         let implementation = method_getImplementation(classMethod.method)
-        let function = unsafeBitCast(implementation, to: Function.self)
         
-        return function(anyClass, classMethod.selector, argument0, argument1, argument2)
+        switch `return` {
+        case .reference:
+            typealias Function = @convention(c)(AnyClass, Selector, Any?, Any?)->Any?
+            let function = unsafeBitCast(implementation, to: Function.self)
+            let result = function(anyClass, classMethod.selector, argument0, argument1)
+            return result as? Return
+        case .value(let type):
+            typealias Function = @convention(c)(AnyClass, Selector, Any?, Any?)->Unmanaged<AnyObject>
+            let function = unsafeBitCast(implementation, to: Function.self)
+            let result = function(anyClass, classMethod.selector, argument0, argument1)
+            return cast(result, to: type)
+        }
     }
     
     /// Call class method with reflection
-    /// - Warning: 0 value of non-class type will be returned as nil
     @discardableResult
-    public func call(
+    public func call<Return>(
         _ classMethod: NSObjectClassMethod,
         with argument0: Any?,
         with argument1: Any?,
         with argument2: Any?,
-        with argument3: Any?
-    ) -> Any? {
+        return: NSObjectReturn<Return>
+    ) -> Return? {
         guard anyClass == classMethod.anyClass else { return nil }
         
-        typealias Function = @convention(c)(AnyClass, Selector, Any?, Any?, Any?, Any?)->Any?
         let implementation = method_getImplementation(classMethod.method)
-        let function = unsafeBitCast(implementation, to: Function.self)
         
-        return function(anyClass, classMethod.selector, argument0, argument1, argument2, argument3)
+        switch `return` {
+        case .reference:
+            typealias Function = @convention(c)(AnyClass, Selector, Any?, Any?, Any?)->Any?
+            let function = unsafeBitCast(implementation, to: Function.self)
+            let result = function(anyClass, classMethod.selector, argument0, argument1, argument2)
+            return result as? Return
+        case .value(let type):
+            typealias Function = @convention(c)(AnyClass, Selector, Any?, Any?, Any?)->Unmanaged<AnyObject>
+            let function = unsafeBitCast(implementation, to: Function.self)
+            let result = function(anyClass, classMethod.selector, argument0, argument1, argument2)
+            return cast(result, to: type)
+        }
     }
     
     /// Call class method with reflection
-    /// - Warning: 0 value of non-class type will be returned as nil
     @discardableResult
-    public func call(
+    public func call<Return>(
         _ classMethod: NSObjectClassMethod,
         with argument0: Any?,
         with argument1: Any?,
         with argument2: Any?,
         with argument3: Any?,
-        with argument4: Any?
-    ) -> Any? {
+        return: NSObjectReturn<Return>
+    ) -> Return? {
         guard anyClass == classMethod.anyClass else { return nil }
         
-        typealias Function = @convention(c)(AnyClass, Selector, Any?, Any?, Any?, Any?, Any?)->Any?
         let implementation = method_getImplementation(classMethod.method)
-        let function = unsafeBitCast(implementation, to: Function.self)
         
-        return function(anyClass, classMethod.selector, argument0, argument1, argument2, argument3, argument4)
+        switch `return` {
+        case .reference:
+            typealias Function = @convention(c)(AnyClass, Selector, Any?, Any?, Any?, Any?)->Any?
+            let function = unsafeBitCast(implementation, to: Function.self)
+            let result = function(anyClass, classMethod.selector, argument0, argument1, argument2, argument3)
+            return result as? Return
+        case .value(let type):
+            typealias Function = @convention(c)(AnyClass, Selector, Any?, Any?, Any?, Any?)->Unmanaged<AnyObject>
+            let function = unsafeBitCast(implementation, to: Function.self)
+            let result = function(anyClass, classMethod.selector, argument0, argument1, argument2, argument3)
+            return cast(result, to: type)
+        }
+    }
+    
+    /// Call class method with reflection
+    @discardableResult
+    public func call<Return>(
+        _ classMethod: NSObjectClassMethod,
+        with argument0: Any?,
+        with argument1: Any?,
+        with argument2: Any?,
+        with argument3: Any?,
+        with argument4: Any?,
+        return: NSObjectReturn<Return>
+    ) -> Return? {
+        guard anyClass == classMethod.anyClass else { return nil }
+        
+        let implementation = method_getImplementation(classMethod.method)
+        
+        switch `return` {
+        case .reference:
+            typealias Function = @convention(c)(AnyClass, Selector, Any?, Any?, Any?, Any?, Any?)->Any?
+            let function = unsafeBitCast(implementation, to: Function.self)
+            let result = function(anyClass, classMethod.selector, argument0, argument1, argument2, argument3, argument4)
+            return result as? Return
+        case .value(let type):
+            typealias Function = @convention(c)(AnyClass, Selector, Any?, Any?, Any?, Any?, Any?)->Unmanaged<AnyObject>
+            let function = unsafeBitCast(implementation, to: Function.self)
+            let result = function(anyClass, classMethod.selector, argument0, argument1, argument2, argument3, argument4)
+            return cast(result, to: type)
+        }
+    }
+}
+
+extension NSObjectClass {
+    private func cast<Actual>(
+        _ value: Unmanaged<AnyObject>,
+        to type: Actual.Type
+    ) -> Actual {
+        let raw = unsafeBitCast(value, to: Int.self)
+        
+        switch MemoryLayout<Actual>.size {
+        case 1:
+            return unsafeBitCast(Int8(raw), to: type)
+        case 2:
+            return unsafeBitCast(Int16(raw), to: type)
+        case 4:
+            return unsafeBitCast(Int32(raw), to: type)
+        default:
+            return unsafeBitCast(Int64(raw), to: type)
+        }
     }
 }
 

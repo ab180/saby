@@ -10,10 +10,10 @@ import XCTest
 
 final class NSObjectInstanceMethodTest: XCTestCase {
     func test__init_class_method() {
-        let NSDictionary = NSObjectClass(name: "NSDictionary")!
-        let dictionaryWithValuesForKeys = NSDictionary.method(name: "dictionaryWithObjects:forKeys:")!
-        let instance = NSDictionary.instance(
-            object: NSDictionary.call(dictionaryWithValuesForKeys, with: ["1"], with: ["a"])
+        let classNSDictionary = NSObjectClass(name: "NSDictionary")!
+        let methodDictionaryWithValuesForKeys = classNSDictionary.method(name: "dictionaryWithObjects:forKeys:")!
+        let instance = classNSDictionary.instance(
+            object: classNSDictionary.call(methodDictionaryWithValuesForKeys, with: ["1"], with: ["a"], return: .reference)
         )!
         
         XCTAssertNotNil(instance.method(name: "objectForKey:"))
@@ -21,14 +21,25 @@ final class NSObjectInstanceMethodTest: XCTestCase {
         XCTAssertNil(instance.method(name: ""))
     }
     
-    func test__call() {
-        let NSDictionary = NSObjectClass(name: "NSDictionary")!
-        let dictionaryWithValuesForKeys = NSDictionary.method(name: "dictionaryWithObjects:forKeys:")!
-        let instance = NSDictionary.instance(
-            object: NSDictionary.call(dictionaryWithValuesForKeys, with: ["1"], with: ["a"])
+    func test__call_return_reference() {
+        let classNSDictionary = NSObjectClass(name: "NSDictionary")!
+        let methodDictionaryWithValuesForKeys = classNSDictionary.method(name: "dictionaryWithObjects:forKeys:")!
+        let instance = classNSDictionary.instance(
+            object: classNSDictionary.call(methodDictionaryWithValuesForKeys, with: ["1"], with: ["a"], return: .reference)
         )!
-        let objectForKey = instance.method(name: "objectForKey:")!
+        let methodObjectForKey = instance.method(name: "objectForKey:")!
         
-        XCTAssertEqual(instance.call(objectForKey, with: "a") as! String, "1")
+        XCTAssertEqual(instance.call(methodObjectForKey, with: "a", return: .reference(String.self))!, "1")
+    }
+    
+    func test__call_return_value() {
+        let classNSDictionary = NSObjectClass(name: "NSDictionary")!
+        let methodDictionaryWithValuesForKeys = classNSDictionary.method(name: "dictionaryWithObjects:forKeys:")!
+        let instance = classNSDictionary.instance(
+            object: classNSDictionary.call(methodDictionaryWithValuesForKeys, with: ["1"], with: ["a"], return: .reference)
+        )!
+        let methodCount = instance.method(name: "count")!
+        
+        XCTAssertEqual(instance.call(methodCount, return: .value(Int.self))!, 1)
     }
 }
