@@ -35,7 +35,7 @@ extension NSObjectClass {
     @discardableResult
     public func call<Return>(
         _ classMethod: NSObjectClassMethod,
-        return: NSObjectReturn<Return>
+        return: NSObjectReturn<Return> = .void
     ) -> Return? {
         guard anyClass == classMethod.anyClass else { return nil }
         
@@ -52,6 +52,11 @@ extension NSObjectClass {
             let function = unsafeBitCast(implementation, to: Function.self)
             let result = function(anyClass, classMethod.selector)
             return cast(result, to: type)
+        case .void:
+            typealias Function = @convention(c)(AnyClass, Selector)->Void
+            let function = unsafeBitCast(implementation, to: Function.self)
+            function(anyClass, classMethod.selector)
+            return () as? Return
         }
     }
     
@@ -60,7 +65,7 @@ extension NSObjectClass {
     public func call<Return>(
         _ classMethod: NSObjectClassMethod,
         with argument0: Any?,
-        return: NSObjectReturn<Return>
+        return: NSObjectReturn<Return> = .void
     ) -> Return? {
         guard anyClass == classMethod.anyClass else { return nil }
         
@@ -77,6 +82,11 @@ extension NSObjectClass {
             let function = unsafeBitCast(implementation, to: Function.self)
             let result = function(anyClass, classMethod.selector, argument0)
             return cast(result, to: type)
+        case .void:
+            typealias Function = @convention(c)(AnyClass, Selector, Any?)->Void
+            let function = unsafeBitCast(implementation, to: Function.self)
+            function(anyClass, classMethod.selector, argument0)
+            return () as? Return
         }
     }
     
@@ -86,7 +96,7 @@ extension NSObjectClass {
         _ classMethod: NSObjectClassMethod,
         with argument0: Any?,
         with argument1: Any?,
-        return: NSObjectReturn<Return>
+        return: NSObjectReturn<Return> = .void
     ) -> Return? {
         guard anyClass == classMethod.anyClass else { return nil }
         
@@ -103,6 +113,11 @@ extension NSObjectClass {
             let function = unsafeBitCast(implementation, to: Function.self)
             let result = function(anyClass, classMethod.selector, argument0, argument1)
             return cast(result, to: type)
+        case .void:
+            typealias Function = @convention(c)(AnyClass, Selector, Any?, Any?)->Void
+            let function = unsafeBitCast(implementation, to: Function.self)
+            function(anyClass, classMethod.selector, argument0, argument1)
+            return () as? Return
         }
     }
     
@@ -113,7 +128,7 @@ extension NSObjectClass {
         with argument0: Any?,
         with argument1: Any?,
         with argument2: Any?,
-        return: NSObjectReturn<Return>
+        return: NSObjectReturn<Return> = .void
     ) -> Return? {
         guard anyClass == classMethod.anyClass else { return nil }
         
@@ -130,6 +145,11 @@ extension NSObjectClass {
             let function = unsafeBitCast(implementation, to: Function.self)
             let result = function(anyClass, classMethod.selector, argument0, argument1, argument2)
             return cast(result, to: type)
+        case .void:
+            typealias Function = @convention(c)(AnyClass, Selector, Any?, Any?, Any?)->Void
+            let function = unsafeBitCast(implementation, to: Function.self)
+            function(anyClass, classMethod.selector, argument0, argument1, argument2)
+            return () as? Return
         }
     }
     
@@ -141,7 +161,7 @@ extension NSObjectClass {
         with argument1: Any?,
         with argument2: Any?,
         with argument3: Any?,
-        return: NSObjectReturn<Return>
+        return: NSObjectReturn<Return> = .void
     ) -> Return? {
         guard anyClass == classMethod.anyClass else { return nil }
         
@@ -158,6 +178,11 @@ extension NSObjectClass {
             let function = unsafeBitCast(implementation, to: Function.self)
             let result = function(anyClass, classMethod.selector, argument0, argument1, argument2, argument3)
             return cast(result, to: type)
+        case .void:
+            typealias Function = @convention(c)(AnyClass, Selector, Any?, Any?, Any?, Any?)->Void
+            let function = unsafeBitCast(implementation, to: Function.self)
+            function(anyClass, classMethod.selector, argument0, argument1, argument2, argument3)
+            return () as? Return
         }
     }
     
@@ -170,7 +195,7 @@ extension NSObjectClass {
         with argument2: Any?,
         with argument3: Any?,
         with argument4: Any?,
-        return: NSObjectReturn<Return>
+        return: NSObjectReturn<Return> = .void
     ) -> Return? {
         guard anyClass == classMethod.anyClass else { return nil }
         
@@ -187,6 +212,11 @@ extension NSObjectClass {
             let function = unsafeBitCast(implementation, to: Function.self)
             let result = function(anyClass, classMethod.selector, argument0, argument1, argument2, argument3, argument4)
             return cast(result, to: type)
+        case .void:
+            typealias Function = @convention(c)(AnyClass, Selector, Any?, Any?, Any?, Any?, Any?)->Void
+            let function = unsafeBitCast(implementation, to: Function.self)
+            function(anyClass, classMethod.selector, argument0, argument1, argument2, argument3, argument4)
+            return () as? Return
         }
     }
 }
