@@ -38,9 +38,9 @@ public enum LogLevel: Comparable, CaseIterable {
         case .debug:
             return .default
         case .info:
-            return .info
+            return .default
         case .warning:
-            return .info
+            return .default
         case .error:
             return .error
         case .fault:
