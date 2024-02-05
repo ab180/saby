@@ -51,10 +51,10 @@ extension JSON {
         if let value = value as? String {
             return .string(value)
         }
-        else if let value = value as? Double {
+        else if let value = value as? Double, !value.isNaN, !value.isInfinite {
             return .number(value)
         }
-        else if let value = value as? Float {
+        else if let value = value as? Float, !value.isNaN, !value.isInfinite {
             return .number(Double(value))
         }
         else if let value = value as? Int64 {
