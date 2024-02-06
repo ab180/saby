@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SabyConcurrency
 import SabyTestMock
 
 public struct WaitMockFunction {
@@ -23,10 +24,14 @@ public struct WaitMockFunction {
         var callArgument: Argument?
         var callResult: Result?
         
+        let lock = Lock()
         let semaphore = DispatchSemaphore(value: 0)
         let callback = mock.callback
         mock.callback = { argument, result in
-            if until(argument, result) {
+            lock.lock()
+            defer { lock.unlock() }
+            
+            if until(argument, result), callArgument == nil, callResult == nil {
                 callArgument = argument
                 callResult = result
                 semaphore.signal()

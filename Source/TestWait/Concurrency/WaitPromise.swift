@@ -21,13 +21,24 @@ public struct WaitPromise {
         var result: Value?
         var failure: Error?
         
+        let lock = Lock()
         let semaphore = DispatchSemaphore(value: 0)
         promise.then { value in
-            result = value
-            semaphore.signal()
+            lock.lock()
+            defer { lock.unlock() }
+            
+            if result == nil {
+                result = value
+                semaphore.signal()
+            }
         }.catch { error in
-            failure = error
-            semaphore.signal()
+            lock.lock()
+            defer { lock.unlock() }
+            
+            if failure == nil {
+                failure = error
+                semaphore.signal()
+            }
         }
 
         if case .timedOut = semaphore.wait(timeout: .now() + timeout) {

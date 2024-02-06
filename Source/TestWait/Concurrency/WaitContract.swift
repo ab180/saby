@@ -23,17 +23,26 @@ public struct WaitContract {
         var result: Value?
         var failure: Error?
         
+        let lock = Lock()
         let semaphore = DispatchSemaphore(value: 0)
         contract.subscribe(
             onResolved: {
-                if until($0) {
+                lock.lock()
+                defer { lock.unlock() }
+                
+                if until($0), result == nil {
                     result = $0
                     semaphore.signal()
                 }
             },
             onRejected: {
-                failure = $0
-                semaphore.signal()
+                lock.lock()
+                defer { lock.unlock() }
+                
+                if failure == nil {
+                    failure = $0
+                    semaphore.signal()
+                }
             },
             onCanceled: {}
         )
