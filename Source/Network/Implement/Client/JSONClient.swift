@@ -38,6 +38,10 @@ extension JSONClient {
         timeout: Interval? = nil,
         optionBlock: (inout URLRequest) -> Void = { _ in }
     ) -> Promise<ClientResult<JSON>, Error> {
+        let header = header.merging([
+            "Content-Type": "application/json"
+        ]) { _, new in new }
+        
         var bodyData: Data? = nil
         if let body {
             guard let body = try? body.datafy() else {
