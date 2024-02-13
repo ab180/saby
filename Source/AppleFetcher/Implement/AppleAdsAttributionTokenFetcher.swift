@@ -56,24 +56,24 @@ private final class ClassAAAttribution {
         let error = UnsafeMutablePointer<NSError?>.allocate(capacity: 1)
         defer { error.deallocate() }
         
-        let result = classAAAttribution.call(
-            methodAttributionTokenWithError,
-            with: OpaquePointer(error),
-            return: .reference
-        )
+        let result = {
+            let function = unsafeBitCast(
+                methodAttributionTokenWithError.implementation,
+                to: (@convention(c)(AnyClass, Selector, OpaquePointer)->String).self
+            )
+            return function(
+                methodAttributionTokenWithError.anyClass,
+                methodAttributionTokenWithError.selector,
+                OpaquePointer(error)
+            )
+        }()
+        
         if let error = error.pointee {
             throw error
-        }
-        guard let result = result as? String else {
-            throw AppleAdsAttributionTokenFetcherError.attributionTokenIsNotString
         }
         
         return result
     }
-}
-
-public enum AppleAdsAttributionTokenFetcherError: Error {
-    case attributionTokenIsNotString
 }
 
 #endif

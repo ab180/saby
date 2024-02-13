@@ -53,7 +53,16 @@ private final class TrackerReflection {
                 classTracker.method(name: "sharedManager")
             ),
             let instanceTracker = (
-                classTracker.instance(object: classTracker.call(methodShared, return: .reference))
+                classTracker.instance(object: {
+                    let function = unsafeBitCast(
+                        methodShared.implementation,
+                        to: (@convention(c)(AnyClass, Selector)->Any?).self
+                    )
+                    return function(
+                        methodShared.anyClass,
+                        methodShared.selector
+                    )
+                }())
             ),
             let methodTrackIdentifier = (
                 instanceTracker.method(name: "advertisingIdentifier")
@@ -74,8 +83,26 @@ private final class TrackerReflection {
     
     func track() throws -> IdentifierForAdvertiser {
         guard
-            let limitAdTracking = instanceTracker.call(methodTrackLimitAdTracking, return: .value(Bool.self)),
-            let identifier = instanceTracker.call(methodTrackIdentifier, return: .reference(UUID.self))
+            let limitAdTracking = {
+                let function = unsafeBitCast(
+                    methodTrackLimitAdTracking.implementation,
+                    to: (@convention(c)(NSObject, Selector)->Bool).self
+                )
+                return function(
+                    methodTrackLimitAdTracking.object,
+                    methodTrackLimitAdTracking.selector
+                )
+            }(),
+            let identifier = {
+                let function = unsafeBitCast(
+                    methodTrackIdentifier.implementation,
+                    to: (@convention(c)(NSObject, Selector)->UUID).self
+                )
+                return function(
+                    methodTrackIdentifier.object,
+                    methodTrackIdentifier.selector
+                )
+            }()
         else {
             throw IdentifierForAdvertiserTrackerError.unmatchedType
         }

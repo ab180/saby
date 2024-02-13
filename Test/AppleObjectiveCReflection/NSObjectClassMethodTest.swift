@@ -21,12 +21,18 @@ final class NSObjectClassMethodTest: XCTestCase {
         let classNSDictionary = NSObjectClass(name: "NSDictionary")!
         let methodDictionaryWithValuesForKeys = classNSDictionary.method(name: "dictionaryWithObjects:forKeys:")!
         
-        let dictionary = classNSDictionary.call(
-            methodDictionaryWithValuesForKeys,
-            with: ["1", "2", "3"],
-            with: ["a", "b", "c"],
-            return: .reference(NSDictionary.self)
-        )!
+        let dictionary = {
+            let function = unsafeBitCast(
+                methodDictionaryWithValuesForKeys.implementation,
+                to: (@convention(c)(AnyClass, Selector, [String], [String])->[String: String]).self
+            )
+            return function(
+                methodDictionaryWithValuesForKeys.anyClass,
+                methodDictionaryWithValuesForKeys.selector,
+                ["1", "2", "3"],
+                ["a", "b", "c"]
+            )
+        }()
         
         XCTAssertEqual(dictionary, ["a":"1","b":"2","c":"3"])
     }
@@ -35,10 +41,16 @@ final class NSObjectClassMethodTest: XCTestCase {
         let classNSDictionary = NSObjectClass(name: "NSDictionary")!
         let methodIsProxy = classNSDictionary.method(name: "isProxy")!
         
-        let isProxy = classNSDictionary.call(
-            methodIsProxy,
-            return: .value(Bool.self)
-        )!
+        let isProxy = {
+            let function = unsafeBitCast(
+                methodIsProxy.implementation,
+                to: (@convention(c)(AnyClass, Selector)->Bool).self
+            )
+            return function(
+                methodIsProxy.anyClass,
+                methodIsProxy.selector
+            )
+        }()
         
         XCTAssertEqual(isProxy, false)
     }

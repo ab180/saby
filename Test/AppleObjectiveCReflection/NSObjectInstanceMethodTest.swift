@@ -13,7 +13,18 @@ final class NSObjectInstanceMethodTest: XCTestCase {
         let classNSDictionary = NSObjectClass(name: "NSDictionary")!
         let methodDictionaryWithValuesForKeys = classNSDictionary.method(name: "dictionaryWithObjects:forKeys:")!
         let instance = classNSDictionary.instance(
-            object: classNSDictionary.call(methodDictionaryWithValuesForKeys, with: ["1"], with: ["a"], return: .reference)
+            object: {
+                let function = unsafeBitCast(
+                    methodDictionaryWithValuesForKeys.implementation,
+                    to: (@convention(c)(AnyClass, Selector, [String], [String])->[String: String]).self
+                )
+                return function(
+                    methodDictionaryWithValuesForKeys.anyClass,
+                    methodDictionaryWithValuesForKeys.selector,
+                    ["1"],
+                    ["a"]
+                )
+            }()
         )!
         
         XCTAssertNotNil(instance.method(name: "objectForKey:"))
@@ -25,21 +36,62 @@ final class NSObjectInstanceMethodTest: XCTestCase {
         let classNSDictionary = NSObjectClass(name: "NSDictionary")!
         let methodDictionaryWithValuesForKeys = classNSDictionary.method(name: "dictionaryWithObjects:forKeys:")!
         let instance = classNSDictionary.instance(
-            object: classNSDictionary.call(methodDictionaryWithValuesForKeys, with: ["1"], with: ["a"], return: .reference)
+            object: {
+                let function = unsafeBitCast(
+                    methodDictionaryWithValuesForKeys.implementation,
+                    to: (@convention(c)(AnyClass, Selector, [String], [String])->[String: String]).self
+                )
+                return function(
+                    methodDictionaryWithValuesForKeys.anyClass,
+                    methodDictionaryWithValuesForKeys.selector,
+                    ["1"],
+                    ["a"]
+                )
+            }()
         )!
         let methodObjectForKey = instance.method(name: "objectForKey:")!
         
-        XCTAssertEqual(instance.call(methodObjectForKey, with: "a", return: .reference(String.self))!, "1")
+        XCTAssertEqual({
+            let function = unsafeBitCast(
+                methodObjectForKey.implementation,
+                to: (@convention(c)(NSObject, Selector, String)->String).self
+            )
+            return function(
+                methodObjectForKey.object,
+                methodObjectForKey.selector,
+                "a"
+            )
+        }(), "1")
     }
     
     func test__call_return_value() {
         let classNSDictionary = NSObjectClass(name: "NSDictionary")!
         let methodDictionaryWithValuesForKeys = classNSDictionary.method(name: "dictionaryWithObjects:forKeys:")!
         let instance = classNSDictionary.instance(
-            object: classNSDictionary.call(methodDictionaryWithValuesForKeys, with: ["1"], with: ["a"], return: .reference)
+            object: {
+                let function = unsafeBitCast(
+                    methodDictionaryWithValuesForKeys.implementation,
+                    to: (@convention(c)(AnyClass, Selector, [String], [String])->[String: String]).self
+                )
+                return function(
+                    methodDictionaryWithValuesForKeys.anyClass,
+                    methodDictionaryWithValuesForKeys.selector,
+                    ["1"],
+                    ["a"]
+                )
+            }()
         )!
         let methodCount = instance.method(name: "count")!
         
-        XCTAssertEqual(instance.call(methodCount, return: .value(Int.self))!, 1)
+        XCTAssertEqual({
+            let function = unsafeBitCast(
+                methodCount.implementation,
+                to: (@convention(c)(NSObject, Selector)->Int).self
+            )
+            return function(
+                methodCount.object,
+                methodCount.selector
+            )
+        }(), 1)
     }
 }

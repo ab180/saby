@@ -61,7 +61,16 @@ private final class TrackerReflection {
     
     func track() throws -> TrackingAuthorization {
         guard
-            let code = classTracker.call(methodTrackCode, return: .value(UInt.self)),
+            let code = {
+                let function = unsafeBitCast(
+                    methodTrackCode.implementation,
+                    to: (@convention(c)(AnyClass, Selector)->UInt).self
+                )
+                return function(
+                    methodTrackCode.anyClass,
+                    methodTrackCode.selector
+                )
+            }(),
             let trackingAuthorization = TrackingAuthorization(rawValue: code)
         else {
             throw TrackingAuthorizationTrackerError.unmatchedType

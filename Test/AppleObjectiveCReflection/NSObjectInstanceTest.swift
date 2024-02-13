@@ -10,12 +10,23 @@ import XCTest
 
 final class NSObjectInstanceTest: XCTestCase {
     func test__init_instance() {
-        let NSDictionary = NSObjectClass(name: "NSDictionary")!
-        let dictionaryWithValuesForKeys = NSDictionary.method(name: "dictionaryWithObjects:forKeys:")!
-        let instance = NSDictionary.instance(
-            object: NSDictionary.call(dictionaryWithValuesForKeys, with: ["1"], with: ["a"], return: .reference)
+        let classNSDictionary = NSObjectClass(name: "NSDictionary")!
+        let dictionaryWithValuesForKeys = classNSDictionary.method(name: "dictionaryWithObjects:forKeys:")!
+        let instance = classNSDictionary.instance(
+            object: {
+                let function = unsafeBitCast(
+                    dictionaryWithValuesForKeys.implementation,
+                    to: (@convention(c)(AnyClass, Selector, [String], [String])->[String: String]).self
+                )
+                return function(
+                    dictionaryWithValuesForKeys.anyClass,
+                    dictionaryWithValuesForKeys.selector,
+                    ["1"],
+                    ["a"]
+                )
+            }()
         )!
         
-        XCTAssertTrue(instance.object.isKind(of: NSDictionary.anyClass))
+        XCTAssertTrue(instance.object.isKind(of: classNSDictionary.anyClass))
     }
 }
