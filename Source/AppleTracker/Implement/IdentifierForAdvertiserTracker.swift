@@ -68,7 +68,7 @@ private final class TrackerReflection {
                 instanceTracker.method(name: "advertisingIdentifier")
             ),
             let methodTrackLimitAdTracking = (
-                instanceTracker.method(name: "advertisingTrackingEnabled")
+                instanceTracker.method(name: "isAdvertisingTrackingEnabled")
             )
         else {
             return nil
