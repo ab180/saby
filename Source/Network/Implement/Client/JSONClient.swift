@@ -36,7 +36,7 @@ extension JSONClient {
         header: ClientHeader = [:],
         body: JSON? = nil,
         timeout: Interval? = nil,
-        optionBlock: (inout URLRequest) -> Void = { _ in }
+        optionBlock: @escaping (inout URLRequest) -> Void = { _ in }
     ) -> Promise<ClientResult<JSON>, Error> {
         let header = header.merging([
             "Content-Type": "application/json"

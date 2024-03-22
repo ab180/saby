@@ -39,7 +39,7 @@ extension DataClient {
         header: ClientHeader = [:],
         body: Data? = nil,
         timeout: Interval? = nil,
-        optionBlock: (inout URLRequest) -> Void = { _ in }
+        optionBlock: @escaping (inout URLRequest) -> Void = { _ in }
     ) -> Promise<ClientResult<Data?>, Error> {
         let pending = Promise<ClientResult<Data?>, Error>.pending()
         
