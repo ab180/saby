@@ -54,7 +54,7 @@ private final class ClassAAAttribution {
     
     func attributionToken() throws -> String {
         let error = UnsafeMutablePointer<NSError?>.allocate(capacity: 1)
-        defer { error.deallocate() }
+        error.initialize(to: nil)
         
         let result = {
             let function = unsafeBitCast(
@@ -71,6 +71,9 @@ private final class ClassAAAttribution {
         if let error = error.pointee {
             throw error
         }
+        
+        error.deinitialize(count: 1)
+        error.deallocate()
         
         return result
     }

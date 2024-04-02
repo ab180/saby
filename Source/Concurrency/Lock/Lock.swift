@@ -20,6 +20,7 @@ public final class Lock {
     deinit {
         pthread_mutex_destroy(token)
         
+        token.deinitialize(count: 1)
         token.deallocate()
     }
 

@@ -20,6 +20,7 @@ public final class Mutex {
     deinit {
         pthread_mutex_destroy(lock)
         
+        lock.deinitialize(count: 1)
         lock.deallocate()
     }
 
