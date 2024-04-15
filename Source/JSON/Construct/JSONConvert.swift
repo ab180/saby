@@ -27,31 +27,48 @@ extension JSON {
     public func datafy(format: JSONEncoder.OutputFormatting = []) throws -> Data {
         let encoder = JSONEncoder()
         encoder.outputFormatting = format
-        let data = try encoder.encode(self)
+        let data = try encoder.encode(self.deepFilterNonConfirmingFloat())
         return data
     }
 }
 
 extension JSON {
     public static func encode<Value: Encodable>(_ value: Value) throws -> JSON {
-        let data = try JSONEncoder().encode(value)
-        let value = try JSONDecoder().decode(JSON.self, from: data)
+        let encoder = JSONEncoder.acceptingNonConfirmingFloat()
+        let decoder = JSONDecoder.acceptingNonConfirmingFloat()
+        let data = try encoder.encode(value)
+        let value = try decoder.decode(JSON.self, from: data)
         return value
     }
     
     public func decode<Value: Decodable>(_ type: Value.Type) throws -> Value {
-        let data = try JSONEncoder().encode(self)
-        let value = try JSONDecoder().decode(type, from: data)
+        let encoder = JSONEncoder.acceptingNonConfirmingFloat()
+        let decoder = JSONDecoder.acceptingNonConfirmingFloat()
+        let data = try encoder.encode(self)
+        let value = try decoder.decode(type, from: data)
         return value
     }
 }
 
 extension JSON {
+    private func deepFilterNonConfirmingFloat() throws -> JSON {
+        return try self.deepFilter {
+            if case .number(let value) = $0 {
+                if !value.isNaN && !value.isInfinite {
+                    return true
+                }
+                else {
+                    return false
+                }
+            }
+            return true
+        } ?? { throw InternalError.valueIsNotJSON }()
+    }
+}
+
+extension JSON {
     public static func from(unsafe value: Any?) throws -> JSON {
-        if let value = value as? String {
-            return .string(value)
-        }
-        else if let value = value as? Double, !value.isNaN, !value.isInfinite {
+        if let value = value as? Double, !value.isNaN, !value.isInfinite {
             return .number(value)
         }
         else if let value = value as? Float, !value.isNaN, !value.isInfinite {
@@ -89,6 +106,9 @@ extension JSON {
         }
         else if let value = value as? Bool {
             return .boolean(value)
+        }
+        else if let value = value as? String {
+            return .string(value)
         }
         else if let value = value as? [String: Any?] {
             return JSON.from(unsafe: value)

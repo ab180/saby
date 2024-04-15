@@ -9,7 +9,7 @@ import Foundation
 
 struct Codable0: Codable, Equatable {
     let a: String
-    let b: Int
+    let b: Double
     let c: Null
 }
 

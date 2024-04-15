@@ -80,6 +80,15 @@ final class JSONConvertTest: XCTestCase {
         XCTAssertEqual(try! JSON.encode(encodable), json)
     }
     
+    func test__from_encodable_nan() {
+        let encodable = Codable0(a: "123", b: Double.nan, c: nil)
+        let encoded = try! JSON.encode(encodable)
+        
+        XCTAssertEqual(encodable.a, encoded["a"]!.rawString)
+        XCTAssertTrue(encodable.b.isNaN); XCTAssertTrue(encoded["b"]!.rawNumber!.isNaN)
+        XCTAssertNil(encoded["c"]!.raw)
+    }
+    
     func test__from_decodable() {
         let json: JSON = JSON.from([
             "a": "123",
@@ -88,9 +97,21 @@ final class JSONConvertTest: XCTestCase {
         ])
         let decodable = Codable0(a: "123", b: 10, c: nil)
         
-        
-        
         XCTAssertEqual(try! json.decode(Codable0.self), decodable)
+    }
+    
+    func test__from_decodable_nan() {
+        let json: JSON = JSON.from([
+            "a": "123",
+            "b": Double.nan,
+            "c": nil
+        ])
+        let decoded = try! json.decode(Codable0.self)
+        let decodable = Codable0(a: "123", b: Double.nan, c: nil)
+        
+        XCTAssertEqual(decoded.a, decodable.a)
+        XCTAssertTrue(decoded.b.isNaN); XCTAssertTrue(decodable.b.isNaN)
+        XCTAssertEqual(decoded.c, decodable.c)
     }
     
     func test__from_any() {

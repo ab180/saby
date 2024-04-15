@@ -8,11 +8,6 @@
 import Foundation
 
 extension JSON {
-    public var rawString: String? {
-        guard case .string(let value) = self else { return nil }
-        return value
-    }
-    
     public var rawNumber: Double? {
         guard case .number(let value) = self else { return nil }
         return value
@@ -20,6 +15,11 @@ extension JSON {
     
     public var rawBoolean: Bool? {
         guard case .boolean(let value) = self else { return nil }
+        return value
+    }
+    
+    public var rawString: String? {
+        guard case .string(let value) = self else { return nil }
         return value
     }
     
@@ -48,11 +48,6 @@ extension JSON {
 }
 
 extension JSON {
-    public var isString: Bool {
-        guard case .string(_) = self else { return false }
-        return true
-    }
-    
     public var isNumber: Bool {
         guard case .number(_) = self else { return false }
         return true
@@ -60,6 +55,11 @@ extension JSON {
     
     public var isBoolean: Bool {
         guard case .boolean(_) = self else { return false }
+        return true
+    }
+    
+    public var isString: Bool {
+        guard case .string(_) = self else { return false }
         return true
     }
     

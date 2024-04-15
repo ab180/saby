@@ -8,6 +8,7 @@
 import Foundation
 import SabySafe
 import SabyConcurrency
+import SabyJSON
 
 public final class FileValuePreference<Value: Codable>: ValuePreference {
     typealias Context = FileValuePreferenceContext
@@ -17,7 +18,7 @@ public final class FileValuePreference<Value: Codable>: ValuePreference {
     let contextLoad: () throws -> Context<Value>
     let context: Atomic<Context<Value>?>
     
-    let encoder = JSONEncoder()
+    let encoder = JSONEncoder.acceptingNonConfirmingFloat()
 
     public init(directoryURL: URL, fileName: String, migration: @escaping () throws -> Void) {
         self.contextLoad = {
@@ -93,7 +94,7 @@ struct FileValuePreferenceContext<Value: Codable> {
     ) throws -> FileValuePreferenceContext {
         try migration()
         
-        let decoder = JSONDecoder()
+        let decoder = JSONDecoder.acceptingNonConfirmingFloat()
         let fileManager = FileManager.default
         
         guard directoryURL.isFileURL else {

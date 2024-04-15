@@ -8,9 +8,9 @@
 import Foundation
 
 public enum JSON: Equatable {
-    case string(String)
     case number(Double)
     case boolean(Bool)
+    case string(String)
     case object([String: JSON])
     case array([JSON])
     case null

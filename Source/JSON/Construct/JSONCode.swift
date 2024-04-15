@@ -23,10 +23,7 @@ extension JSON: Encodable, Decodable {
     
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
-        if let value = try? container.decode(String.self) {
-            self = .string(value)
-        }
-        else if let value = try? container.decode(Double.self) {
+        if let value = try? container.decode(Double.self) {
             self = .number(value)
         }
         else if let value = try? container.decode(Float.self) {
@@ -64,6 +61,9 @@ extension JSON: Encodable, Decodable {
         }
         else if let value = try? container.decode(Bool.self) {
             self = .boolean(value)
+        }
+        else if let value = try? container.decode(String.self) {
+            self = .string(value)
         }
         else if let value = try? container.decode([String: JSON].self) {
             self = .object(value)

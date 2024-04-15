@@ -7,9 +7,9 @@
 
 import Foundation
 
-extension JSON: ExpressibleByStringLiteral {
-    public init(stringLiteral value: String) {
-        self = .string(value)
+extension JSON: ExpressibleByFloatLiteral {
+    public init(floatLiteral value: Double) {
+        self = .number(value)
     }
 }
 
@@ -19,15 +19,15 @@ extension JSON: ExpressibleByIntegerLiteral {
     }
 }
 
-extension JSON: ExpressibleByFloatLiteral {
-    public init(floatLiteral value: Double) {
-        self = .number(value)
-    }
-}
-
 extension JSON: ExpressibleByBooleanLiteral {
     public init(booleanLiteral value: Bool) {
         self = .boolean(value)
+    }
+}
+
+extension JSON: ExpressibleByStringLiteral {
+    public init(stringLiteral value: String) {
+        self = .string(value)
     }
 }
 

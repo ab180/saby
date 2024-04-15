@@ -10,6 +10,7 @@ import CoreData
 import SabyConcurrency
 import SabySafe
 import SabySize
+import SabyJSON
 
 public final class CoreDataArrayStorage<Value: Codable & KeyIdentifiable>: ArrayStorage {
     typealias Context = NSManagedObjectContext
@@ -20,8 +21,8 @@ public final class CoreDataArrayStorage<Value: Codable & KeyIdentifiable>: Array
     let contextLoad: () -> Promise<Context, Error>
     let contextPromise: Atomic<Promise<Context, Error>>
     
-    let encoder = JSONEncoder()
-    let decoder = JSONDecoder()
+    let encoder = JSONEncoder.acceptingNonConfirmingFloat()
+    let decoder = JSONDecoder.acceptingNonConfirmingFloat()
     
     public init(directoryURL: URL, fileName: String, migration: @escaping () -> Promise<Void, Error>) {
         let schema = SabyCoreDataArrayStorageSchema()

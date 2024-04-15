@@ -7,6 +7,7 @@
 
 import Foundation
 import SabyConcurrency
+import SabyJSON
 
 public final class FileDictionaryStorage<
     Key: Hashable & Codable,
@@ -19,7 +20,7 @@ public final class FileDictionaryStorage<
     let contextLoad: () -> Promise<Context<Key, Value>, Error>
     let contextPromise: Atomic<Promise<Context<Key, Value>, Error>>
     
-    let encoder = JSONEncoder()
+    let encoder = JSONEncoder.acceptingNonConfirmingFloat()
 
     public init(directoryURL: URL, fileName: String, migration: @escaping () -> Promise<Void, Error>) {
         self.contextLoad = {
@@ -119,7 +120,7 @@ struct FileDictionaryStorageContext<Key: Hashable & Codable, Value: Codable> {
         migration: @escaping () -> Promise<Void, Error>
     ) -> Promise<FileDictionaryStorageContext, Error> {
         migration().then {
-            let decoder = JSONDecoder()
+            let decoder = JSONDecoder.acceptingNonConfirmingFloat()
             let fileManager = FileManager.default
             
             guard directoryURL.isFileURL else {

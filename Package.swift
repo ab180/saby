@@ -171,7 +171,7 @@ package
     .targets.append(contentsOf: [
         .target(
             name: "SabyAppleFetcher",
-            dependencies: ["SabyAppleObjectiveCReflection", "SabyConcurrency"],
+            dependencies: ["SabyAppleObjectiveCReflection", "SabyConcurrency", "SabyJSON"],
             path: "Source/AppleFetcher"),
         .target(
             name: "SabyAppleCrypto",
@@ -179,11 +179,11 @@ package
             path: "Source/AppleCrypto"),
         .target(
             name: "SabyAppleStorage",
-            dependencies: ["SabyConcurrency", "SabySize"],
+            dependencies: ["SabyConcurrency", "SabySize", "SabyJSON"],
             path: "Source/AppleStorage"),
         .target(
             name: "SabyApplePreference",
-            dependencies: ["SabyConcurrency"],
+            dependencies: ["SabyConcurrency", "SabyJSON"],
             path: "Source/ApplePreference"),
         .target(
             name: "SabyAppleTracker",

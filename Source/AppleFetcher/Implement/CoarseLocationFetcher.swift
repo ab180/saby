@@ -10,6 +10,7 @@
 import Foundation
 
 import SabyConcurrency
+import SabyJSON
 
 public final class CoarseLocationFetcher: Fetcher {
     public typealias Value = CoarseLocation
@@ -88,14 +89,14 @@ extension CoarseLocationFetcher {
             try? fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
         }
         
-        try? JSONEncoder().encode(Locale.preferredLanguages).write(to: url)
+        try? JSONEncoder.acceptingNonConfirmingFloat().encode(Locale.preferredLanguages).write(to: url)
     }
     
     private func readPreferredLanguages() -> [String] {
         guard let url else { return Locale.preferredLanguages }
         
         return (
-            (try? JSONDecoder().decode([String].self, from: Data(contentsOf: url)))
+            (try? JSONDecoder.acceptingNonConfirmingFloat().decode([String].self, from: Data(contentsOf: url)))
             ?? Locale.preferredLanguages
         )
     }

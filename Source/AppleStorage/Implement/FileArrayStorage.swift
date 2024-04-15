@@ -8,6 +8,7 @@
 import Foundation
 import SabyConcurrency
 import SabySize
+import SabyJSON
 
 public final class FileArrayStorage<Value: Codable & KeyIdentifiable>: ArrayStorage {
     typealias Context = FileArrayStorageContext
@@ -18,7 +19,7 @@ public final class FileArrayStorage<Value: Codable & KeyIdentifiable>: ArrayStor
     let contextLoad: () -> Promise<Context<Value>, Error>
     let contextPromise: Atomic<Promise<Context<Value>, Error>>
     
-    let encoder = JSONEncoder()
+    let encoder = JSONEncoder.acceptingNonConfirmingFloat()
 
     public init(directoryURL: URL, fileName: String, migration: @escaping () -> Promise<Void, Error>) {
         self.contextLoad = {
@@ -206,7 +207,7 @@ struct FileArrayStorageContext<Value: Codable> {
         migration: @escaping () -> Promise<Void, Error>
     ) -> Promise<FileArrayStorageContext, Error> {
         migration().then {
-            let decoder = JSONDecoder()
+            let decoder = JSONDecoder.acceptingNonConfirmingFloat()
             let fileManager = FileManager.default
             
             guard directoryURL.isFileURL else {
