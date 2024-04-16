@@ -75,6 +75,8 @@ extension NetworkFetcher {
             ipStorage[interfaceType] = ip
         }
         
+        freeifaddrs(interfacesPointer)
+        
         let searchs = [
             InterfaceType(name: "en0", family: sa_family_t(AF_INET)),
             InterfaceType(name: "en0", family: sa_family_t(AF_INET6)),
@@ -94,17 +96,18 @@ extension NetworkFetcher {
     }
     
     private func fetchType() -> NetworkType {
-        var zeroAddress = sockaddr()
-        bzero(&zeroAddress, MemoryLayout.size(ofValue: zeroAddress))
-        zeroAddress.sa_len = UInt8(MemoryLayout.size(ofValue: zeroAddress))
-        zeroAddress.sa_family = sa_family_t(AF_INET)
+        var zeroAddress = sockaddr_in()
+        zeroAddress.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
+        zeroAddress.sin_family = sa_family_t(AF_INET)
         
-        guard let reachability = SCNetworkReachabilityCreateWithAddress(
-            kCFAllocatorDefault,
-            &zeroAddress
-        ) else {
+        guard let reachability = withUnsafePointer(to: &zeroAddress, {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                SCNetworkReachabilityCreateWithAddress(nil, $0)
+            }
+        }) else {
             return .none
         }
+        
         
         var flags = SCNetworkReachabilityFlags()
         if !SCNetworkReachabilityGetFlags(reachability, &flags) {
@@ -115,13 +118,16 @@ extension NetworkFetcher {
             return .none
         }
         
-        if flags.contains(.connectionRequired)
-            && !(
-                (flags.contains(.connectionOnDemand) || flags.contains(.connectionOnTraffic))
-                && !flags.contains(.interventionRequired)
-            )
-        {
-            return .none
+        var type = NetworkType.none
+        
+        if !flags.contains(.connectionRequired) {
+            type = .wifi
+        }
+        
+        if flags.contains(.connectionOnDemand) || flags.contains(.connectionOnTraffic) {
+            if !flags.contains(.interventionRequired) {
+                type = .wifi
+            }
         }
         
         #if os(iOS) || os(tvOS)
@@ -130,7 +136,7 @@ extension NetworkFetcher {
         }
         #endif
         
-        return .wifi
+        return type
     }
 }
 
