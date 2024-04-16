@@ -204,6 +204,7 @@ public final class ContractExecuting<Value, Failure: Error> {
     public let onCancel: (@escaping () -> Void) -> Void
     
     let cancelWhen: CancelWhen
+    let subscribeQueue = DispatchQueue(label: "co.ab180.saby")
     
     init(
         queue: DispatchQueue,
@@ -229,6 +230,28 @@ public final class ContractExecuting<Value, Failure: Error> {
     public enum CancelWhen {
         case `deinit`
         case none
+    }
+}
+
+extension ContractExecuting {
+    public func subscribe(
+        _ contract: Contract<Value, Failure>
+    ) {
+        weak var weakSelf = self.contract
+        contract.subscribe(
+            on: subscribeQueue,
+            onResolved: { weakSelf?.resolve($0) },
+            onRejected: { weakSelf?.reject($0) },
+            onCanceled: { weakSelf?.cancel() }
+        )
+    }
+    
+    public func subscribe(
+        _ contracts: [Contract<Value, Failure>]
+    ) {
+        contracts.forEach {
+            subscribe($0)
+        }
     }
 }
 

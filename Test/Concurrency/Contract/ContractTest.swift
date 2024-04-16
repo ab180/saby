@@ -96,4 +96,60 @@ final class ContractTest: XCTestCase {
 
         XCTAssertEqual(XCTWaiter().wait(for: [expect], timeout: 1), .completed)
     }
+    
+    func test__executing_subscribe() {
+        let executing = Contract<Int, Error>.executing()
+        let contract0 = Contract<Int, Error>()
+        let contract1 = Contract<Int, Error>()
+        
+        executing.subscribe([contract0, contract1])
+        
+        ContractTest.expect(
+            contract: executing.contract,
+            state: .resolved(10),
+            timeout: .seconds(1)
+        ) {
+            contract0.resolve(10)
+        }
+        
+        ContractTest.expect(
+            contract: executing.contract,
+            state: .resolved(20),
+            timeout: .seconds(1)
+        ) {
+            contract1.resolve(20)
+        }
+
+        ContractTest.expect(
+            contract: executing.contract,
+            state: .rejected(ContractTest.SampleError.one),
+            timeout: .seconds(1)
+        ) {
+            contract0.reject(ContractTest.SampleError.one)
+        }
+
+        ContractTest.expect(
+            contract: executing.contract,
+            state: .rejected(ContractTest.SampleError.two),
+            timeout: .seconds(1)
+        ) {
+            contract1.reject(ContractTest.SampleError.two)
+        }
+        
+        ContractTest.expect(
+            contract: executing.contract,
+            state: .canceled,
+            timeout: .seconds(1)
+        ) {
+            contract0.cancel()
+        }
+        
+        ContractTest.expect(
+            contract: executing.contract,
+            state: .canceled,
+            timeout: .seconds(1)
+        ) {
+            contract1.resolve(10)
+        }
+    }
 }
