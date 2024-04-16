@@ -11,27 +11,25 @@ public final class Promise<Value, Failure: Error> {
     var state: Atomic<PromiseState<Value, Failure>>
     
     let queue: DispatchQueue
-    let executeGroup: DispatchGroup
-    let cancelGroup: DispatchGroup
+    let pendingGroup: DispatchGroup
+    
+    var cancelSubscribers: [PromiseCancelSubscriber]
     
     init(queue: DispatchQueue = .global()) {
         self.state = Atomic(.pending)
         
         self.queue = queue
-        self.executeGroup = DispatchGroup()
-        self.cancelGroup = DispatchGroup()
+        self.pendingGroup = DispatchGroup()
         
-        executeGroup.enter()
-        cancelGroup.enter()
+        self.cancelSubscribers = []
+        
+        pendingGroup.enter()
     }
     
     deinit {
         state.capture { state in
-            if case .canceled = state {} else {
-                cancelGroup.leave()
-                if case .pending = state {
-                    executeGroup.leave()
-                }
+            if case .pending = state {
+                pendingGroup.leave()
             }
         }
     }
@@ -222,7 +220,7 @@ extension Promise {
     func resolve(_ value: Value) {
         state.mutate { state in
             if case .pending = state {
-                executeGroup.leave()
+                pendingGroup.leave()
                 return .resolved(value)
             }
             
@@ -233,7 +231,7 @@ extension Promise {
     func reject(_ error: Failure) {
         state.mutate { state in
             if case .pending = state {
-                executeGroup.leave()
+                pendingGroup.leave()
                 return .rejected(error)
             }
             
@@ -244,10 +242,15 @@ extension Promise {
     func cancel() {
         state.mutate { state in
             if case .canceled = state {} else {
-                cancelGroup.leave()
                 if case .pending = state {
-                    executeGroup.leave()
+                    pendingGroup.leave()
                 }
+                for cancelSubscriber in self.cancelSubscribers {
+                    pendingGroup.notify(queue: queue) {
+                        cancelSubscriber.onCanceled()
+                    }
+                }
+                cancelSubscribers = []
                 return .canceled
             }
             
@@ -262,7 +265,7 @@ extension Promise {
         onCanceled: @escaping () -> Void
     ) {
         let state = self.state
-        executeGroup.notify(queue: queue) {
+        pendingGroup.notify(queue: queue) {
             let state = state.capture { $0 }
             
             if case .resolved(let value) = state {
@@ -272,11 +275,17 @@ extension Promise {
                 onRejected(error)
             }
         }
-        cancelGroup.notify(queue: queue) {
-            let state = state.capture { $0 }
-            
+        state.capture { state in
             if case .canceled = state {
-                onCanceled()
+                pendingGroup.notify(queue: queue) {
+                    onCanceled()
+                }
+            }
+            else {
+                cancelSubscribers.append(PromiseCancelSubscriber(
+                    queue: queue,
+                    onCanceled: onCanceled
+                ))
             }
         }
     }
@@ -285,12 +294,17 @@ extension Promise {
         queue: DispatchQueue,
         onCanceled: @escaping () -> Void
     ) {
-        let state = self.state
-        cancelGroup.notify(queue: queue) {
-            let state = state.capture { $0 }
-            
+        state.capture { state in
             if case .canceled = state {
-                onCanceled()
+                pendingGroup.notify(queue: queue) {
+                    onCanceled()
+                }
+            }
+            else {
+                cancelSubscribers.append(PromiseCancelSubscriber(
+                    queue: queue,
+                    onCanceled: onCanceled
+                ))
             }
         }
     }
@@ -373,7 +387,7 @@ extension Promise {
     ) -> Promise<Value, Failure> {
         let promise = Promise(queue: queue)
         promise.state = Atomic(.resolved(value))
-        promise.executeGroup.leave()
+        promise.pendingGroup.leave()
         
         return promise
     }
@@ -384,7 +398,7 @@ extension Promise {
     ) -> Promise<Value, Error> where Failure == Error {
         let promise = Promise<Value, Error>(queue: queue)
         promise.state = Atomic(.rejected(error))
-        promise.executeGroup.leave()
+        promise.pendingGroup.leave()
         
         return promise
     }
@@ -394,8 +408,7 @@ extension Promise {
     ) -> Promise<Value, Failure> {
         let promise = Promise(queue: queue)
         promise.state = Atomic(.canceled)
-        promise.executeGroup.leave()
-        promise.cancelGroup.leave()
+        promise.pendingGroup.leave()
         
         return promise
     }
@@ -442,6 +455,11 @@ enum PromiseState<Value, Failure: Error> {
     case resolved(_ value: Value)
     case rejected(_ error: Failure)
     case canceled
+}
+
+struct PromiseCancelSubscriber {
+    let queue: DispatchQueue
+    let onCanceled: () -> Void
 }
 
 public enum PromiseError: Error {

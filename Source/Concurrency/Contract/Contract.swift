@@ -12,28 +12,18 @@ public final class Contract<Value, Failure: Error> {
     
     let queue: DispatchQueue
     var executeGroup: DispatchGroup
-    var cancelGroup: DispatchGroup
 
     var subscribers: [ContractSubscriber<Value, Failure>]
+    var cancelSubscribers: [ContractCancelSubscriber]
     
     init(queue: DispatchQueue = .global()) {
         self.state = Atomic(.executing)
         
         self.queue = queue
         self.executeGroup = DispatchGroup()
-        self.cancelGroup = DispatchGroup()
 
         self.subscribers = []
-        
-        cancelGroup.enter()
-    }
-    
-    deinit {
-        state.capture { state in
-            if case .canceled = state {} else {
-                cancelGroup.leave()
-            }
-        }
+        self.cancelSubscribers = []
     }
 }
 
@@ -80,8 +70,14 @@ extension Contract {
     
     func cancel() {
         state.mutate { state in
-            if case .canceled = state {} else {
-                cancelGroup.leave()
+            if case .executing = state {
+                for cancelSubscriber in self.cancelSubscribers {
+                    executeGroup.notify(queue: queue) {
+                        cancelSubscriber.onCanceled()
+                    }
+                }
+                subscribers = []
+                cancelSubscribers = []
                 return .canceled
             }
             
@@ -96,19 +92,21 @@ extension Contract {
         onCanceled: @escaping () -> Void
     ) {
         state.capture { state in
-            subscribers.append(ContractSubscriber(
-                queue: queue,
-                onResolved: onResolved,
-                onRejected: onRejected
-            ))
-        }
-        
-        let state = self.state
-        cancelGroup.notify(queue: queue) {
-            let state = state.capture { $0 }
-            
-            if case .canceled = state {
-                onCanceled()
+            if case .executing = state {
+                subscribers.append(ContractSubscriber(
+                    queue: queue,
+                    onResolved: onResolved,
+                    onRejected: onRejected
+                ))
+                cancelSubscribers.append(ContractCancelSubscriber(
+                    queue: queue,
+                    onCanceled: onCanceled
+                ))
+            }
+            else if case .canceled = state {
+                executeGroup.notify(queue: queue) {
+                    onCanceled()
+                }
             }
         }
     }
@@ -117,12 +115,17 @@ extension Contract {
         queue: DispatchQueue,
         onCanceled: @escaping () -> Void
     ) {
-        let state = self.state
-        cancelGroup.notify(queue: queue) {
-            let state = state.capture { $0 }
-            
-            if case .canceled = state {
-                onCanceled()
+        state.capture { state in
+            if case .executing = state {
+                cancelSubscribers.append(ContractCancelSubscriber(
+                    queue: queue,
+                    onCanceled: onCanceled
+                ))
+            }
+            else if case .canceled = state {
+                executeGroup.notify(queue: queue) {
+                    onCanceled()
+                }
             }
         }
     }
@@ -190,7 +193,6 @@ extension Contract {
     ) -> Contract<Value, Failure> {
         let contract = Contract(queue: queue)
         contract.state = Atomic(.canceled)
-        contract.cancelGroup.leave()
         
         return contract
     }
@@ -264,6 +266,11 @@ struct ContractSubscriber<Value, Failure: Error> {
     let queue: DispatchQueue
     let onResolved: (Value) -> Void
     let onRejected: (Failure) -> Void
+}
+
+struct ContractCancelSubscriber {
+    let queue: DispatchQueue
+    let onCanceled: () -> Void
 }
 
 public final class ContractSchedule {
