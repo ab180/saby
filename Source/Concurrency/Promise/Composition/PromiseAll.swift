@@ -16,32 +16,27 @@ extension Promise where
         _ promises: [Promise<Value0, Failure0>]
     ) -> Promise<[Value0], Failure0> {
         let promiseReturn = Promise<[Value0], Failure0>(queue: queue)
-        let group = DispatchGroup()
-        
-        promises.forEach { promise in
-            group.enter()
-            var leave = Once { group.leave() }
-            promise.subscribe(
-                queue: promise.queue,
-                onResolved: { _ in leave() },
-                onRejected: { promiseReturn.reject($0); leave() },
-                onCanceled: { promiseReturn.cancel(); leave() }
-            )
-        }
-        
-        group.notify(queue: queue) {
+        let resolve = {
             var values = [Value0]()
-            promises.forEach { promise in
+            for promise in promises {
                 if case .resolved(let value) = promise.state.capture({ $0 }) {
                     values.append(value)
                 }
-            }
-
-            if values.count != promises.count {
-                return
+                else {
+                    return
+                }
             }
             
             promiseReturn.resolve(values)
+        }
+        
+        promises.forEach { promise in
+            promise.subscribe(
+                queue: promise.queue,
+                onResolved: { _ in resolve() },
+                onRejected: { promiseReturn.reject($0) },
+                onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+            )
         }
         
         return promiseReturn
@@ -53,26 +48,7 @@ extension Promise where
         _ promise1: Promise<Value1, Failure1>
     ) -> Promise<(Value0, Value1), Error> {
         let promiseReturn = Promise<(Value0, Value1), Error>(queue: queue)
-        let group = DispatchGroup()
-        
-        group.enter()
-        var leave0 = Once { group.leave() }
-        promise0.subscribe(
-            queue: queue,
-            onResolved: { _ in leave0() },
-            onRejected: { promiseReturn.reject($0); leave0() },
-            onCanceled: { promiseReturn.cancel(); leave0() }
-        )
-        group.enter()
-        var leave1 = Once { group.leave() }
-        promise1.subscribe(
-            queue: queue,
-            onResolved: { _ in leave1() },
-            onRejected: { promiseReturn.reject($0); leave1() },
-            onCanceled: { promiseReturn.cancel(); leave1() }
-        )
-        
-        group.notify(queue: queue) {
+        let resolve = {
             guard
                 case .resolved(let value0) = promise0.state.capture({ $0 }),
                 case .resolved(let value1) = promise1.state.capture({ $0 })
@@ -82,6 +58,19 @@ extension Promise where
             
             promiseReturn.resolve((value0, value1))
         }
+        
+        promise0.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { promiseReturn.reject($0) },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
+        promise1.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { promiseReturn.reject($0) },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
         
         return promiseReturn
     }
@@ -93,34 +82,7 @@ extension Promise where
         _ promise2: Promise<Value2, Failure2>
     ) -> Promise<(Value0, Value1, Value2), Error> {
         let promiseReturn = Promise<(Value0, Value1, Value2), Error>(queue: queue)
-        let group = DispatchGroup()
-
-        group.enter()
-        var leave0 = Once { group.leave() }
-        promise0.subscribe(
-            queue: queue,
-            onResolved: { _ in leave0() },
-            onRejected: { promiseReturn.reject($0); leave0() },
-            onCanceled: { promiseReturn.cancel(); leave0() }
-        )
-        group.enter()
-        var leave1 = Once { group.leave() }
-        promise1.subscribe(
-            queue: queue,
-            onResolved: { _ in leave1() },
-            onRejected: { promiseReturn.reject($0); leave1() },
-            onCanceled: { promiseReturn.cancel(); leave1() }
-        )
-        group.enter()
-        var leave2 = Once { group.leave() }
-        promise2.subscribe(
-            queue: queue,
-            onResolved: { _ in leave2() },
-            onRejected: { promiseReturn.reject($0); leave2() },
-            onCanceled: { promiseReturn.cancel(); leave2() }
-        )
-        
-        group.notify(queue: queue) {
+        let resolve = {
             guard
                 case .resolved(let value0) = promise0.state.capture({ $0 }),
                 case .resolved(let value1) = promise1.state.capture({ $0 }),
@@ -131,6 +93,25 @@ extension Promise where
             
             promiseReturn.resolve((value0, value1, value2))
         }
+        
+        promise0.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { promiseReturn.reject($0) },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
+        promise1.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { promiseReturn.reject($0) },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
+        promise2.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { promiseReturn.reject($0) },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
         
         return promiseReturn
     }
@@ -143,42 +124,7 @@ extension Promise where
         _ promise3: Promise<Value3, Failure3>
     ) -> Promise<(Value0, Value1, Value2, Value3), Error> {
         let promiseReturn = Promise<(Value0, Value1, Value2, Value3), Error>(queue: queue)
-        let group = DispatchGroup()
-
-        group.enter()
-        var leave0 = Once { group.leave() }
-        promise0.subscribe(
-            queue: queue,
-            onResolved: { _ in leave0() },
-            onRejected: { promiseReturn.reject($0); leave0() },
-            onCanceled: { promiseReturn.cancel(); leave0() }
-        )
-        group.enter()
-        var leave1 = Once { group.leave() }
-        promise1.subscribe(
-            queue: queue,
-            onResolved: { _ in leave1() },
-            onRejected: { promiseReturn.reject($0); leave1() },
-            onCanceled: { promiseReturn.cancel(); leave1() }
-        )
-        group.enter()
-        var leave2 = Once { group.leave() }
-        promise2.subscribe(
-            queue: queue,
-            onResolved: { _ in leave2() },
-            onRejected: { promiseReturn.reject($0); leave2() },
-            onCanceled: { promiseReturn.cancel(); leave2() }
-        )
-        group.enter()
-        var leave3 = Once { group.leave() }
-        promise3.subscribe(
-            queue: queue,
-            onResolved: { _ in leave3() },
-            onRejected: { promiseReturn.reject($0); leave3() },
-            onCanceled: { promiseReturn.cancel(); leave3() }
-        )
-        
-        group.notify(queue: queue) {
+        let resolve = {
             guard
                 case .resolved(let value0) = promise0.state.capture({ $0 }),
                 case .resolved(let value1) = promise1.state.capture({ $0 }),
@@ -190,6 +136,31 @@ extension Promise where
             
             promiseReturn.resolve((value0, value1, value2, value3))
         }
+        
+        promise0.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { promiseReturn.reject($0) },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
+        promise1.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { promiseReturn.reject($0) },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
+        promise2.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { promiseReturn.reject($0) },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
+        promise3.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { promiseReturn.reject($0) },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
         
         return promiseReturn
     }
@@ -203,50 +174,7 @@ extension Promise where
         _ promise4: Promise<Value4, Failure4>
     ) -> Promise<(Value0, Value1, Value2, Value3, Value4), Error> {
         let promiseReturn = Promise<(Value0, Value1, Value2, Value3, Value4), Error>(queue: queue)
-        let group = DispatchGroup()
-
-        group.enter()
-        var leave0 = Once { group.leave() }
-        promise0.subscribe(
-            queue: queue,
-            onResolved: { _ in leave0() },
-            onRejected: { promiseReturn.reject($0); leave0() },
-            onCanceled: { promiseReturn.cancel(); leave0() }
-        )
-        group.enter()
-        var leave1 = Once { group.leave() }
-        promise1.subscribe(
-            queue: queue,
-            onResolved: { _ in leave1() },
-            onRejected: { promiseReturn.reject($0); leave1() },
-            onCanceled: { promiseReturn.cancel(); leave1() }
-        )
-        group.enter()
-        var leave2 = Once { group.leave() }
-        promise2.subscribe(
-            queue: queue,
-            onResolved: { _ in leave2() },
-            onRejected: { promiseReturn.reject($0); leave2() },
-            onCanceled: { promiseReturn.cancel(); leave2() }
-        )
-        group.enter()
-        var leave3 = Once { group.leave() }
-        promise3.subscribe(
-            queue: queue,
-            onResolved: { _ in leave3() },
-            onRejected: { promiseReturn.reject($0); leave3() },
-            onCanceled: { promiseReturn.cancel(); leave3() }
-        )
-        group.enter()
-        var leave4 = Once { group.leave() }
-        promise4.subscribe(
-            queue: queue,
-            onResolved: { _ in leave4() },
-            onRejected: { promiseReturn.reject($0); leave4() },
-            onCanceled: { promiseReturn.cancel(); leave4() }
-        )
-        
-        group.notify(queue: queue) {
+        let resolve = {
             guard
                 case .resolved(let value0) = promise0.state.capture({ $0 }),
                 case .resolved(let value1) = promise1.state.capture({ $0 }),
@@ -259,6 +187,37 @@ extension Promise where
             
             promiseReturn.resolve((value0, value1, value2, value3, value4))
         }
+        
+        promise0.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { promiseReturn.reject($0) },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
+        promise1.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { promiseReturn.reject($0) },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
+        promise2.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { promiseReturn.reject($0) },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
+        promise3.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { promiseReturn.reject($0) },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
+        promise4.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { promiseReturn.reject($0) },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
         
         return promiseReturn
     }
@@ -274,26 +233,7 @@ extension Promise where
         _ promise1: Promise<Value1, Never>
     ) -> Promise<(Value0, Value1), Never> {
         let promiseReturn = Promise<(Value0, Value1), Never>(queue: queue)
-        let group = DispatchGroup()
-        
-        group.enter()
-        var leave0 = Once { group.leave() }
-        promise0.subscribe(
-            queue: queue,
-            onResolved: { _ in leave0() },
-            onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); leave0() }
-        )
-        group.enter()
-        var leave1 = Once { group.leave() }
-        promise1.subscribe(
-            queue: queue,
-            onResolved: { _ in leave1() },
-            onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); leave1() }
-        )
-        
-        group.notify(queue: queue) {
+        let resolve = {
             guard
                 case .resolved(let value0) = promise0.state.capture({ $0 }),
                 case .resolved(let value1) = promise1.state.capture({ $0 })
@@ -303,6 +243,19 @@ extension Promise where
             
             promiseReturn.resolve((value0, value1))
         }
+        
+        promise0.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { _ in },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
+        promise1.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { _ in },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
         
         return promiseReturn
     }
@@ -314,34 +267,7 @@ extension Promise where
         _ promise2: Promise<Value2, Never>
     ) -> Promise<(Value0, Value1, Value2), Never> {
         let promiseReturn = Promise<(Value0, Value1, Value2), Never>(queue: queue)
-        let group = DispatchGroup()
-
-        group.enter()
-        var leave0 = Once { group.leave() }
-        promise0.subscribe(
-            queue: queue,
-            onResolved: { _ in leave0() },
-            onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); leave0() }
-        )
-        group.enter()
-        var leave1 = Once { group.leave() }
-        promise1.subscribe(
-            queue: queue,
-            onResolved: { _ in leave1() },
-            onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); leave1() }
-        )
-        group.enter()
-        var leave2 = Once { group.leave() }
-        promise2.subscribe(
-            queue: queue,
-            onResolved: { _ in leave2() },
-            onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); leave2() }
-        )
-        
-        group.notify(queue: queue) {
+        let resolve = {
             guard
                 case .resolved(let value0) = promise0.state.capture({ $0 }),
                 case .resolved(let value1) = promise1.state.capture({ $0 }),
@@ -352,6 +278,25 @@ extension Promise where
             
             promiseReturn.resolve((value0, value1, value2))
         }
+
+        promise0.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { _ in },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
+        promise1.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { _ in },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
+        promise2.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { _ in },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
         
         return promiseReturn
     }
@@ -364,42 +309,7 @@ extension Promise where
         _ promise3: Promise<Value3, Never>
     ) -> Promise<(Value0, Value1, Value2, Value3), Never> {
         let promiseReturn = Promise<(Value0, Value1, Value2, Value3), Never>(queue: queue)
-        let group = DispatchGroup()
-
-        group.enter()
-        var leave0 = Once { group.leave() }
-        promise0.subscribe(
-            queue: queue,
-            onResolved: { _ in leave0() },
-            onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); leave0() }
-        )
-        group.enter()
-        var leave1 = Once { group.leave() }
-        promise1.subscribe(
-            queue: queue,
-            onResolved: { _ in leave1() },
-            onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); leave1() }
-        )
-        group.enter()
-        var leave2 = Once { group.leave() }
-        promise2.subscribe(
-            queue: queue,
-            onResolved: { _ in leave2() },
-            onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); leave2() }
-        )
-        group.enter()
-        var leave3 = Once { group.leave() }
-        promise3.subscribe(
-            queue: queue,
-            onResolved: { _ in leave3() },
-            onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); leave3() }
-        )
-        
-        group.notify(queue: queue) {
+        let resolve = {
             guard
                 case .resolved(let value0) = promise0.state.capture({ $0 }),
                 case .resolved(let value1) = promise1.state.capture({ $0 }),
@@ -411,6 +321,31 @@ extension Promise where
             
             promiseReturn.resolve((value0, value1, value2, value3))
         }
+        
+        promise0.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { _ in },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
+        promise1.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { _ in },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
+        promise2.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { _ in },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
+        promise3.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { _ in },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
         
         return promiseReturn
     }
@@ -424,50 +359,7 @@ extension Promise where
         _ promise4: Promise<Value4, Never>
     ) -> Promise<(Value0, Value1, Value2, Value3, Value4), Never> {
         let promiseReturn = Promise<(Value0, Value1, Value2, Value3, Value4), Never>(queue: queue)
-        let group = DispatchGroup()
-
-        group.enter()
-        var leave0 = Once { group.leave() }
-        promise0.subscribe(
-            queue: queue,
-            onResolved: { _ in leave0() },
-            onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); leave0() }
-        )
-        group.enter()
-        var leave1 = Once { group.leave() }
-        promise1.subscribe(
-            queue: queue,
-            onResolved: { _ in leave1() },
-            onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); leave1() }
-        )
-        group.enter()
-        var leave2 = Once { group.leave() }
-        promise2.subscribe(
-            queue: queue,
-            onResolved: { _ in leave2() },
-            onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); leave2() }
-        )
-        group.enter()
-        var leave3 = Once { group.leave() }
-        promise3.subscribe(
-            queue: queue,
-            onResolved: { _ in leave3() },
-            onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); leave3() }
-        )
-        group.enter()
-        var leave4 = Once { group.leave() }
-        promise4.subscribe(
-            queue: queue,
-            onResolved: { _ in leave4() },
-            onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel(); leave4() }
-        )
-        
-        group.notify(queue: queue) {
+        let resolve = {
             guard
                 case .resolved(let value0) = promise0.state.capture({ $0 }),
                 case .resolved(let value1) = promise1.state.capture({ $0 }),
@@ -481,19 +373,37 @@ extension Promise where
             promiseReturn.resolve((value0, value1, value2, value3, value4))
         }
         
-        return promiseReturn
-    }
-}
-
-private struct Once {
-    var isCalled = false
-    let block: () -> Void
-    
-    mutating func callAsFunction() {
-        if !isCalled {
-            block()
-        }
+        promise0.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { _ in },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
+        promise1.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { _ in },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
+        promise2.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { _ in },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
+        promise3.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { _ in },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
+        promise4.subscribe(
+            queue: queue,
+            onResolved: { _ in resolve() },
+            onRejected: { _ in },
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+        )
         
-        isCalled = true
+        return promiseReturn
     }
 }

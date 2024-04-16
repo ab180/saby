@@ -39,7 +39,7 @@ extension Promise {
             queue: queue,
             onResolved: { promiseReturn.resolve($0) },
             onRejected: { promiseReturn.reject($0) },
-            onCanceled: { promiseReturn.cancel() }
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
         )
         
         queue.asyncAfter(deadline: .now() + interval) {

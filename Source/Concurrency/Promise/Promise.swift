@@ -72,7 +72,7 @@ extension Promise where Failure == Error {
                 try block(
                     { self.resolve($0) },
                     { self.reject($0) },
-                    { self.cancel() },
+                    { [weak self] in self?.cancel() },
                     { self.subscribe(queue: queue, onCanceled: $0) }
                 )
             } catch let error {
@@ -112,7 +112,7 @@ extension Promise where Failure == Never {
             block(
                 { self.resolve($0) },
                 { _ in },
-                { self.cancel() },
+                { [weak self] in self?.cancel() },
                 { self.subscribe(queue: queue, onCanceled: $0) }
             )
         }
@@ -155,7 +155,7 @@ extension Promise where
                     queue: queue,
                     onResolved: { promise.resolve($0) },
                     onRejected: { promise.reject($0) },
-                    onCanceled: { promise.cancel() }
+                    onCanceled: { [weak promise] in promise?.cancel() }
                 )
             } catch let error {
                 promise.reject(error)
@@ -191,7 +191,7 @@ extension Promise where
                 queue: queue,
                 onResolved: { promise.resolve($0) },
                 onRejected: { promise.reject($0) },
-                onCanceled: { promise.cancel() }
+                onCanceled: { [weak promise] in promise?.cancel() }
             )
         }
         
@@ -210,7 +210,7 @@ extension Promise where
                 queue: queue,
                 onResolved: { promise.resolve($0) },
                 onRejected: { _ in },
-                onCanceled: { promise.cancel() }
+                onCanceled: { [weak promise] in promise?.cancel() }
             )
         }
         

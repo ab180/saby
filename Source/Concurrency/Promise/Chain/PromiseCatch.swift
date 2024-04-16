@@ -29,7 +29,7 @@ extension Promise {
                     promiseReturn.reject(error)
                 }
             },
-            onCanceled: { promiseReturn.cancel() }
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
         )
         
         return promiseReturn
@@ -48,7 +48,7 @@ extension Promise {
             queue: queue,
             onResolved: { promiseReturn.resolve($0) },
             onRejected: { block($0); promiseReturn.reject($0) },
-            onCanceled: { promiseReturn.cancel() }
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
         )
         
         return promiseReturn

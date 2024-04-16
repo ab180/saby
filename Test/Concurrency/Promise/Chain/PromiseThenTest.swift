@@ -159,18 +159,18 @@ final class PromiseThenTest: XCTestCase {
         var promiseCancel: (() -> Void)?
         let thenPromise = Promise<Void, Error>.pending().promise
         
-        let promise = Promise<Int, Error> { resolve, reject, cancel, _ in
+        let promise0 = Promise<Int, Error> { resolve, reject, cancel, _ in
             promiseCancel = cancel
             resolve(10)
         }
-        .then { _ in
+        let promise1 = promise0.then { _ in
             promiseCancel?()
             end.signal()
             return thenPromise
         }
         
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
+        PromiseTest.expect(promise: promise1, state: .canceled, timeout: .seconds(1))
         PromiseTest.expect(promise: thenPromise, state: .canceled, timeout: .seconds(1))
     }
     

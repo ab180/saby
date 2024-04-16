@@ -129,18 +129,18 @@ final class PromiseRecoverTest: XCTestCase {
         var promiseCancel: (() -> Void)?
         let recoverPromise = Promise<Void, Error>.pending().promise
         
-        let promise = Promise<Void, Error> { resolve, reject, cancel, _ in
+        let promise0 = Promise<Void, Error> { resolve, reject, cancel, _ in
             promiseCancel = cancel
             throw PromiseTest.SampleError.one
         }
-        .recover { error in
+        let promise1 = promise0.recover { error in
             promiseCancel?()
             end.signal()
             return recoverPromise
         }
         
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
+        PromiseTest.expect(promise: promise1, state: .canceled, timeout: .seconds(1))
         PromiseTest.expect(promise: recoverPromise, state: .canceled, timeout: .seconds(1))
     }
 }

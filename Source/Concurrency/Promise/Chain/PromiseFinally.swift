@@ -21,7 +21,7 @@ extension Promise {
             queue: queue,
             onResolved: { block(); promiseReturn.resolve($0) },
             onRejected: { block(); promiseReturn.reject($0) },
-            onCanceled: { promiseReturn.cancel() }
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
         )
         
         return promiseReturn

@@ -28,7 +28,7 @@ extension Promise {
                     promiseReturn.reject(error)
                 }
             },
-            onCanceled: { promiseReturn.cancel() }
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
         )
         
         return promiseReturn
@@ -53,17 +53,17 @@ extension Promise {
                         queue: queue,
                         onResolved: { promiseReturn.resolve($0) },
                         onRejected: { promiseReturn.reject($0) },
-                        onCanceled: { promiseReturn.cancel() }
+                        onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
                     )
                     self?.subscribe(
                         queue: queue,
-                        onCanceled: { promise.cancel() }
+                        onCanceled: { [weak promise] in promise?.cancel() }
                     )
                 } catch let error {
                     promiseReturn.reject(error)
                 }
             },
-            onCanceled: { promiseReturn.cancel() }
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
         )
         
         return promiseReturn
@@ -87,7 +87,7 @@ extension Promise {
                 let value = block($0)
                 promiseReturn.resolve(value)
             },
-            onCanceled: { promiseReturn.cancel() }
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
         )
         
         return promiseReturn
@@ -111,14 +111,14 @@ extension Promise {
                     queue: queue,
                     onResolved: { promiseReturn.resolve($0) },
                     onRejected: { promiseReturn.reject($0) },
-                    onCanceled: { promiseReturn.cancel() }
+                    onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
                 )
                 self?.subscribe(
                     queue: queue,
-                    onCanceled: { promise.cancel() }
+                    onCanceled: { [weak promise] in promise?.cancel() }
                 )
             },
-            onCanceled: { promiseReturn.cancel() }
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
         )
         
         return promiseReturn

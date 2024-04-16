@@ -31,7 +31,7 @@ extension Promise {
             queue: queue,
             onResolved: { promiseReturn.resolve($0) },
             onRejected: { promiseReturn.reject($0) },
-            onCanceled: { promiseReturn.cancel() }
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
         )
         
         return promiseReturn
@@ -44,7 +44,7 @@ extension Promise {
             queue: queue,
             onResolved: { _ in promiseReturn.resolve(()) },
             onRejected: { promiseReturn.reject($0) },
-            onCanceled: { promiseReturn.cancel() }
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
         )
         
         return promiseReturn
@@ -57,7 +57,7 @@ extension Promise {
             queue: queue,
             onResolved: { promiseReturn.resolve($0) },
             onRejected: { promiseReturn.reject($0) },
-            onCanceled: { promiseReturn.cancel() }
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
         )
         
         return promiseReturn
@@ -72,7 +72,7 @@ extension Promise where Failure == Never {
             queue: queue,
             onResolved: { promiseReturn.resolve($0) },
             onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel() }
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
         )
         
         return promiseReturn
@@ -85,7 +85,7 @@ extension Promise where Failure == Never {
             queue: queue,
             onResolved: { promiseReturn.resolve($0) },
             onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel() }
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
         )
         
         return promiseReturn
@@ -98,7 +98,7 @@ extension Promise where Failure == Never {
             queue: queue,
             onResolved: { _ in promiseReturn.resolve(()) },
             onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel() }
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
         )
         
         return promiseReturn
@@ -111,7 +111,7 @@ extension Promise where Failure == Never {
             queue: queue,
             onResolved: { promiseReturn.resolve($0) },
             onRejected: { _ in },
-            onCanceled: { promiseReturn.cancel() }
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
         )
         
         return promiseReturn

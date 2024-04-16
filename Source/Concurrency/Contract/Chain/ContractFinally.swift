@@ -27,7 +27,7 @@ extension Contract {
                 block()
                 contract.reject(error)
             },
-            onCanceled: { contract.cancel() }
+            onCanceled: { [weak contract] in contract?.cancel() }
         )
         
         return contract

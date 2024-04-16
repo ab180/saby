@@ -61,18 +61,18 @@ final class PromiseDelayTest: XCTestCase {
         let end = DispatchSemaphore(value: 0)
         var promiseCancel: (() -> Void)?
         
-        let promise = Promise<Int, Error> { resolve, reject, cancel, _ in
+        let promise0 = Promise<Int, Error> { resolve, reject, cancel, _ in
             promiseCancel = cancel
             resolve(20)
         }
-        .delay(.milliseconds(100))
-        .then { _ in
+        let promise1 = promise0.delay(.milliseconds(100))
+        let promise2 = promise1.then { _ in
             promiseCancel?()
             end.signal()
         }
         
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
+        PromiseTest.expect(promise: promise2, state: .canceled, timeout: .seconds(1))
     }
     
     func test__never_delay_create() {

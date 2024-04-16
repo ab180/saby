@@ -37,7 +37,7 @@ extension Promise {
                 }
             },
             onRejected: { promiseReturn.reject($0) },
-            onCanceled: { promiseReturn.cancel() }
+            onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
         )
         
         return promiseReturn
