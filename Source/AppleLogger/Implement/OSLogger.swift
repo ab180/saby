@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import OSLog
+import os
 
 public final class OSLogger: LoggerType {
     var loggerSetting: LoggerSetting

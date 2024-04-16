@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import OSLog
+import os
 
 public protocol Logger {
     /// You can use each method to show logs

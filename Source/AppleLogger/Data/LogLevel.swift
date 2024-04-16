@@ -5,7 +5,7 @@
 //  Created by 이영빈 on 2022/10/04.
 //
 
-import OSLog
+import os
 
 /// The various log levels that the `SabyApplerLogger` provides
 ///

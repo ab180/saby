@@ -6,7 +6,7 @@
 //
 
 import XCTest
-import OSLog
+import os
 @testable import SabyAppleLogger
 
 final class LoggerTest: XCTestCase {

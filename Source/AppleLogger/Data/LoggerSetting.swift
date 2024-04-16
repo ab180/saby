@@ -5,7 +5,7 @@
 //  Created by 이영빈 on 2022/09/30.
 //
 
-import OSLog
+import os
 
 public struct LoggerSetting {
     /// A variable indicating logger's logging level. Set  to `.none` to not show logs.
