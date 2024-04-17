@@ -15,6 +15,7 @@ public final class DataClient: Client {
     public typealias Request = Data?
     public typealias Response = Data?
     
+    let lock = Lock()
     var storage = [ObjectIdentifier: PromisePending<ClientResult<Data?>, Error>]()
     
     let session: URLSession
@@ -107,10 +108,14 @@ extension DataClient {
         
         task.resume()
         
+        lock.lock()
         storage[ObjectIdentifier(pending)] = pending
+        lock.unlock()
         let remove = { [weak self, weak pending] in
             guard let self, let pending else { return }
-            self.storage[ObjectIdentifier(pending)] = nil
+            self.lock.lock()
+            self.storage.removeValue(forKey: ObjectIdentifier(pending))
+            self.lock.unlock()
         }
         pending.promise.subscribe(
             onResolved: { _ in remove() },
