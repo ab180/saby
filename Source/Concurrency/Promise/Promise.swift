@@ -13,15 +13,11 @@ public final class Promise<Value, Failure: Error> {
     let queue: DispatchQueue
     let pendingGroup: DispatchGroup
     
-    var cancelSubscribers: [PromiseCancelSubscriber]
-    
     init(queue: DispatchQueue = .global()) {
         self.state = Atomic(.pending)
         
         self.queue = queue
         self.pendingGroup = DispatchGroup()
-        
-        self.cancelSubscribers = []
         
         pendingGroup.enter()
     }
@@ -241,16 +237,8 @@ extension Promise {
     
     func cancel() {
         state.mutate { state in
-            if case .canceled = state {} else {
-                if case .pending = state {
-                    pendingGroup.leave()
-                }
-                for cancelSubscriber in self.cancelSubscribers {
-                    pendingGroup.notify(queue: queue) {
-                        cancelSubscriber.onCanceled()
-                    }
-                }
-                cancelSubscribers = []
+            if case .pending = state {
+                pendingGroup.leave()
                 return .canceled
             }
             
@@ -274,18 +262,8 @@ extension Promise {
             else if case .rejected(let error) = state {
                 onRejected(error)
             }
-        }
-        state.capture { state in
-            if case .canceled = state {
-                pendingGroup.notify(queue: queue) {
-                    onCanceled()
-                }
-            }
-            else {
-                cancelSubscribers.append(PromiseCancelSubscriber(
-                    queue: queue,
-                    onCanceled: onCanceled
-                ))
+            else if case .canceled = state {
+                onCanceled()
             }
         }
     }
@@ -294,17 +272,12 @@ extension Promise {
         queue: DispatchQueue,
         onCanceled: @escaping () -> Void
     ) {
-        state.capture { state in
+        let state = self.state
+        pendingGroup.notify(queue: queue) {
+            let state = state.capture { $0 }
+            
             if case .canceled = state {
-                pendingGroup.notify(queue: queue) {
-                    onCanceled()
-                }
-            }
-            else {
-                cancelSubscribers.append(PromiseCancelSubscriber(
-                    queue: queue,
-                    onCanceled: onCanceled
-                ))
+                onCanceled()
             }
         }
     }

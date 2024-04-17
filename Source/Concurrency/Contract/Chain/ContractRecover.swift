@@ -56,7 +56,7 @@ extension Contract {
         subscribe(
             queue: queue,
             onResolved: { value in contract.resolve(value) },
-            onRejected: schedule { [weak self] error, finish in
+            onRejected: schedule { error, finish in
                 do {
                     let promise = try block(error)
                     promise.subscribe(
@@ -69,11 +69,10 @@ extension Contract {
                             defer { finish() }
                             contract.reject($0)
                         },
-                        onCanceled: { [weak contract] in contract?.cancel() }
-                    )
-                    self?.subscribe(
-                        queue: queue,
-                        onCanceled: { [weak promise] in promise?.cancel() }
+                        onCanceled: { [weak contract] in
+                            defer { finish() }
+                            contract?.cancel()
+                        }
                     )
                 }
                 catch let error {
@@ -132,7 +131,7 @@ extension Contract {
         subscribe(
             queue: queue,
             onResolved: { value in contract.resolve(value) },
-            onRejected: schedule { [weak self] error, finish in
+            onRejected: schedule { error, finish in
                 let promise = block(error)
                 promise.subscribe(
                     queue: queue,
@@ -144,11 +143,10 @@ extension Contract {
                         defer { finish() }
                         contract.reject($0)
                     },
-                    onCanceled: { [weak contract] in contract?.cancel() }
-                )
-                self?.subscribe(
-                    queue: queue,
-                    onCanceled: { [weak promise] in promise?.cancel() }
+                    onCanceled: { [weak contract] in
+                        defer { finish() }
+                        contract?.cancel()
+                    }
                 )
             },
             onCanceled: { [weak contract] in contract?.cancel() }

@@ -52,6 +52,6 @@ final class PromiseCatchTest: XCTestCase {
         }
         
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: promise1, state: .canceled, timeout: .seconds(1))
+        PromiseTest.expect(promise: promise1, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
 }

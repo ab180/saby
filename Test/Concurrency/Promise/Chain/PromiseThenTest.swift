@@ -170,8 +170,8 @@ final class PromiseThenTest: XCTestCase {
         }
         
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: promise1, state: .canceled, timeout: .seconds(1))
-        PromiseTest.expect(promise: thenPromise, state: .canceled, timeout: .seconds(1))
+        PromiseTest.expect(promise: promise1, state: .pending, timeout: .seconds(1))
+        PromiseTest.expect(promise: thenPromise, state: .pending, timeout: .seconds(1))
     }
     
     func test__then_return_promise_from_reject() {

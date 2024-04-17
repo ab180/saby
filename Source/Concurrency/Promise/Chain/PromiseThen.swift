@@ -23,7 +23,8 @@ extension Promise {
                 do {
                     let value = try block($0)
                     promiseReturn.resolve(value)
-                } catch let error {
+                }
+                catch let error {
                     promiseReturn.reject(error)
                 }
             },
@@ -45,7 +46,7 @@ extension Promise {
         
         subscribe(
             queue: queue,
-            onResolved: { [weak self] in
+            onResolved: {
                 do {
                     let promise = try block($0)
                     promise.subscribe(
@@ -54,11 +55,8 @@ extension Promise {
                         onRejected: { promiseReturn.reject($0) },
                         onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
                     )
-                    self?.subscribe(
-                        queue: queue,
-                        onCanceled: { [weak promise] in promise?.cancel() }
-                    )
-                } catch let error {
+                }
+                catch let error {
                     promiseReturn.reject(error)
                 }
             },
@@ -104,17 +102,13 @@ extension Promise where Failure == Never {
         
         subscribe(
             queue: queue,
-            onResolved: { [weak self] in
+            onResolved: {
                 let promise = block($0)
                 promise.subscribe(
                     queue: queue,
                     onResolved: { promiseReturn.resolve($0) },
                     onRejected: { promiseReturn.reject($0) },
                     onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
-                )
-                self?.subscribe(
-                    queue: queue,
-                    onCanceled: { [weak promise] in promise?.cancel() }
                 )
             },
             onRejected: { _ in },

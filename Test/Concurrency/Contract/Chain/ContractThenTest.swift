@@ -245,7 +245,7 @@ final class ContractThenTest: XCTestCase {
             contract0.resolve(10)
         }
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: thenPromise, state: .canceled, timeout: .seconds(1))
+        PromiseTest.expect(promise: thenPromise, state: .pending, timeout: .seconds(1))
     }
     
     func test__never_then_return_value() {

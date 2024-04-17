@@ -72,7 +72,7 @@ final class PromiseDelayTest: XCTestCase {
         }
         
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: promise2, state: .canceled, timeout: .seconds(1))
+        PromiseTest.expect(promise: promise2, state: .resolved({ $0 == () }), timeout: .seconds(1))
     }
     
     func test__never_delay_create() {

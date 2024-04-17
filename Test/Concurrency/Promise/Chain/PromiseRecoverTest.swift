@@ -140,7 +140,7 @@ final class PromiseRecoverTest: XCTestCase {
         }
         
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: promise1, state: .canceled, timeout: .seconds(1))
-        PromiseTest.expect(promise: recoverPromise, state: .canceled, timeout: .seconds(1))
+        PromiseTest.expect(promise: promise1, state: .pending, timeout: .seconds(1))
+        PromiseTest.expect(promise: recoverPromise, state: .pending, timeout: .seconds(1))
     }
 }

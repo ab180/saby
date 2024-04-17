@@ -74,7 +74,7 @@ final class ContractFilterTest: XCTestCase {
             contract0.resolve("10")
         }
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: filterPromise, state: .canceled, timeout: .seconds(1))
+        PromiseTest.expect(promise: filterPromise, state: .pending, timeout: .seconds(1))
     }
     
     func test__never_filter_bool() {
@@ -142,7 +142,7 @@ final class ContractFilterTest: XCTestCase {
             contract0.resolve("10")
         }
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: filterPromise, state: .canceled, timeout: .seconds(1))
+        PromiseTest.expect(promise: filterPromise, state: .pending, timeout: .seconds(1))
     }
     
     func test__filter_schedule_sync() throws {

@@ -77,7 +77,7 @@ final class ContractRecoverTest: XCTestCase {
             contract0.reject(ContractTest.SampleError.one)
         }
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: recoverPromise, state: .canceled, timeout: .seconds(1))
+        PromiseTest.expect(promise: recoverPromise, state: .pending, timeout: .seconds(1))
     }
     
     func test__recover_schedule_sync() throws {
