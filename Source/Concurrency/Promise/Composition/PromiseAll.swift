@@ -30,13 +30,17 @@ extension Promise where
             promiseReturn.resolve(values)
         }
         
-        promises.forEach { promise in
+        for promise in promises {
             promise.subscribe(
                 queue: promise.queue,
                 onResolved: { _ in resolve() },
                 onRejected: { promiseReturn.reject($0) },
                 onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
             )
+        }
+        
+        if promises.isEmpty {
+            resolve()
         }
         
         return promiseReturn
