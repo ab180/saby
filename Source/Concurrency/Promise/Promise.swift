@@ -346,7 +346,7 @@ extension Promise {
 extension Promise {
     public static func pending(
         on queue: DispatchQueue = .global(),
-        cancelWhen: PromisePending<Value, Failure>.CancelWhen = .none
+        cancelWhen: PromisePendingCancelWhen = .none
     ) -> PromisePending<Value, Failure> {
         PromisePending(
             queue: queue,
@@ -394,11 +394,11 @@ public final class PromisePending<Value, Failure: Error> {
     public let cancel: () -> Void
     public let onCancel: (@escaping () -> Void) -> Void
     
-    let cancelWhen: CancelWhen
+    let cancelWhen: PromisePendingCancelWhen
     
     init(
         queue: DispatchQueue,
-        cancelWhen: CancelWhen
+        cancelWhen: PromisePendingCancelWhen
     ) {
         let promise = Promise<Value, Failure>(queue: queue)
         
@@ -416,11 +416,11 @@ public final class PromisePending<Value, Failure: Error> {
             cancel()
         }
     }
-    
-    public enum CancelWhen {
-        case `deinit`
-        case none
-    }
+}
+
+public enum PromisePendingCancelWhen {
+    case `deinit`
+    case none
 }
 
 enum PromiseState<Value, Failure: Error> {

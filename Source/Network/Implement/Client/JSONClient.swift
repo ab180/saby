@@ -23,8 +23,11 @@ public final class JSONClient: Client {
 }
 
 extension JSONClient {
-    public convenience init(optionBlock: (inout URLSessionConfiguration) -> Void = { _ in }) {
-        let client = DataClient(optionBlock: optionBlock)
+    public convenience init(
+        cancelWhen: PromisePendingCancelWhen,
+        optionBlock: (inout URLSessionConfiguration) -> Void = { _ in }
+    ) {
+        let client = DataClient(cancelWhen: cancelWhen, optionBlock: optionBlock)
         self.init(client: client)
     }
 }

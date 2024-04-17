@@ -14,14 +14,14 @@ import SabyConcurrency
 
 final class DataClientTest: XCTestCase {
     func test__init() {
-        let client = DataClient()
+        let client = DataClient(cancelWhen: .deinit)
         let configuration = URLSessionConfiguration.default
         
         XCTAssertEqual(client.session.configuration, configuration)
     }
     
     func test__init_option_block() {
-        let client = DataClient() {
+        let client = DataClient(cancelWhen: .deinit) {
             $0.timeoutIntervalForRequest = 3000
         }
         let configuration = URLSessionConfiguration.default
@@ -40,7 +40,7 @@ final class DataClientTest: XCTestCase {
                 )
             ]
         }
-        let client = DataClient() {
+        let client = DataClient(cancelWhen: .deinit) {
             $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
         
@@ -59,7 +59,7 @@ final class DataClientTest: XCTestCase {
                 )
             ]
         }
-        let client = DataClient() {
+        let client = DataClient(cancelWhen: .deinit) {
             $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
         
@@ -81,7 +81,7 @@ final class DataClientTest: XCTestCase {
                 )
             ]
         }
-        let client = DataClient() {
+        let client = DataClient(cancelWhen: .deinit) {
             $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
         
@@ -100,7 +100,7 @@ final class DataClientTest: XCTestCase {
                 )
             ]
         }
-        let client = DataClient() {
+        let client = DataClient(cancelWhen: .deinit) {
             $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
         

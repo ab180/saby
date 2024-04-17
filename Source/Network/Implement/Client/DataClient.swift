@@ -15,20 +15,33 @@ public final class DataClient: Client {
     public typealias Request = Data?
     public typealias Response = Data?
     
-    let session: URLSession
+    var storage = [ObjectIdentifier: PromisePending<ClientResult<Data?>, Error>]()
     
-    init(session: URLSession) {
+    let session: URLSession
+    let cancelWhen: PromisePendingCancelWhen
+    
+    init(
+        session: URLSession,
+        cancelWhen: PromisePendingCancelWhen
+    ) {
         self.session = session
+        self.cancelWhen = cancelWhen
     }
 }
 
 extension DataClient {
-    public convenience init(optionBlock: (inout URLSessionConfiguration) -> Void = { _ in }) {
+    public convenience init(
+        cancelWhen: PromisePendingCancelWhen,
+        optionBlock: (inout URLSessionConfiguration) -> Void = { _ in }
+    ) {
         var configuration = URLSessionConfiguration.default
         optionBlock(&configuration)
     
         let session = URLSession(configuration: configuration)
-        self.init(session: session)
+        self.init(
+            session: session,
+            cancelWhen: cancelWhen
+        )
     }
 }
 
@@ -41,19 +54,19 @@ extension DataClient {
         timeout: Interval? = nil,
         optionBlock: @escaping (inout URLRequest) -> Void = { _ in }
     ) -> Promise<ClientResult<Data?>, Error> {
-        let pending = Promise<ClientResult<Data?>, Error>.pending()
+        let pending = Promise<ClientResult<Data?>, Error>.pending(cancelWhen: cancelWhen)
         
         var request = URLRequest(url: url)
-        optionBlock(&request)
-
-        request.url = url
         request.httpMethod = method.rawValue
         header.forEach { (key, value) in
             request.setValue(value, forHTTPHeaderField: key)
         }
         request.httpBody = body
+        optionBlock(&request)
         
-        let task = session.dataTask(with: request) { data, response, error in
+        let task = session.dataTask(with: request) { [weak pending] data, response, error in
+            guard let pending else { return }
+            
             if let error = error {
                 pending.reject(error)
                 return
@@ -76,9 +89,9 @@ extension DataClient {
             task.cancel()
         }
         if let timeout {
-            let item = DispatchWorkItem {
-                pending.reject(DataClientError.timeout)
-                task.cancel()
+            let item = DispatchWorkItem { [weak task, weak pending] in
+                task?.cancel()
+                pending?.reject(DataClientError.timeout)
             }
             DispatchQueue.global().asyncAfter(
                 deadline: .now() + timeout.dispatchTime,
@@ -93,6 +106,17 @@ extension DataClient {
         }
         
         task.resume()
+        
+        storage[ObjectIdentifier(pending)] = pending
+        let remove = { [weak self, weak pending] in
+            guard let self, let pending else { return }
+            self.storage[ObjectIdentifier(pending)] = nil
+        }
+        pending.promise.subscribe(
+            onResolved: { _ in remove() },
+            onRejected: { _ in remove() },
+            onCanceled: { remove() }
+        )
         
         return pending.promise
     }

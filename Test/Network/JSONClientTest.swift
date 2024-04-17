@@ -15,14 +15,14 @@ import SabyConcurrency
 
 final class JSONClientTest: XCTestCase {
     func test__init() {
-        let client = JSONClient()
+        let client = JSONClient(cancelWhen: .deinit)
         let configuration = URLSessionConfiguration.default
         
         XCTAssertEqual(client.client.session.configuration, configuration)
     }
     
     func test__init_option_block() {
-        let client = JSONClient() {
+        let client = JSONClient(cancelWhen: .deinit) {
             $0.timeoutIntervalForRequest = 3000
         }
         let configuration = URLSessionConfiguration.default
@@ -41,7 +41,7 @@ final class JSONClientTest: XCTestCase {
                 )
             ]
         }
-        let client = JSONClient() {
+        let client = JSONClient(cancelWhen: .deinit) {
             $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
         
@@ -67,7 +67,7 @@ final class JSONClientTest: XCTestCase {
                 )
             ]
         }
-        let client = JSONClient() {
+        let client = JSONClient(cancelWhen: .deinit) {
             $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
         
@@ -93,7 +93,7 @@ final class JSONClientTest: XCTestCase {
                 )
             ]
         }
-        let client = JSONClient() {
+        let client = JSONClient(cancelWhen: .deinit) {
             $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
         
@@ -118,7 +118,7 @@ final class JSONClientTest: XCTestCase {
                 )
             ]
         }
-        let client = JSONClient() {
+        let client = JSONClient(cancelWhen: .deinit) {
             $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
         
@@ -144,7 +144,7 @@ final class JSONClientTest: XCTestCase {
                 )
             ]
         }
-        let client = JSONClient() {
+        let client = JSONClient(cancelWhen: .deinit) {
             $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
         
@@ -169,7 +169,7 @@ final class JSONClientTest: XCTestCase {
                 )
             ]
         }
-        let client = JSONClient() {
+        let client = JSONClient(cancelWhen: .deinit) {
             $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
         
@@ -194,7 +194,7 @@ final class JSONClientTest: XCTestCase {
                 )
             ]
         }
-        let client = JSONClient() {
+        let client = JSONClient(cancelWhen: .deinit) {
             $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
         
