@@ -10,13 +10,13 @@ import Foundation
 public protocol Preference {
     /// ``init(directoryURL:storageName:migration:)``
     /// execute migration and then create or load preference from
-    /// `{Directory url}/{Storage name}/{Version name}` path.
+    /// `{Directory url}/{Storage name}_{Version name}` path.
     init(directoryURL: URL, storageName: String, migration: @escaping () throws -> Void)
 }
 
 extension Preference {
     /// ``init(directoryName:storageName:)`` create or load storage from
-    /// `{Directory url}/{Storage name}/{Version name}` path.
+    /// `{Directory url}/{Storage name}_{Version name}` path.
     public init(directoryURL: URL, storageName: String) {
         self.init(directoryURL: directoryURL, storageName: storageName, migration: {})
     }

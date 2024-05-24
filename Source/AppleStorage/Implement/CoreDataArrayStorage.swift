@@ -355,7 +355,7 @@ extension NSManagedObjectContext {
                 )
             }
             
-            let url = directoryURL.appendingPathComponent(storageName).appendingPathExtension(STORAGE_VERSION)
+            let url = directoryURL.appendingPathComponent("\(storageName)_\(STORAGE_VERSION)")
 
             let container = NSPersistentContainer(
                 name: storageName,

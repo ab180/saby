@@ -46,7 +46,7 @@ final class FileArrayStorageTest: XCTestCase {
     }
     
     override func tearDownWithError() throws {
-        let fileURL = directoryURL.appendingPathComponent(storageName)
+        let fileURL = directoryURL
         
         if FileManager.default.fileExists(atPath: fileURL.absoluteString) {
             try FileManager.default.removeItem(at: fileURL)

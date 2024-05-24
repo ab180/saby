@@ -120,7 +120,7 @@ struct FileValueStorageContext<Value: Codable> {
                 )
             }
             
-            let url = directoryURL.appendingPathComponent(storageName).appendingPathExtension(STORAGE_VERSION)
+            let url = directoryURL.appendingPathComponent("\(storageName)_\(STORAGE_VERSION)")
             if !fileManager.fileExists(atPath: url.path) {
                 return FileValueStorageContext(
                     url: url,
