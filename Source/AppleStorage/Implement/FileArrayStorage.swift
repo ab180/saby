@@ -10,9 +10,11 @@ import SabyConcurrency
 import SabySize
 import SabyJSON
 
+private let STORAGE_VERSION = "Version1"
+
 public final class FileArrayStorage<Value: Codable & KeyIdentifiable>: ArrayStorage {
     typealias Context = FileArrayStorageContext
-    typealias Item = FileArrayStorageItem
+    typealias Item = FileArrayStorageItemVersion1
     
     let fileLock = Lock()
     
@@ -21,11 +23,11 @@ public final class FileArrayStorage<Value: Codable & KeyIdentifiable>: ArrayStor
     
     let encoder = JSONEncoder.acceptingNonConfirmingFloat()
 
-    public init(directoryURL: URL, fileName: String, migration: @escaping () -> Promise<Void, Error>) {
+    public init(directoryURL: URL, storageName: String, migration: @escaping () -> Promise<Void, Error>) {
         self.contextLoad = {
             Context.load(
                 directoryURL: directoryURL,
-                fileName: fileName,
+                storageName: storageName,
                 migration: migration
             )
         }
@@ -191,11 +193,11 @@ extension FileArrayStorage {
 
 struct FileArrayStorageContext<Value: Codable> {
     let url: URL
-    let items: Atomic<[FileArrayStorageItem<Value>]>
+    let items: Atomic<[FileArrayStorageItemVersion1<Value>]>
     
     private init(
         url: URL,
-        items: Atomic<[FileArrayStorageItem<Value>]>
+        items: Atomic<[FileArrayStorageItemVersion1<Value>]>
     ) {
         self.url = url
         self.items = items
@@ -203,7 +205,7 @@ struct FileArrayStorageContext<Value: Codable> {
     
     static func load(
         directoryURL: URL,
-        fileName: String,
+        storageName: String,
         migration: @escaping () -> Promise<Void, Error>
     ) -> Promise<FileArrayStorageContext, Error> {
         migration().then {
@@ -221,7 +223,7 @@ struct FileArrayStorageContext<Value: Codable> {
                 )
             }
             
-            let url = directoryURL.appendingPathComponent(fileName)
+            let url = directoryURL.appendingPathComponent(storageName).appendingPathExtension(STORAGE_VERSION)
             if !fileManager.fileExists(atPath: url.path) {
                 return FileArrayStorageContext(
                     url: url,
@@ -232,7 +234,7 @@ struct FileArrayStorageContext<Value: Codable> {
             guard
                 let data = try? Data(contentsOf: url),
                 let items = try? decoder.decode(
-                    [FileArrayStorageItem<Value>].self,
+                    [FileArrayStorageItemVersion1<Value>].self,
                     from: data
                 )
             else {
@@ -254,7 +256,8 @@ public enum FileArrayStorageError: Error {
     case libraryDirectoryNotFound
 }
 
-struct FileArrayStorageItem<Value: Codable>: Codable {
+// Must not be modified. Write ItemVersion2 and write migration logic instead.
+struct FileArrayStorageItemVersion1<Value: Codable>: Codable {
     let key: UUID
     let value: Value
     let date: Date

@@ -17,7 +17,7 @@ final class FileArrayStorageTest: XCTestCase {
     fileprivate var storage: FileArrayStorage<DummyItem>!
     fileprivate var encoder: JSONEncoder!
     fileprivate let directoryURL = FileManager.default.temporaryDirectory
-    fileprivate var fileName: String!
+    fileprivate var storageName: String!
     
     private struct TestItemGroup {
         private static let testCount = 100
@@ -37,16 +37,16 @@ final class FileArrayStorageTest: XCTestCase {
     }
     
     override func setUpWithError() throws {
-        fileName = UUID().uuidString
+        storageName = UUID().uuidString
         storage = FileArrayStorage<DummyItem>(
             directoryURL: directoryURL,
-            fileName: fileName
+            storageName: storageName
         )
         encoder = JSONEncoder()
     }
     
     override func tearDownWithError() throws {
-        let fileURL = directoryURL.appendingPathComponent(fileName)
+        let fileURL = directoryURL.appendingPathComponent(storageName)
         
         if FileManager.default.fileExists(atPath: fileURL.absoluteString) {
             try FileManager.default.removeItem(at: fileURL)

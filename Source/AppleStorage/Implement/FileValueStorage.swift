@@ -10,6 +10,8 @@ import SabySafe
 import SabyConcurrency
 import SabyJSON
 
+private let STORAGE_VERSION = "Version1"
+
 public final class FileValueStorage<Value: Codable>: ValueStorage {
     typealias Context = FileValueStorageContext
     
@@ -20,11 +22,11 @@ public final class FileValueStorage<Value: Codable>: ValueStorage {
     
     let encoder = JSONEncoder.acceptingNonConfirmingFloat()
 
-    public init(directoryURL: URL, fileName: String, migration: @escaping () -> Promise<Void, Error>) {
+    public init(directoryURL: URL, storageName: String, migration: @escaping () -> Promise<Void, Error>) {
         self.contextLoad = {
             Context.load(
                 directoryURL: directoryURL,
-                fileName: fileName,
+                storageName: storageName,
                 migration: migration
             )
         }
@@ -91,16 +93,16 @@ extension FileValueStorage {
 
 struct FileValueStorageContext<Value: Codable> {
     let url: URL
-    let value: Atomic<Value?>
+    let value: Atomic<FileValueStorageItemVersion1<Value>?>
     
-    private init(url: URL, value: Atomic<Value?>) {
+    private init(url: URL, value: Atomic<FileValueStorageItemVersion1<Value>?>) {
         self.url = url
         self.value = value
     }
     
     static func load(
         directoryURL: URL,
-        fileName: String,
+        storageName: String,
         migration: @escaping () -> Promise<Void, Error>
     ) -> Promise<FileValueStorageContext, Error> {
         migration().then {
@@ -118,7 +120,7 @@ struct FileValueStorageContext<Value: Codable> {
                 )
             }
             
-            let url = directoryURL.appendingPathComponent(fileName)
+            let url = directoryURL.appendingPathComponent(storageName).appendingPathExtension(STORAGE_VERSION)
             if !fileManager.fileExists(atPath: url.path) {
                 return FileValueStorageContext(
                     url: url,
@@ -129,7 +131,7 @@ struct FileValueStorageContext<Value: Codable> {
             guard
                 let data = try? Data(contentsOf: url),
                 let value = try? decoder.decode(
-                    Value?.self,
+                    FileValueStorageItemVersion1<Value>?.self,
                     from: data
                 )
             else {
@@ -146,3 +148,6 @@ struct FileValueStorageContext<Value: Codable> {
         }
     }
 }
+
+// Must not be modified. Write ItemVersion2 and write migration logic instead.
+typealias FileValueStorageItemVersion1<Value: Codable> = Value

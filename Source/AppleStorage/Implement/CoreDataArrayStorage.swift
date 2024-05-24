@@ -12,9 +12,11 @@ import SabySafe
 import SabySize
 import SabyJSON
 
+private let STORAGE_VERSION = "Version1"
+
 public final class CoreDataArrayStorage<Value: Codable & KeyIdentifiable>: ArrayStorage {
     typealias Context = NSManagedObjectContext
-    typealias Item = SabyCoreDataArrayStorageItem
+    typealias Item = SabyCoreDataArrayStorageItemVersion1
     
     let entity: NSEntityDescription
     
@@ -24,7 +26,7 @@ public final class CoreDataArrayStorage<Value: Codable & KeyIdentifiable>: Array
     let encoder = JSONEncoder.acceptingNonConfirmingFloat()
     let decoder = JSONDecoder.acceptingNonConfirmingFloat()
     
-    public init(directoryURL: URL, fileName: String, migration: @escaping () -> Promise<Void, Error>) {
+    public init(directoryURL: URL, storageName: String, migration: @escaping () -> Promise<Void, Error>) {
         let schema = SabyCoreDataArrayStorageSchema()
         
         self.entity = schema.entity
@@ -32,7 +34,7 @@ public final class CoreDataArrayStorage<Value: Codable & KeyIdentifiable>: Array
         self.contextLoad = {
             Context.load(
                 directoryURL: directoryURL,
-                fileName: fileName,
+                storageName: storageName,
                 migration: migration,
                 model: schema.model
             )
@@ -50,7 +52,7 @@ extension CoreDataArrayStorage {
             let request = self.createAnyRequest(key: key)
             try context.executeDelete(request)
 
-            let item = SabyCoreDataArrayStorageItem(
+            let item = SabyCoreDataArrayStorageItemVersion1(
                 entity: self.entity,
                 insertInto: context
             )
@@ -70,7 +72,7 @@ extension CoreDataArrayStorage {
             try context.executeDelete(request)
             
             for value in values {
-                let item = SabyCoreDataArrayStorageItem(
+                let item = SabyCoreDataArrayStorageItemVersion1(
                     entity: self.entity,
                     insertInto: context
                 )
@@ -195,7 +197,7 @@ extension CoreDataArrayStorage {
     }
     
     fileprivate func createSizeRequest() -> NSFetchRequest<NSDictionary> {
-        let byteExpression = NSExpression(forKeyPath: \SabyCoreDataArrayStorageItem.byte)
+        let byteExpression = NSExpression(forKeyPath: \SabyCoreDataArrayStorageItemVersion1.byte)
         let sumExpression = NSExpression(forFunction: "sum:", arguments: [byteExpression])
         let sumDescription = NSExpressionDescription()
         sumDescription.expression = sumExpression
@@ -335,7 +337,7 @@ extension NSManagedObjectContext {
 extension NSManagedObjectContext {
     static func load(
         directoryURL: URL,
-        fileName: String,
+        storageName: String,
         migration: @escaping () -> Promise<Void, Error>,
         model: NSManagedObjectModel
     ) -> Promise<NSManagedObjectContext, Error> {
@@ -353,10 +355,10 @@ extension NSManagedObjectContext {
                 )
             }
             
-            let url = directoryURL.appendingPathComponent(fileName)
+            let url = directoryURL.appendingPathComponent(storageName).appendingPathExtension(STORAGE_VERSION)
 
             let container = NSPersistentContainer(
-                name: fileName,
+                name: storageName,
                 managedObjectModel: model
             )
             let storeDescription = NSPersistentStoreDescription(url: url)
@@ -380,8 +382,9 @@ public enum CoreDataArrayStorageError: Error {
     case requestResultNotFound
 }
 
-@objc(SabyCoreDataArrayStorageItem)
-final class SabyCoreDataArrayStorageItem: NSManagedObject {
+// Must not be modified. Write ItemVersion2 and write migration logic instead.
+@objc(SabyCoreDataArrayStorageItemVersion1)
+final class SabyCoreDataArrayStorageItemVersion1: NSManagedObject {
     @NSManaged var key: UUID
     @NSManaged var data: Data
     @NSManaged var date: Date
@@ -426,8 +429,8 @@ final class SabyCoreDataArrayStorageSchema {
         }
         
         let itemEntity = NSEntityDescription()
-        itemEntity.name = String(describing: SabyCoreDataArrayStorageItem.self)
-        itemEntity.managedObjectClassName = String(describing: SabyCoreDataArrayStorageItem.self)
+        itemEntity.name = String(describing: SabyCoreDataArrayStorageItemVersion1.self)
+        itemEntity.managedObjectClassName = String(describing: SabyCoreDataArrayStorageItemVersion1.self)
         itemEntity.properties = [
             keyAttribute,
             dataAttribute,

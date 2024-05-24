@@ -9,6 +9,8 @@ import Foundation
 import SabyConcurrency
 import SabyJSON
 
+private let STORAGE_VERSION = "Version1"
+
 public final class FileDictionaryStorage<
     Key: Hashable & Codable,
     Value: Codable
@@ -22,11 +24,11 @@ public final class FileDictionaryStorage<
     
     let encoder = JSONEncoder.acceptingNonConfirmingFloat()
 
-    public init(directoryURL: URL, fileName: String, migration: @escaping () -> Promise<Void, Error>) {
+    public init(directoryURL: URL, storageName: String, migration: @escaping () -> Promise<Void, Error>) {
         self.contextLoad = {
             Context.load(
                 directoryURL: directoryURL,
-                fileName: fileName,
+                storageName: storageName,
                 migration: migration
             )
         }
@@ -107,16 +109,16 @@ extension FileDictionaryStorage {
 
 struct FileDictionaryStorageContext<Key: Hashable & Codable, Value: Codable> {
     let url: URL
-    let values: Atomic<[Key: Value]>
+    let values: Atomic<FileDictionaryStorageItemVersion1<Key, Value>>
     
-    private init(url: URL, values: Atomic<[Key: Value]>) {
+    private init(url: URL, values: Atomic<FileDictionaryStorageItemVersion1<Key, Value>>) {
         self.url = url
         self.values = values
     }
     
     static func load(
         directoryURL: URL,
-        fileName: String,
+        storageName: String,
         migration: @escaping () -> Promise<Void, Error>
     ) -> Promise<FileDictionaryStorageContext, Error> {
         migration().then {
@@ -134,7 +136,7 @@ struct FileDictionaryStorageContext<Key: Hashable & Codable, Value: Codable> {
                 )
             }
             
-            let url = directoryURL.appendingPathComponent(fileName)
+            let url = directoryURL.appendingPathComponent(storageName).appendingPathExtension(STORAGE_VERSION)
             if !fileManager.fileExists(atPath: url.path) {
                 return FileDictionaryStorageContext(
                     url: url,
@@ -145,7 +147,7 @@ struct FileDictionaryStorageContext<Key: Hashable & Codable, Value: Codable> {
             guard
                 let data = try? Data(contentsOf: url),
                 let values = try? decoder.decode(
-                    [Key: Value].self,
+                    FileDictionaryStorageItemVersion1<Key, Value>.self,
                     from: data
                 )
             else {
@@ -162,3 +164,6 @@ struct FileDictionaryStorageContext<Key: Hashable & Codable, Value: Codable> {
         }
     }
 }
+
+// Must not be modified. Write ItemVersion2 and write migration logic instead.
+typealias FileDictionaryStorageItemVersion1<Key: Hashable & Codable, Value: Codable> = [Key: Value]
