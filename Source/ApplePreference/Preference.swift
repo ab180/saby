@@ -8,17 +8,17 @@
 import Foundation
 
 public protocol Preference {
-    /// ``init(directoryURL:fileName:migration:)``
+    /// ``init(directoryURL:storageName:migration:)``
     /// execute migration and then create or load preference from
-    /// `{Directory url}/{File name}` path.
-    init(directoryURL: URL, fileName: String, migration: @escaping () throws -> Void)
+    /// `{Directory url}/{Storage name}/{Version name}` path.
+    init(directoryURL: URL, storageName: String, migration: @escaping () throws -> Void)
 }
 
 extension Preference {
-    /// ``init(directoryName:fileName:)`` create or load storage from
-    /// `{Directory url}/{File name}` path.
-    public init(directoryURL: URL, fileName: String) {
-        self.init(directoryURL: directoryURL, fileName: fileName, migration: {})
+    /// ``init(directoryName:storageName:)`` create or load storage from
+    /// `{Directory url}/{Storage name}/{Version name}` path.
+    public init(directoryURL: URL, storageName: String) {
+        self.init(directoryURL: directoryURL, storageName: storageName, migration: {})
     }
 }
 

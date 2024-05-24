@@ -10,6 +10,8 @@ import SabySafe
 import SabyConcurrency
 import SabyJSON
 
+private let STORAGE_VERSION = "Version1"
+
 public final class FileValuePreference<Value: Codable>: ValuePreference {
     typealias Context = FileValuePreferenceContext
     
@@ -20,11 +22,11 @@ public final class FileValuePreference<Value: Codable>: ValuePreference {
     
     let encoder = JSONEncoder.acceptingNonConfirmingFloat()
 
-    public init(directoryURL: URL, fileName: String, migration: @escaping () throws -> Void) {
+    public init(directoryURL: URL, storageName: String, migration: @escaping () throws -> Void) {
         self.contextLoad = {
             try Context.load(
                 directoryURL: directoryURL,
-                fileName: fileName,
+                storageName: storageName,
                 migration: migration
             )
         }
@@ -80,16 +82,16 @@ extension FileValuePreference {
 
 struct FileValuePreferenceContext<Value: Codable> {
     let url: URL
-    let value: Atomic<Value?>
+    let value: Atomic<FileValuePreferenceItemVersion1<Value>?>
     
-    private init(url: URL, value: Atomic<Value?>) {
+    private init(url: URL, value: Atomic<FileValuePreferenceItemVersion1<Value>?>) {
         self.url = url
         self.value = value
     }
     
     static func load(
         directoryURL: URL,
-        fileName: String,
+        storageName: String,
         migration: () throws -> Void
     ) throws -> FileValuePreferenceContext {
         try migration()
@@ -108,7 +110,7 @@ struct FileValuePreferenceContext<Value: Codable> {
             )
         }
 
-        let url = directoryURL.appendingPathComponent(fileName)
+        let url = directoryURL.appendingPathComponent(storageName).appendingPathExtension(STORAGE_VERSION)
         if !fileManager.fileExists(atPath: url.path) {
             return FileValuePreferenceContext(
                 url: url,
@@ -119,7 +121,7 @@ struct FileValuePreferenceContext<Value: Codable> {
         guard
             let data = try? Data(contentsOf: url),
             let value = try? decoder.decode(
-                Value?.self,
+                FileValuePreferenceItemVersion1<Value>?.self,
                 from: data
             )
         else {
@@ -135,3 +137,6 @@ struct FileValuePreferenceContext<Value: Codable> {
         )
     }
 }
+
+// Must not be modified. Write new ItemVersion and write migration logic instead.
+typealias FileValuePreferenceItemVersion1<Value: Codable> = Value

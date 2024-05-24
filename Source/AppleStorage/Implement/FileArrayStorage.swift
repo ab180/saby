@@ -256,7 +256,7 @@ public enum FileArrayStorageError: Error {
     case libraryDirectoryNotFound
 }
 
-// Must not be modified. Write ItemVersion2 and write migration logic instead.
+// Must not be modified. Write new ItemVersion and write migration logic instead.
 struct FileArrayStorageItemVersion1<Value: Codable>: Codable {
     let key: UUID
     let value: Value

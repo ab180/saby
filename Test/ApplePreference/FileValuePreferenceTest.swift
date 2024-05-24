@@ -17,7 +17,7 @@ final class FileValuePreferenceTest: XCTestCase {
     fileprivate let testCount = 500
     fileprivate var preference: FileValuePreference<DummyItem>!
     fileprivate let directoryURL = FileManager.default.temporaryDirectory
-    fileprivate var fileName: String!
+    fileprivate var storageName: String!
     
     fileprivate var testObjects: [DummyItem] {
         var result: [DummyItem] = []
@@ -29,15 +29,15 @@ final class FileValuePreferenceTest: XCTestCase {
     }
     
     override func setUpWithError() throws {
-        fileName = UUID().uuidString
+        storageName = UUID().uuidString
         preference = FileValuePreference<DummyItem>(
             directoryURL: directoryURL,
-            fileName: fileName
+            storageName: storageName
         )
     }
     
     override func tearDownWithError() throws {
-        let fileURL = directoryURL.appendingPathComponent(fileName)
+        let fileURL = directoryURL.appendingPathComponent(storageName)
         
         if FileManager.default.fileExists(atPath: fileURL.absoluteString) {
             try FileManager.default.removeItem(at: fileURL)

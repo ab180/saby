@@ -382,7 +382,7 @@ public enum CoreDataArrayStorageError: Error {
     case requestResultNotFound
 }
 
-// Must not be modified. Write ItemVersion2 and write migration logic instead.
+// Must not be modified. Write new ItemVersion and write migration logic instead.
 @objc(SabyCoreDataArrayStorageItemVersion1)
 final class SabyCoreDataArrayStorageItemVersion1: NSManagedObject {
     @NSManaged var key: UUID
