@@ -69,6 +69,46 @@ final class JSONConvertTest: XCTestCase {
         XCTAssertEqual(json, decoded)
     }
     
+    func test__from_json_serialization() {
+        let json = JSON.from([
+            "a": "a",
+            "b": 1,
+            "c": [
+                "a": "a",
+                "b": 1,
+                "c": true
+            ],
+            "d": [
+                "a",
+                1,
+                true
+            ],
+            "e": nil
+        ])
+        let string = """
+        {
+            "a": "a",
+            "b": 1,
+            "c": {
+                "a": "a",
+                "b": 1,
+                "c": true
+            },
+            "d": [
+                "a",
+                1,
+                true
+            ],
+            "e": null
+        }
+        """
+        
+        XCTAssertEqual(
+            try! JSON.from(unsafe: JSONSerialization.jsonObject(with: string.data(using: .utf8)!)),
+            json
+        )
+    }
+    
     func test__from_encodable() {
         let json = JSON.from([
             "a": "123",
@@ -151,5 +191,12 @@ final class JSONConvertTest: XCTestCase {
         XCTAssertEqual(JSON.from(unsafe: ["1",1,JSONEncoder()]), JSON.from(["1",1]))
         XCTAssertEqual(JSON.from(unsafe: [nil,1,JSONEncoder()]), JSON.from([nil,1]))
         XCTAssertEqual(JSON.from(unsafe: [[JSONEncoder(),nil],[1,2,3]]), JSON.from([[nil],[1,2,3]]))
+    }
+    
+    func test__from_nsnumber() {
+        XCTAssertEqual(try! JSON.from(unsafe: NSNumber(integerLiteral: 1)), JSON.from(1))
+        XCTAssertEqual(try! JSON.from(unsafe: NSNumber(floatLiteral: 1.0)), JSON.from(1.0))
+        XCTAssertEqual(try! JSON.from(unsafe: NSNumber(booleanLiteral: true)), JSON.from(true))
+        XCTAssertEqual(try! JSON.from(unsafe: NSNumber(booleanLiteral: false)), JSON.from(false))
     }
 }

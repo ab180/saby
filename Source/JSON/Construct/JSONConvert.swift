@@ -68,7 +68,14 @@ extension JSON {
 
 extension JSON {
     public static func from(unsafe value: Any?) throws -> JSON {
-        if let value = value as? Double, !value.isNaN, !value.isInfinite {
+        if
+            let value = value as? NSNumber,
+            value === kCFBooleanTrue || value === kCFBooleanFalse,
+            let value = value as? Bool
+        {
+            return .boolean(value)
+        }
+        else if let value = value as? Double, !value.isNaN, !value.isInfinite {
             return .number(value)
         }
         else if let value = value as? Float, !value.isNaN, !value.isInfinite {
