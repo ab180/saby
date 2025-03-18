@@ -343,6 +343,19 @@ extension Promise {
     }
 }
 
+extension Promise where Failure == Error {
+    public static func tryResolved(
+        on queue: DispatchQueue = .global(),
+        _ value: Value
+    ) -> Promise<Value, Failure> {
+        let promise = Promise(queue: queue)
+        promise.state = Atomic(.resolved(value))
+        promise.pendingGroup.leave()
+        
+        return promise
+    }
+}
+
 extension Promise {
     public static func pending(
         on queue: DispatchQueue = .global(),
