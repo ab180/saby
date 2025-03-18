@@ -39,7 +39,7 @@ final class PromiseAllTest: XCTestCase {
     
     func test__all_2_reject_1() {
         let promise =
-        Promise.all(
+        Promise.tryAll(
             Promise.async { () -> Int in
                 throw PromiseTest.SampleError.one
             },
@@ -53,7 +53,7 @@ final class PromiseAllTest: XCTestCase {
     
     func test__all_2_cancel_1() {
         let promise =
-        Promise.all(
+        Promise.tryAll(
             Promise<Int, Error>.canceled(),
             Promise.async {
                 true
@@ -82,7 +82,7 @@ final class PromiseAllTest: XCTestCase {
     
     func test__all_3_reject_1() {
         let promise =
-        Promise.all(
+        Promise.tryAll(
             Promise.async { () -> Int in
                 throw PromiseTest.SampleError.one
             },
@@ -99,7 +99,7 @@ final class PromiseAllTest: XCTestCase {
     
     func test__all_3_cancel_1() {
         let promise =
-        Promise.all(
+        Promise.tryAll(
             Promise<Int, Error>.canceled(),
             Promise.async {
                 true
@@ -134,7 +134,7 @@ final class PromiseAllTest: XCTestCase {
     
     func test__all_4_reject_1() {
         let promise =
-        Promise.all(
+        Promise.tryAll(
             Promise.async { () -> Int in
                 throw PromiseTest.SampleError.one
             },
@@ -154,7 +154,7 @@ final class PromiseAllTest: XCTestCase {
     
     func test__all_4_cancel_1() {
         let promise =
-        Promise.all(
+        Promise.tryAll(
             Promise<Int, Error>.canceled(),
             Promise.async {
                 true
@@ -195,7 +195,7 @@ final class PromiseAllTest: XCTestCase {
     
     func test__all_5_reject_1() {
         let promise =
-        Promise.all(
+        Promise.tryAll(
             Promise.async { () -> Int in
                 throw PromiseTest.SampleError.one
             },
@@ -218,7 +218,7 @@ final class PromiseAllTest: XCTestCase {
     
     func test__all_5_cancel_1() {
         let promise =
-        Promise.all(
+        Promise.tryAll(
             Promise<Int, Error>.canceled(),
             Promise.async {
                 true
@@ -288,7 +288,7 @@ final class PromiseAllTest: XCTestCase {
     
     func test__all_6_reject_1() {
         let promise =
-        Promise.all(
+        Promise.tryAll(
             Promise.async { () -> Int in
                 throw PromiseTest.SampleError.one
             },
@@ -314,7 +314,7 @@ final class PromiseAllTest: XCTestCase {
     
     func test__all_6_cancel_1() {
         let promise =
-        Promise.all(
+        Promise.tryAll(
             Promise<Int, Error>.canceled(),
             Promise.async {
                 true

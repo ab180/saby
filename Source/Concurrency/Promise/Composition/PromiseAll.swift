@@ -46,21 +46,49 @@ extension Promise where
         return promiseReturn
     }
     
-    public static func all<each PromiseValue, each PromiseFailure>(
+    public static func all<each PromiseValue>(
+        on queue: DispatchQueue = .global(),
+        _ promises: repeat Promise<each PromiseValue, Never>
+    ) -> Promise<(repeat each PromiseValue), Never> {
+        let promiseReturn = Promise<(repeat each PromiseValue), Never>(queue: queue)
+        
+        let resolve = {
+            let captures = (repeat (each promises).state.capture({ $0 }).resolved)
+            
+            for capture in repeat each captures {
+                guard capture != nil else { return }
+            }
+            
+            let resolved = (repeat (each captures)!)
+            promiseReturn.resolve(resolved)
+        }
+        
+        for promise in repeat each promises {
+            promise.subscribe(
+                queue: queue,
+                onResolved: { _ in resolve() },
+                onRejected: { _ in },
+                onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
+            )
+        }
+        
+        return promiseReturn
+    }
+    
+    public static func tryAll<each PromiseValue, each PromiseFailure>(
         on queue: DispatchQueue = .global(),
         _ promises: repeat Promise<each PromiseValue, each PromiseFailure>
     ) -> Promise<(repeat each PromiseValue), Error> {
         let promiseReturn = Promise<(repeat each PromiseValue), Error>(queue: queue)
         
         let resolve = {
-            let captures = (repeat (each promises).state.capture({ $0 }))
+            let captures = (repeat (each promises).state.capture({ $0 }).resolved)
             
             for capture in repeat each captures {
-                guard case .resolved = capture
-                else { return }
+                guard capture != nil else { return }
             }
             
-            let resolved = (repeat (each captures).resolved!)
+            let resolved = (repeat (each captures)!)
             promiseReturn.resolve(resolved)
         }
         
