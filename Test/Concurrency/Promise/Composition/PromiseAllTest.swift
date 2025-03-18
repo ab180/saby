@@ -259,4 +259,106 @@ final class PromiseAllTest: XCTestCase {
         
         PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
+    
+    func test__all_6() {
+        let promise =
+        Promise.all(
+            Promise.async {
+                10
+            },
+            Promise.async {
+                true
+            },
+            Promise.async {
+                "10"
+            },
+            Promise.async {
+                10
+            },
+            Promise.async {
+                true
+            },
+            Promise.async {
+                "10"
+            }
+        )
+        
+        PromiseTest.expect(promise: promise, state: .resolved({$0 == (10, true, "10", 10, true, "10")}), timeout: .seconds(1))
+    }
+    
+    func test__all_6_reject_1() {
+        let promise =
+        Promise.all(
+            Promise.async { () -> Int in
+                throw PromiseTest.SampleError.one
+            },
+            Promise.async {
+                true
+            },
+            Promise.async {
+                "10"
+            },
+            Promise.async {
+                10
+            },
+            Promise.async {
+                true
+            },
+            Promise.async {
+                "10"
+            }
+        )
+        
+        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+    }
+    
+    func test__all_6_cancel_1() {
+        let promise =
+        Promise.all(
+            Promise<Int, Error>.canceled(),
+            Promise.async {
+                true
+            },
+            Promise.async {
+                "10"
+            },
+            Promise.async {
+                10
+            },
+            Promise.async {
+                true
+            },
+            Promise.async {
+                "10"
+            }
+        )
+        
+        PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
+    }
+    
+    func test__all_same_6_reject_1() {
+        let promise =
+        Promise.all([
+            Promise.async { () -> Int in
+                throw PromiseTest.SampleError.one
+            },
+            Promise.async {
+                20
+            },
+            Promise.async {
+                30
+            },
+            Promise.async {
+                40
+            },
+            Promise.async {
+                50
+            },
+            Promise.async {
+                60
+            }
+        ])
+        
+        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+    }
 }
