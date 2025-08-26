@@ -1,0 +1,36 @@
+name: Create Release
+
+on:
+  pull_request:
+    types: [opened, labeled, synchronize]
+    branches:
+      - main
+
+jobs:
+  check-label:
+    runs-on: ubuntu-latest
+    outputs:
+      has_label: ${{ steps.label-check.outputs.has_label }}
+    steps:
+      - name: Check for 'create' label
+        id: label-check
+        run: |
+          labels=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels" \
+            | jq -r '.[].name')
+          if echo "$labels" | grep -q 'create'; then
+            echo "Label 'create' found."
+            echo "::set-output name=has_label::true"
+          else
+            echo "Label 'create' not found."
+            echo "::set-output name=has_label::false"
+          fi
+
+  create_release:
+    needs: check-label
+    if: needs.check-label.outputs.has_label == 'true'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Create XCFramework
+        uses: unsignedapps/swift-create-xcframework@v2
