@@ -383,7 +383,6 @@ public enum CoreDataArrayStorageError: Error {
 }
 
 // Must not be modified. Write new ItemVersion and write migration logic instead.
-@objc(SabyCoreDataArrayStorageItemVersion1)
 final class SabyCoreDataArrayStorageItemVersion1: NSManagedObject {
     @NSManaged var key: UUID
     @NSManaged var data: Data
