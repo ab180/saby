@@ -18,20 +18,25 @@ extension LogService {
         _ message: String,
         _ printBlock: (String) -> Void
     ) {
-        if setting.isPaginateLogEnabled, message.count > LoggerConstant.paginateSize {
-            let logs = LoggerConstant.paginatedLog(message)
-            let id = arc4random() % 1000000000
-            
-            logs.enumerated().forEach { (index, log) in
-                printBlock(
-                    "\(log)"
-                    + "\nlog={page=\(index + 1)/\(logs.count), id=\(id)}"
-                )
-            }
+        guard setting.isPaginateLogEnabled, message.count > LoggerConstant.paginateSize
+        else {
+            printBlock(message)
             return
         }
         
-        printBlock(message)
+        let logs = LoggerConstant.paginatedLog(message)
+        let id = arc4random() % 1000000000
+        
+        logs
+            .enumerated()
+            .map { (index, log) in
+                let header = setting.isLegacyLogEnabled
+                    ? "[\(setting.subsystem)][\(setting.category)]\n"
+                    : ""
+                let footer = "\nlog={page=\(index + 1)/\(logs.count), id=\(id)}"
+                return header + log + footer
+            }
+            .forEach(printBlock)
     }
 }
 

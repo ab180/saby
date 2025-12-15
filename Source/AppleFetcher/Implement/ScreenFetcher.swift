@@ -16,20 +16,22 @@ public final class ScreenFetcher: Fetcher {
     public typealias Value = Promise<Screen, Error>
     
     public init() {}
-
+    
     public func fetch() -> Promise<Screen, Error> {
-        return Promise.all(
+        return Promise.tryAll(
             Promise<CGSize, Error>.resolved(fetchSize()),
             Promise<CGFloat, Error>.resolved(fetchScale()),
             fetchOrientation()
         )
         .then { size, scale, orientation in
-            Screen(
+            let screen = Screen(
                 width: size.width,
                 height: size.height,
                 scale: scale,
                 orientation: orientation.isLandscape ? "landscape": "portrait"
             )
+            
+            return screen
         }
     }
 }

@@ -14,6 +14,9 @@ public struct LoggerSetting {
     /// A variable indicating logger paginate log or not. Because of `os_log`'s 1024 length limit.
     public var isPaginateLogEnabled: Bool = false
     
+    /// A variable indicating logger use legacy log system or not.
+    public var isLegacyLogEnabled: Bool = false
+    
     /// A variable used for displaying `subsystem` value in console
     public let subsystem: String
     

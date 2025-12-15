@@ -179,11 +179,11 @@ package
             path: "Source/AppleCrypto"),
         .target(
             name: "SabyAppleStorage",
-            dependencies: ["SabyConcurrency", "SabySize", "SabyJSON"],
+            dependencies: ["SabyConcurrency", "SabySize", "SabyJSON", "SabySafe"],
             path: "Source/AppleStorage"),
         .target(
             name: "SabyApplePreference",
-            dependencies: ["SabyConcurrency", "SabyJSON"],
+            dependencies: ["SabyConcurrency", "SabyJSON", "SabySafe"],
             path: "Source/ApplePreference"),
         .target(
             name: "SabyAppleTracker",
