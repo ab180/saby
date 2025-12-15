@@ -18,9 +18,13 @@ extension LogService {
         _ message: String,
         _ printBlock: (String) -> Void
     ) {
+        let header = setting.isLegacyLogEnabled
+            ? "[\(setting.subsystem)][\(setting.category)]\n"
+            : ""
+        
         guard setting.isPaginateLogEnabled, message.count > LoggerConstant.paginateSize
         else {
-            printBlock(message)
+            printBlock(header + message)
             return
         }
         
@@ -30,9 +34,6 @@ extension LogService {
         logs
             .enumerated()
             .map { (index, log) in
-                let header = setting.isLegacyLogEnabled
-                    ? "[\(setting.subsystem)][\(setting.category)]\n"
-                    : ""
                 let footer = "\nlog={page=\(index + 1)/\(logs.count), id=\(id)}"
                 return header + log + footer
             }
