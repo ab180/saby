@@ -81,7 +81,7 @@ var package = Package(
             path: "Source/TestFake"),
         .target(
             name: "SabyNetwork",
-            dependencies: ["SabyConcurrency", "SabyJSON", "SabySafe", "SabyTime"],
+            dependencies: ["SabyConcurrency", "SabyJSON", "SabyTime"],
             path: "Source/Network"),
         .target(
             name: "SabyNumeric",
@@ -179,11 +179,11 @@ package
             path: "Source/AppleCrypto"),
         .target(
             name: "SabyAppleStorage",
-            dependencies: ["SabyConcurrency", "SabySize", "SabyJSON", "SabySafe"],
+            dependencies: ["SabyConcurrency", "SabySize", "SabyJSON"],
             path: "Source/AppleStorage"),
         .target(
             name: "SabyApplePreference",
-            dependencies: ["SabyConcurrency", "SabyJSON", "SabySafe"],
+            dependencies: ["SabyConcurrency", "SabyJSON"],
             path: "Source/ApplePreference"),
         .target(
             name: "SabyAppleTracker",
