@@ -19,7 +19,7 @@ extension LogService {
         _ printBlock: (String) -> Void
     ) {
         let header = setting.isLegacyLogEnabled
-            ? "[\(setting.subsystem)][\(setting.category)]\n"
+            ? "[\(setting.subsystem)]"
             : ""
         
         guard setting.isPaginateLogEnabled, message.count > LoggerConstant.paginateSize
