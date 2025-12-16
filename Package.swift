@@ -3,6 +3,12 @@ import PackageDescription
 
 var package = Package(
     name: "Saby",
+    platforms: [
+        .iOS(.v12),
+        .macOS(.v10_15),
+        .tvOS(.v13),
+        .watchOS(.v6),
+    ],
     products: [
         .library(
             name: "SabyConcurrency",
