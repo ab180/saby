@@ -30,8 +30,8 @@ public final class NetworkFetcher: Fetcher {
 }
 
 public struct InterfaceType: Hashable {
-    let name: String
-    let family: sa_family_t
+    public let name: String
+    public let family: sa_family_t
 }
 
 public struct IP {
