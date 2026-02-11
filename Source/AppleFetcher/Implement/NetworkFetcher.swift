@@ -18,35 +18,41 @@ public final class NetworkFetcher: Fetcher {
     public init() {}
 
     public func fetch() -> Network {
-        let ip = fetchIP()
+        let ipList = fetchIPList()
         let type = fetchType()
         
         return Network(
-            ip: ip,
+            ip: ipList,
             isCellular: type == .cellular,
             isWiFi: type == .wifi
         )
     }
 }
 
+public struct InterfaceType: Hashable {
+    let name: String
+    let family: sa_family_t
+}
+
+public struct IP {
+    public let ip: String
+    public let interfaceType: InterfaceType
+}
+
 public struct Network {
-    public let ip: String?
+    public let ip: [IP]
     public let isCellular: Bool
     public let isWiFi: Bool
 }
 
 extension NetworkFetcher {
-    private func fetchIP() -> String? {
-        struct InterfaceType: Hashable {
-            let name: String
-            let family: sa_family_t
-        }
+    private func fetchIPList() -> [IP] {
         
         var ipStorage: [InterfaceType: String] = [:]
         
         var interfacesPointer: UnsafeMutablePointer<ifaddrs>?
-        guard getifaddrs(&interfacesPointer) == 0 else { return nil }
-        guard let interfaceFirstPointer = interfacesPointer else { return nil }
+        guard getifaddrs(&interfacesPointer) == 0 else { return [] }
+        guard let interfaceFirstPointer = interfacesPointer else { return [] }
         
         for interfacePointer in sequence(
             first: interfaceFirstPointer,
@@ -86,13 +92,11 @@ extension NetworkFetcher {
             InterfaceType(name: "utun0", family: sa_family_t(AF_INET6))
         ]
         
-        for search in searchs {
-            if let ip = ipStorage[search] {
-                return ip
+        return ipStorage
+            .filter { searchs.contains($0.key) }
+            .map { key, value in
+                IP(ip: value, interfaceType: key)
             }
-        }
-        
-        return nil
     }
     
     private func fetchType() -> NetworkType {
