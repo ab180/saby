@@ -46,6 +46,7 @@ extension Promise where
         return promiseReturn
     }
     
+    @_documentation(visibility: internal)
     public static func all<each PromiseValue>(
         on queue: DispatchQueue = .global(),
         _ promises: repeat Promise<each PromiseValue, Never>
@@ -75,6 +76,7 @@ extension Promise where
         return promiseReturn
     }
     
+    @_documentation(visibility: internal)
     public static func tryAll<each PromiseValue, each PromiseFailure>(
         on queue: DispatchQueue = .global(),
         _ promises: repeat Promise<each PromiseValue, each PromiseFailure>
