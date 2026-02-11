@@ -30,12 +30,12 @@ public final class NetworkFetcher: Fetcher {
 }
 
 public struct InterfaceType: Hashable {
-    let name: String
-    let family: sa_family_t
+    public let name: String
+    public let family: sa_family_t
 }
 
 public struct IP {
-    public let ip: String
+    public let address: String
     public let interfaceType: InterfaceType
 }
 
@@ -95,7 +95,7 @@ extension NetworkFetcher {
         return ipStorage
             .filter { searchs.contains($0.key) }
             .map { key, value in
-                IP(ip: value, interfaceType: key)
+                IP(address: value, interfaceType: key)
             }
     }
     
