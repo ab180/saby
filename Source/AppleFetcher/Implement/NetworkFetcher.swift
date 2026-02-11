@@ -22,7 +22,7 @@ public final class NetworkFetcher: Fetcher {
         let type = fetchType()
         
         return Network(
-            ip: ipList,
+            ipList: ipList,
             isCellular: type == .cellular,
             isWiFi: type == .wifi
         )
@@ -40,7 +40,7 @@ public struct IP {
 }
 
 public struct Network {
-    public let ip: [IP]
+    public let ipList: [IP]
     public let isCellular: Bool
     public let isWiFi: Bool
 }
