@@ -72,6 +72,21 @@ extension FileDictionaryStorage {
             }
         }
     }
+    
+    public func get(limit: Limit) -> Promise<[Value], Error> {
+        execute { context in
+            context.values.capture { values in
+                let array = Array(values.values)
+                switch limit {
+                case .unlimited:
+                    return array
+                case .count(let limit):
+                    return Array(array.prefix(limit))
+                }
+            }
+        }
+    }
+
 
     public func save() -> Promise<Void, Error> {
         execute { context in
@@ -167,3 +182,4 @@ struct FileDictionaryStorageContext<Key: Hashable & Codable, Value: Codable> {
 
 // Must not be modified. Write new ItemVersion and write migration logic instead.
 typealias FileDictionaryStorageItemVersion1<Key: Hashable & Codable, Value: Codable> = [Key: Value]
+
