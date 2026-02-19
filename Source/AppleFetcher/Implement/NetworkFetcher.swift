@@ -31,7 +31,14 @@ public final class NetworkFetcher: Fetcher {
 
 public struct InterfaceType: Hashable {
     public let name: String
-    public let family: sa_family_t
+    public let protocolVersion: ProtocolVersion
+}
+
+extension InterfaceType {
+    public enum ProtocolVersion {
+        case v4
+        case v6
+    }
 }
 
 public struct IP {
@@ -60,9 +67,22 @@ extension NetworkFetcher {
         ) {
             let interface = interfacePointer.pointee
             
+            let family = interface.ifa_addr.pointee.sa_family
+            guard let protocolVersion = {
+                switch Int32(family) {
+                case AF_INET:
+                    return InterfaceType.ProtocolVersion.v4
+                case AF_INET6:
+                    return InterfaceType.ProtocolVersion.v6
+                default:
+                    return nil
+                }
+            }()
+            else { continue }
+            
             let interfaceType = InterfaceType(
                 name: String(cString: interface.ifa_name),
-                family: interface.ifa_addr.pointee.sa_family
+                protocolVersion: protocolVersion
             )
             let ip = { () -> String in
                 var buffer = [CChar](repeating: 0, count: Int(NI_MAXHOST))
@@ -84,12 +104,12 @@ extension NetworkFetcher {
         freeifaddrs(interfacesPointer)
         
         let searchs = [
-            InterfaceType(name: "en0", family: sa_family_t(AF_INET)),
-            InterfaceType(name: "en0", family: sa_family_t(AF_INET6)),
-            InterfaceType(name: "pdp_ip0", family: sa_family_t(AF_INET)),
-            InterfaceType(name: "pdp_ip0", family: sa_family_t(AF_INET6)),
-            InterfaceType(name: "utun0", family: sa_family_t(AF_INET)),
-            InterfaceType(name: "utun0", family: sa_family_t(AF_INET6))
+            InterfaceType(name: "en0", protocolVersion: .v4),
+            InterfaceType(name: "en0", protocolVersion: .v6),
+            InterfaceType(name: "pdp_ip0", protocolVersion: .v4),
+            InterfaceType(name: "pdp_ip0", protocolVersion: .v6),
+            InterfaceType(name: "utun0", protocolVersion: .v4),
+            InterfaceType(name: "utun0", protocolVersion: .v6)
         ]
         
         return ipStorage
