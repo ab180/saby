@@ -29,21 +29,17 @@ public final class NetworkFetcher: Fetcher {
     }
 }
 
-public struct InterfaceType: Hashable {
-    public let name: String
-    public let protocolVersion: ProtocolVersion
+public struct IP {
+    public let address: String
+    public let interface: String
+    public let version: IP.Version
 }
 
-extension InterfaceType {
-    public enum ProtocolVersion {
+extension IP {
+    public enum Version {
         case v4
         case v6
     }
-}
-
-public struct IP {
-    public let address: String
-    public let interfaceType: InterfaceType
 }
 
 public struct Network {
@@ -54,8 +50,7 @@ public struct Network {
 
 extension NetworkFetcher {
     private func fetchIPList() -> [IP] {
-        
-        var ipStorage: [InterfaceType: String] = [:]
+        var ipStorage: [String: (IP.Version, String)] = [:]
         
         var interfacesPointer: UnsafeMutablePointer<ifaddrs>?
         guard getifaddrs(&interfacesPointer) == 0 else { return [] }
@@ -71,19 +66,16 @@ extension NetworkFetcher {
             guard let protocolVersion = {
                 switch Int32(family) {
                 case AF_INET:
-                    return InterfaceType.ProtocolVersion.v4
+                    return IP.Version.v4
                 case AF_INET6:
-                    return InterfaceType.ProtocolVersion.v6
+                    return IP.Version.v6
                 default:
                     return nil
                 }
             }()
             else { continue }
             
-            let interfaceType = InterfaceType(
-                name: String(cString: interface.ifa_name),
-                protocolVersion: protocolVersion
-            )
+            let interfaceType = String(cString: interface.ifa_name)
             let ip = { () -> String in
                 var buffer = [CChar](repeating: 0, count: Int(NI_MAXHOST))
                 getnameinfo(
@@ -98,24 +90,24 @@ extension NetworkFetcher {
                 return String(cString: buffer)
             }()
             
-            ipStorage[interfaceType] = ip
+            ipStorage[interfaceType] = (protocolVersion, ip)
         }
         
         freeifaddrs(interfacesPointer)
         
-        let searchs = [
-            InterfaceType(name: "en0", protocolVersion: .v4),
-            InterfaceType(name: "en0", protocolVersion: .v6),
-            InterfaceType(name: "pdp_ip0", protocolVersion: .v4),
-            InterfaceType(name: "pdp_ip0", protocolVersion: .v6),
-            InterfaceType(name: "utun0", protocolVersion: .v4),
-            InterfaceType(name: "utun0", protocolVersion: .v6)
+        let searches = [
+            ("en0", IP.Version.v4),
+            ("en0", IP.Version.v6),
+            ("pdp_ip0", IP.Version.v4),
+            ("pdp_ip0", IP.Version.v6),
+            ("utun0", IP.Version.v4),
+            ("utun0", IP.Version.v6)
         ]
         
         return ipStorage
-            .filter { searchs.contains($0.key) }
+            .filter { searches.map(\.0).contains($0.key) }
             .map { key, value in
-                IP(address: value, interfaceType: key)
+                IP(address: value.1, interface: key, version: value.0)
             }
     }
     
