@@ -98,12 +98,10 @@ extension NetworkFetcher {
                 return String(cString: buffer)
             }()
             
-            guard let ip else{ continue }
+            guard let ip else { continue }
             
             ipList.append(IP(address: ip, interface: interfaceName, version: protocolVersion))
         }
-        
-        freeifaddrs(interfacesPointer)
         
         return ipList
     }
