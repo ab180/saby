@@ -50,7 +50,7 @@ public struct Network {
 
 extension NetworkFetcher {
     private func fetchIPList() -> [IP] {
-        var ipStorage: [String: (IP.Version, String)] = [:]
+        var ipStorage: [String: IP] = [:]
         
         var interfacesPointer: UnsafeMutablePointer<ifaddrs>?
         guard getifaddrs(&interfacesPointer) == 0 else { return [] }
@@ -75,7 +75,7 @@ extension NetworkFetcher {
             }()
             else { continue }
             
-            let interfaceType = String(cString: interface.ifa_name)
+            let interfaceName = String(cString: interface.ifa_name)
             let ip = { () -> String in
                 var buffer = [CChar](repeating: 0, count: Int(NI_MAXHOST))
                 getnameinfo(
@@ -90,25 +90,18 @@ extension NetworkFetcher {
                 return String(cString: buffer)
             }()
             
-            ipStorage[interfaceType] = (protocolVersion, ip)
+            ipStorage[interfaceName] = IP(address: ip, interface: interfaceName, version: protocolVersion)
         }
         
         freeifaddrs(interfacesPointer)
         
-        let searches = [
-            ("en0", IP.Version.v4),
-            ("en0", IP.Version.v6),
-            ("pdp_ip0", IP.Version.v4),
-            ("pdp_ip0", IP.Version.v6),
-            ("utun0", IP.Version.v4),
-            ("utun0", IP.Version.v6)
-        ]
+        let searches = ["en0", "pdp_ip0", "utun0"]
         
-        return ipStorage
-            .filter { searches.map(\.0).contains($0.key) }
-            .map { key, value in
-                IP(address: value.1, interface: key, version: value.0)
-            }
+        return Array(
+            ipStorage
+            .filter({ searches.contains($0.key) })
+            .values
+        )
     }
     
     private func fetchType() -> NetworkType {
