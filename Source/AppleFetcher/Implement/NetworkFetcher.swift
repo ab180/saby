@@ -53,8 +53,9 @@ extension NetworkFetcher {
         var ipList: [IP] = []
         
         var interfacesPointer: UnsafeMutablePointer<ifaddrs>?
-        defer { freeifaddrs(interfacesPointer) }
         guard getifaddrs(&interfacesPointer) == 0 else { return [] }
+        defer { freeifaddrs(interfacesPointer) }
+        
         guard let interfaceFirstPointer = interfacesPointer else { return [] }
         
         for interfacePointer in sequence(
