@@ -29,14 +29,17 @@ public final class NetworkFetcher: Fetcher {
     }
 }
 
-public struct InterfaceType: Hashable {
-    let name: String
-    let family: sa_family_t
+public struct IP {
+    public let address: String
+    public let interface: String
+    public let version: IP.Version
 }
 
-public struct IP {
-    public let ip: String
-    public let interfaceType: InterfaceType
+extension IP {
+    public enum Version {
+        case v4
+        case v6
+    }
 }
 
 public struct Network {
@@ -47,11 +50,12 @@ public struct Network {
 
 extension NetworkFetcher {
     private func fetchIPList() -> [IP] {
-        
-        var ipStorage: [InterfaceType: String] = [:]
+        var ipList: [IP] = []
         
         var interfacesPointer: UnsafeMutablePointer<ifaddrs>?
         guard getifaddrs(&interfacesPointer) == 0 else { return [] }
+        defer { freeifaddrs(interfacesPointer) }
+        
         guard let interfaceFirstPointer = interfacesPointer else { return [] }
         
         for interfacePointer in sequence(
@@ -60,13 +64,27 @@ extension NetworkFetcher {
         ) {
             let interface = interfacePointer.pointee
             
-            let interfaceType = InterfaceType(
-                name: String(cString: interface.ifa_name),
-                family: interface.ifa_addr.pointee.sa_family
-            )
-            let ip = { () -> String in
+            guard interface.ifa_addr != nil else { continue }
+            
+            let family = interface.ifa_addr.pointee.sa_family
+            guard let protocolVersion = {
+                switch Int32(family) {
+                case AF_INET:
+                    return IP.Version.v4
+                case AF_INET6:
+                    return IP.Version.v6
+                default:
+                    return nil
+                }
+            }()
+            else { continue }
+            
+            let interfaceName = String(cString: interface.ifa_name)
+            guard ["en0", "pdp_ip0", "utun0"].contains(interfaceName) else { continue }
+            
+            let ip = { () -> String? in
                 var buffer = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-                getnameinfo(
+                let result = getnameinfo(
                     interface.ifa_addr,
                     socklen_t(interface.ifa_addr.pointee.sa_len),
                     &buffer,
@@ -75,28 +93,18 @@ extension NetworkFetcher {
                     socklen_t(0),
                     NI_NUMERICHOST
                 )
+                
+                guard result == 0 else { return nil }
+                
                 return String(cString: buffer)
             }()
             
-            ipStorage[interfaceType] = ip
+            guard let ip else { continue }
+            
+            ipList.append(IP(address: ip, interface: interfaceName, version: protocolVersion))
         }
         
-        freeifaddrs(interfacesPointer)
-        
-        let searchs = [
-            InterfaceType(name: "en0", family: sa_family_t(AF_INET)),
-            InterfaceType(name: "en0", family: sa_family_t(AF_INET6)),
-            InterfaceType(name: "pdp_ip0", family: sa_family_t(AF_INET)),
-            InterfaceType(name: "pdp_ip0", family: sa_family_t(AF_INET6)),
-            InterfaceType(name: "utun0", family: sa_family_t(AF_INET)),
-            InterfaceType(name: "utun0", family: sa_family_t(AF_INET6))
-        ]
-        
-        return ipStorage
-            .filter { searchs.contains($0.key) }
-            .map { key, value in
-                IP(ip: value, interfaceType: key)
-            }
+        return ipList
     }
     
     private func fetchType() -> NetworkType {
