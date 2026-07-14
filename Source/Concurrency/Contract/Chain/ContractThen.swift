@@ -49,13 +49,17 @@ extension Contract {
         schedule: ContractSchedule = .async,
         _ block: @escaping (Value) throws -> Promise<Result, ResultFailure>
     ) -> Contract<Result, Error> {
+        let sharesExplicitQueue = queue != nil
         let queue = queue ?? self.queue
         
         let contract = Contract<Result, Error>(queue: self.queue)
         
         subscribe(
             queue: queue,
-            onResolved: schedule { value, finish in
+            onResolved: schedule.handler(
+                on: queue,
+                sharesExplicitQueue: sharesExplicitQueue
+            ) { value, finish in
                 do {
                     let promise = try block(value)
                     promise.subscribe(
@@ -124,13 +128,17 @@ extension Contract where Failure == Never {
         schedule: ContractSchedule = .async,
         _ block: @escaping (Value) -> Promise<Result, ResultFailure>
     ) -> Contract<Result, ResultFailure> {
+        let sharesExplicitQueue = queue != nil
         let queue = queue ?? self.queue
         
         let contract = Contract<Result, ResultFailure>(queue: self.queue)
         
         subscribe(
             queue: queue,
-            onResolved: schedule { value, finish in
+            onResolved: schedule.handler(
+                on: queue,
+                sharesExplicitQueue: sharesExplicitQueue
+            ) { value, finish in
                 let promise = block(value)
                 promise.subscribe(
                     queue: queue,

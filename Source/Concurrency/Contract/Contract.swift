@@ -36,11 +36,11 @@ extension Contract {
                 let subscribers = subscribers
                 
                 subscribers.forEach { subscriber in
-                    next.enter()
-                    current.notify(queue: subscriber.queue) {
-                        subscriber.onResolved(value)
-                        next.leave()
-                    }
+                    subscriber.onResolved.accept(
+                        value,
+                        after: current,
+                        tracking: next
+                    )
                 }
                 
                 executeGroup = next
@@ -56,11 +56,11 @@ extension Contract {
                 let subscribers = subscribers
                 
                 subscribers.forEach { subscriber in
-                    next.enter()
-                    current.notify(queue: subscriber.queue) {
-                        subscriber.onRejected(error)
-                        next.leave()
-                    }
+                    subscriber.onRejected.accept(
+                        error,
+                        after: current,
+                        tracking: next
+                    )
                 }
                 
                 executeGroup = next
@@ -87,14 +87,13 @@ extension Contract {
 
     func subscribe(
         queue: DispatchQueue,
-        onResolved: @escaping (Value) -> Void,
-        onRejected: @escaping (Failure) -> Void,
+        onResolved: ContractEventHandler<Value>,
+        onRejected: ContractEventHandler<Failure>,
         onCanceled: @escaping () -> Void
     ) {
         state.capture { state in
             if case .executing = state {
                 subscribers.append(ContractSubscriber(
-                    queue: queue,
                     onResolved: onResolved,
                     onRejected: onRejected
                 ))
@@ -109,6 +108,48 @@ extension Contract {
                 }
             }
         }
+    }
+
+    func subscribe(
+        queue: DispatchQueue,
+        onResolved: @escaping (Value) -> Void,
+        onRejected: @escaping (Failure) -> Void,
+        onCanceled: @escaping () -> Void
+    ) {
+        subscribe(
+            queue: queue,
+            onResolved: ContractEventHandler(on: queue, block: onResolved),
+            onRejected: ContractEventHandler(on: queue, block: onRejected),
+            onCanceled: onCanceled
+        )
+    }
+
+    func subscribe(
+        queue: DispatchQueue,
+        onResolved: ContractEventHandler<Value>,
+        onRejected: @escaping (Failure) -> Void,
+        onCanceled: @escaping () -> Void
+    ) {
+        subscribe(
+            queue: queue,
+            onResolved: onResolved,
+            onRejected: ContractEventHandler(on: queue, block: onRejected),
+            onCanceled: onCanceled
+        )
+    }
+
+    func subscribe(
+        queue: DispatchQueue,
+        onResolved: @escaping (Value) -> Void,
+        onRejected: ContractEventHandler<Failure>,
+        onCanceled: @escaping () -> Void
+    ) {
+        subscribe(
+            queue: queue,
+            onResolved: ContractEventHandler(on: queue, block: onResolved),
+            onRejected: onRejected,
+            onCanceled: onCanceled
+        )
     }
     
     func subscribe(
@@ -263,14 +304,52 @@ enum ContractState {
 }
 
 struct ContractSubscriber<Value, Failure: Error> {
-    let queue: DispatchQueue
-    let onResolved: (Value) -> Void
-    let onRejected: (Failure) -> Void
+    let onResolved: ContractEventHandler<Value>
+    let onRejected: ContractEventHandler<Failure>
 }
 
 struct ContractCancelSubscriber {
     let queue: DispatchQueue
     let onCanceled: () -> Void
+}
+
+struct ContractEventHandler<Value> {
+    private let onAccepted: (
+        Value,
+        DispatchGroup,
+        DispatchGroup
+    ) -> Void
+
+    init(
+        on queue: DispatchQueue,
+        block: @escaping (Value) -> Void
+    ) {
+        self.onAccepted = { value, previous, current in
+            current.enter()
+            previous.notify(queue: queue) {
+                block(value)
+                current.leave()
+            }
+        }
+    }
+
+    init(
+        onAccepted: @escaping (
+            Value,
+            DispatchGroup,
+            DispatchGroup
+        ) -> Void
+    ) {
+        self.onAccepted = onAccepted
+    }
+
+    func accept(
+        _ value: Value,
+        after previous: DispatchGroup,
+        tracking current: DispatchGroup
+    ) {
+        onAccepted(value, previous, current)
+    }
 }
 
 public final class ContractSchedule {
@@ -280,24 +359,37 @@ public final class ContractSchedule {
         self.mode = mode
     }
     
-    func callAsFunction<Value>(
+    func handler<Value>(
+        on queue: DispatchQueue,
+        sharesExplicitQueue: Bool,
         block: @escaping (
             Value,
             @escaping () -> Void
         ) -> Void
-    ) -> (Value) -> Void {
+    ) -> ContractEventHandler<Value> {
         switch mode {
         case .async:
-            return { value in
+            return ContractEventHandler(on: queue) { value in
                 block(value, {})
             }
-        case .sync(let next):
-            return { value in
-                next.mutate { promise in
-                    promise.then { _ in
-                        Promise { resolve, _ in
-                            block(value, { resolve(()) })
-                        }
+        case .sync(let coordinator):
+            guard sharesExplicitQueue else {
+                return ContractEventHandler(on: queue) { value in
+                    coordinator.enqueue(on: .global()) { finish in
+                        block(value, finish)
+                    }
+                }
+            }
+
+            let coordinator = ContractScheduleCoordinatorRegistry.shared.coordinator(
+                for: queue
+            )
+            return ContractEventHandler { value, previous, current in
+                current.enter()
+                coordinator.enqueue(on: queue) { finish in
+                    previous.notify(queue: queue) {
+                        block(value, finish)
+                        current.leave()
                     }
                 }
             }
@@ -309,11 +401,103 @@ public final class ContractSchedule {
     }
     
     public static var sync: ContractSchedule {
-        self.init(mode: .sync(next: Atomic(.resolved(()))))
+        self.init(mode: .sync(coordinator: ContractScheduleCoordinator()))
     }
     
     private enum Mode {
         case async
-        case sync(next: Atomic<Promise<Void, Never>>)
+        case sync(coordinator: ContractScheduleCoordinator)
+    }
+}
+
+final class ContractScheduleCoordinator {
+    private let tail = Atomic(Promise<Void, Never>.resolved(()))
+
+    func enqueue(
+        on queue: DispatchQueue,
+        block: @escaping (@escaping () -> Void) -> Void
+    ) {
+        let completion = Promise<Void, Never>.pending()
+        var previous: Promise<Void, Never>?
+
+        tail.mutate { tail in
+            previous = tail
+            return completion.promise
+        }
+
+        let finish = { [self] in
+            complete(completion)
+        }
+
+        previous?.subscribe(
+            on: queue,
+            onResolved: { _ in
+                block(finish)
+            },
+            onRejected: { _ in },
+            onCanceled: {
+                block(finish)
+            }
+        )
+    }
+
+    private func complete(
+        _ completion: PromisePending<Void, Never>
+    ) {
+        completion.resolve(())
+    }
+}
+
+final class ContractScheduleCoordinatorRegistry {
+    static let shared = ContractScheduleCoordinatorRegistry()
+
+    private let entries = Atomic<[Entry]>([])
+
+    private init() {}
+
+    func coordinator(
+        for queue: DispatchQueue
+    ) -> ContractScheduleCoordinator {
+        var result: ContractScheduleCoordinator?
+
+        entries.mutate { entries in
+            var entries = entries.filter {
+                $0.queue != nil && $0.coordinator != nil
+            }
+            if let coordinator = entries.first(where: {
+                $0.queue === queue
+            })?.coordinator {
+                result = coordinator
+            }
+            else {
+                let coordinator = ContractScheduleCoordinator()
+                entries.append(Entry(queue: queue, coordinator: coordinator))
+                result = coordinator
+            }
+            return entries
+        }
+
+        return result!
+    }
+
+    var activeCount: Int {
+        entries.mutate { entries in
+            entries.filter {
+                $0.queue != nil && $0.coordinator != nil
+            }
+        }.count
+    }
+
+    private final class Entry {
+        weak var queue: DispatchQueue?
+        weak var coordinator: ContractScheduleCoordinator?
+
+        init(
+            queue: DispatchQueue,
+            coordinator: ContractScheduleCoordinator
+        ) {
+            self.queue = queue
+            self.coordinator = coordinator
+        }
     }
 }

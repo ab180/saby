@@ -178,4 +178,26 @@ final class ContractFilterTest: XCTestCase {
         
         XCTAssertEqual(actual, expect)
     }
+
+    func test__filter_optional_promise_schedule_sync_nil_finishes() {
+        let queue = DispatchQueue(label: "co.ab180.saby.contract-filter-test")
+        let contract = Contract<Int, Never>.executing()
+        let filtered = expectation(description: "second value filtered")
+
+        contract.contract
+            .filter(on: queue, schedule: .sync) { value -> Promise<Int, Never>? in
+                guard value != 1 else { return nil }
+                return .resolved(value)
+            }
+            .then { value in
+                if value == 2 {
+                    filtered.fulfill()
+                }
+            }
+
+        contract.resolve(1)
+        contract.resolve(2)
+
+        XCTAssertEqual(XCTWaiter().wait(for: [filtered], timeout: 1), .completed)
+    }
 }
