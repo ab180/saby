@@ -10,6 +10,8 @@ import SabyJSON
 import SabySize
 
 private let STORAGE_VERSION = "Version1"
+private let STORAGE_ENCODING_VERSION_KEY = "SabyCoreDataSetStorageEncodingVersion"
+private let STORAGE_ENCODING_VERSION = 1
 
 public final class CoreDataSetStorage<Value: Codable & Hashable>: SetStorage {
     typealias Context = NSManagedObjectContext
@@ -55,17 +57,19 @@ extension CoreDataSetStorage {
 
             try context.executeSetStorageDelete(self.createAnyRequest())
 
-            guard !encodedValues.isEmpty else { return }
+            if !encodedValues.isEmpty {
+                let insertRequest = self.createInsertRequest(encodedValues: encodedValues)
+                insertRequest.resultType = .statusOnly
 
-            let insertRequest = self.createInsertRequest(encodedValues: encodedValues)
-            insertRequest.resultType = .statusOnly
-
-            guard
-                let result = try context.execute(insertRequest) as? NSBatchInsertResult,
-                result.result as? Bool == true
-            else {
-                throw CoreDataSetStorageError.batchInsertFailed
+                guard
+                    let result = try context.execute(insertRequest) as? NSBatchInsertResult,
+                    result.result as? Bool == true
+                else {
+                    throw CoreDataSetStorageError.batchInsertFailed
+                }
             }
+
+            try context.markSetStorageEncodingCurrent()
         }
     }
 
@@ -90,13 +94,33 @@ extension CoreDataSetStorage {
             let data = try self.encoder.encode(value)
             let request = self.createContainsRequest(data: data)
 
-            return try context.fetch(request).isEmpty == false
+            if try context.fetch(request).isEmpty == false {
+                return true
+            }
+
+            guard try context.isSetStorageEncodingCurrent() == false else {
+                return false
+            }
+
+            let dictionaries = try context.fetch(self.createDataRequest())
+            for dictionary in dictionaries {
+                guard let legacyData = dictionary["data"] as? Data else {
+                    throw CoreDataSetStorageError.requestResultNotFound
+                }
+
+                if try self.decoder.decode(Value.self, from: legacyData) == value {
+                    return true
+                }
+            }
+
+            return false
         }
     }
 
     public func clear() -> Promise<Void, Error> {
         execute { context in
             try context.executeSetStorageDelete(self.createAnyRequest())
+            try context.markSetStorageEncodingCurrent()
         }
     }
 }
@@ -215,6 +239,38 @@ extension CoreDataSetStorage {
 }
 
 private extension NSManagedObjectContext {
+    func isSetStorageEncodingCurrent() throws -> Bool {
+        let metadata = try setStorageMetadata()
+        let version = metadata.values[STORAGE_ENCODING_VERSION_KEY] as? NSNumber
+
+        return version?.intValue == STORAGE_ENCODING_VERSION
+    }
+
+    func markSetStorageEncodingCurrent() throws {
+        var metadata = try setStorageMetadata()
+        metadata.values[STORAGE_ENCODING_VERSION_KEY] = STORAGE_ENCODING_VERSION
+        metadata.coordinator.setMetadata(metadata.values, for: metadata.store)
+    }
+
+    func setStorageMetadata() throws -> (
+        coordinator: NSPersistentStoreCoordinator,
+        store: NSPersistentStore,
+        values: [String: Any]
+    ) {
+        guard
+            let coordinator = persistentStoreCoordinator,
+            let store = coordinator.persistentStores.first
+        else {
+            throw CoreDataSetStorageError.persistentStoreNotFound
+        }
+
+        return (
+            coordinator,
+            store,
+            coordinator.metadata(for: store)
+        )
+    }
+
     func executeSetStorageDelete(
         _ request: NSFetchRequest<any NSFetchRequestResult>
     ) throws {
@@ -273,6 +329,7 @@ private extension NSManagedObjectContext {
 public enum CoreDataSetStorageError: Error {
     case batchDeleteFailed
     case batchInsertFailed
+    case persistentStoreNotFound
     case requestResultNotFound
 }
 
