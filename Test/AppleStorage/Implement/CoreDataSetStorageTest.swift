@@ -44,6 +44,14 @@ final class CoreDataSetStorageTest: XCTestCase {
         XCTAssertEqual(try storage.size().wait().byte, 0)
     }
 
+    func test__contains() throws {
+        let existingValue = SetValue(id: 0)
+        try storage.set([existingValue]).wait()
+
+        XCTAssertTrue(try storage.contains(existingValue).wait())
+        XCTAssertFalse(try storage.contains(SetValue(id: 1)).wait())
+    }
+
     func test__set_and_get_100_000_values() throws {
         let expected = Set((0 ..< 100_000).map(SetValue.init(id:)))
 
@@ -52,5 +60,7 @@ final class CoreDataSetStorageTest: XCTestCase {
 
         XCTAssertEqual(actual, expected)
         XCTAssertEqual(try storage.count().wait(), expected.count)
+        XCTAssertTrue(try storage.contains(SetValue(id: 99_999)).wait())
+        XCTAssertFalse(try storage.contains(SetValue(id: 100_000)).wait())
     }
 }

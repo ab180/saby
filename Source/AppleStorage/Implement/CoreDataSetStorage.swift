@@ -19,7 +19,11 @@ public final class CoreDataSetStorage<Value: Codable & Hashable>: SetStorage {
     let contextLoad: () -> Promise<Context, Error>
     let contextPromise: Atomic<Promise<Context, Error>>
 
-    let encoder = JSONEncoder.acceptingNonConfirmingFloat()
+    let encoder: JSONEncoder = {
+        let encoder = JSONEncoder.acceptingNonConfirmingFloat()
+        encoder.outputFormatting = [.sortedKeys]
+        return encoder
+    }()
     let decoder = JSONDecoder.acceptingNonConfirmingFloat()
 
     public init(
@@ -78,6 +82,15 @@ extension CoreDataSetStorage {
             }
 
             return values
+        }
+    }
+
+    public func contains(_ value: Value) -> Promise<Bool, Error> {
+        execute { context in
+            let data = try self.encoder.encode(value)
+            let request = self.createContainsRequest(data: data)
+
+            return try context.fetch(request).isEmpty == false
         }
     }
 
@@ -147,6 +160,16 @@ extension CoreDataSetStorage {
         request.entity = entity
         request.propertiesToFetch = ["data"]
         request.resultType = .dictionaryResultType
+
+        return request
+    }
+
+    fileprivate func createContainsRequest(data: Data) -> NSFetchRequest<NSManagedObjectID> {
+        let request = NSFetchRequest<NSManagedObjectID>()
+        request.entity = entity
+        request.predicate = NSPredicate(format: "data == %@", data as NSData)
+        request.fetchLimit = 1
+        request.resultType = .managedObjectIDResultType
 
         return request
     }
@@ -287,6 +310,17 @@ final class SabyCoreDataSetStorageSchema {
         itemEntity.properties = [
             dataAttribute,
             byteAttribute
+        ]
+        itemEntity.indexes = [
+            NSFetchIndexDescription(
+                name: "SabyCoreDataSetStorageDataIndex",
+                elements: [
+                    NSFetchIndexElementDescription(
+                        property: dataAttribute,
+                        collationType: .binary
+                    )
+                ]
+            )
         ]
 
         let model = NSManagedObjectModel()
