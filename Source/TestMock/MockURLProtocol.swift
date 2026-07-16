@@ -72,12 +72,27 @@ public struct URLResult {
     let data: Promise<Data?, Never>
     let error: Error?
     
-    public init(url: URL, code: Int, data: Data?) {
-        self.init(url: url, code: code, data: .resolved(data))
+    public init(
+        url: URL,
+        code: Int,
+        headers: [String: String] = [:],
+        data: Data?
+    ) {
+        self.init(url: url, code: code, headers: headers, data: .resolved(data))
     }
     
-    public init(url: URL, code: Int, data: Promise<Data?, Never>) {
-        let response = HTTPURLResponse(url: url, statusCode: code, httpVersion: nil, headerFields: nil)
+    public init(
+        url: URL,
+        code: Int,
+        headers: [String: String] = [:],
+        data: Promise<Data?, Never>
+    ) {
+        let response = HTTPURLResponse(
+            url: url,
+            statusCode: code,
+            httpVersion: nil,
+            headerFields: headers
+        )
         
         self.url = url
         self.response = response
@@ -85,12 +100,27 @@ public struct URLResult {
         self.error = nil
     }
     
-    public init(url: URL, code: Int, json: JSON) {
-        self.init(url: url, code: code, json: .resolved(json))
+    public init(
+        url: URL,
+        code: Int,
+        headers: [String: String] = [:],
+        json: JSON
+    ) {
+        self.init(url: url, code: code, headers: headers, json: .resolved(json))
     }
     
-    public init(url: URL, code: Int, json: Promise<JSON, Never>) {
-        let response = HTTPURLResponse(url: url, statusCode: code, httpVersion: nil, headerFields: nil)
+    public init(
+        url: URL,
+        code: Int,
+        headers: [String: String] = [:],
+        json: Promise<JSON, Never>
+    ) {
+        let response = HTTPURLResponse(
+            url: url,
+            statusCode: code,
+            httpVersion: nil,
+            headerFields: headers
+        )
         
         self.url = url
         self.response = response

@@ -36,6 +36,7 @@ final class DataClientTest: XCTestCase {
                 URLResult(
                     url: URL(string: "https://mock.api.ab180.co/request")!,
                     code: 200,
+                    headers: ["X-Response-ID": "success"],
                     data: Data()
                 )
             ]
@@ -46,7 +47,13 @@ final class DataClientTest: XCTestCase {
         
         let response = client.request(URL(string: "https://mock.api.ab180.co/request")!)
         
-        Expect.promise(response, state: .resolved({ $0 == (200, Data()) }), timeout: .seconds(2))
+        Expect.promise(
+            response,
+            state: .resolved({
+                $0 == (200, ["X-Response-ID": "success"], Data())
+            }),
+            timeout: .seconds(2)
+        )
     }
     
     func test__request_reponse_code_not_2XX() {

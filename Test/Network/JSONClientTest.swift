@@ -37,6 +37,7 @@ final class JSONClientTest: XCTestCase {
                 URLResult(
                     url: URL(string: "https://mock.api.ab180.co/request")!,
                     code: 200,
+                    headers: ["X-Response-ID": "success"],
                     data: try! JSON.from([:]).datafy()
                 )
             ]
@@ -52,7 +53,9 @@ final class JSONClientTest: XCTestCase {
         
         Expect.promise(
             response,
-            state: .resolved({ $0 == (200, [:]) }),
+            state: .resolved({
+                $0 == (200, ["X-Response-ID": "success"], [:])
+            }),
             timeout: .seconds(2)
         )
     }
