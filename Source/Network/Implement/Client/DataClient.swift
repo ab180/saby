@@ -86,7 +86,7 @@ extension DataClient {
 
             pending.resolve((
                 code2XX: code,
-                headers: response.clientHeaders,
+                headers: response.responseHeaders,
                 body: data
             ))
         }
@@ -138,7 +138,7 @@ public enum DataClientError: Error {
 }
 
 private extension HTTPURLResponse {
-    var clientHeaders: ClientHeader {
+    var responseHeaders: ClientHeader {
         allHeaderFields.reduce(into: [:]) { headers, field in
             guard let key = field.key as? String else { return }
             headers[key] = String(describing: field.value)
