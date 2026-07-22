@@ -58,14 +58,21 @@ extension CoreDataSetStorage {
             try context.executeSetStorageDelete(self.createAnyRequest())
 
             if !encodedValues.isEmpty {
-                let insertRequest = self.createInsertRequest(encodedValues: encodedValues)
-                insertRequest.resultType = .statusOnly
+                if #available(iOS 13.0, macOS 10.15, macCatalyst 13.0, tvOS 13.0, watchOS 6.0, *) {
+                    let insertRequest = self.createInsertRequest(encodedValues: encodedValues)
+                    insertRequest.resultType = .statusOnly
 
-                guard
-                    let result = try context.execute(insertRequest) as? NSBatchInsertResult,
-                    result.result as? Bool == true
-                else {
-                    throw CoreDataSetStorageError.batchInsertFailed
+                    guard
+                        let result = try context.execute(insertRequest) as? NSBatchInsertResult,
+                        result.result as? Bool == true
+                    else {
+                        throw CoreDataSetStorageError.batchInsertFailed
+                    }
+                } else {
+                    try context.insertSetStorageItems(
+                        encodedValues: encodedValues,
+                        entity: self.entity
+                    )
                 }
             }
 
@@ -143,6 +150,7 @@ extension CoreDataSetStorage {
 }
 
 extension CoreDataSetStorage {
+    @available(iOS 13.0, macOS 10.15, macCatalyst 13.0, tvOS 13.0, watchOS 6.0, *)
     fileprivate func createInsertRequest(encodedValues: [Data]) -> NSBatchInsertRequest {
         if #available(iOS 14.0, macOS 11.0, macCatalyst 14.0, tvOS 14.0, watchOS 7.0, *) {
             var index = 0
@@ -239,6 +247,27 @@ extension CoreDataSetStorage {
 }
 
 private extension NSManagedObjectContext {
+    func insertSetStorageItems(
+        encodedValues: [Data],
+        entity: NSEntityDescription
+    ) throws {
+        for data in encodedValues {
+            let item = SabyCoreDataSetStorageItemVersion1(
+                entity: entity,
+                insertInto: self
+            )
+            item.data = data
+            item.byte = data.count
+        }
+
+        do {
+            try save()
+        } catch {
+            rollback()
+            throw error
+        }
+    }
+
     func isSetStorageEncodingCurrent() throws -> Bool {
         let metadata = try setStorageMetadata()
         let version = metadata.values[STORAGE_ENCODING_VERSION_KEY] as? NSNumber
