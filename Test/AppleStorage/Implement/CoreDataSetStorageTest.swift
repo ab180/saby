@@ -50,6 +50,30 @@ final class CoreDataSetStorageTest: XCTestCase {
         XCTAssertEqual(try storage.size().wait().byte, 0)
     }
 
+    func test__add() throws {
+        let existingValue = SetValue(id: 0)
+        let newValue = SetValue(id: 1)
+        try storage.set([existingValue]).wait()
+
+        try storage.add(existingValue).wait()
+        try storage.add(newValue).wait()
+
+        XCTAssertEqual(try storage.get().wait(), [existingValue, newValue])
+        XCTAssertEqual(try storage.count().wait(), 2)
+    }
+
+    func test__delete() throws {
+        let deletedValue = SetValue(id: 0)
+        let remainingValue = SetValue(id: 1)
+        try storage.set([deletedValue, remainingValue]).wait()
+
+        try storage.delete(deletedValue).wait()
+        try storage.delete(SetValue(id: 2)).wait()
+
+        XCTAssertEqual(try storage.get().wait(), [remainingValue])
+        XCTAssertEqual(try storage.count().wait(), 1)
+    }
+
     func test__contains() throws {
         let existingValue = SetValue(id: 0)
         try storage.set([existingValue]).wait()
@@ -74,6 +98,16 @@ final class CoreDataSetStorageTest: XCTestCase {
         XCTAssertFalse(
             try storage.contains(LegacySetValue(first: 1, second: 3)).wait()
         )
+
+        let newValue = LegacySetValue(first: 3, second: 4)
+        try storage.add(existingValue).wait()
+        try storage.add(newValue).wait()
+        XCTAssertEqual(try storage.get().wait(), [existingValue, newValue])
+
+        try storage.delete(existingValue).wait()
+        XCTAssertEqual(try storage.get().wait(), [newValue])
+        try storage.delete(newValue).wait()
+        XCTAssertEqual(try storage.get().wait(), [])
 
         try storage.set([existingValue]).wait()
         XCTAssertTrue(try storage.contains(existingValue).wait())

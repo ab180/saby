@@ -70,6 +70,6 @@ public typealias ClientHeader = Dictionary<String, String>
 
 public typealias ClientResult<Response> = (
     code2XX: Int,
-    headers: ClientHeader,
+    header: ClientHeader,
     body: Response
 )
