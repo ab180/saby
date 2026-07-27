@@ -84,7 +84,11 @@ extension DataClient {
                 return
             }
 
-            pending.resolve((code2XX: code, body: data))
+            pending.resolve((
+                code2XX: code,
+                headers: response.headers,
+                body: data
+            ))
         }
         pending.onCancel {
             task.cancel()
@@ -131,4 +135,13 @@ public enum DataClientError: Error {
     case timeout
     case statusCodeNotFound
     case statusCodeNot2XX(codeNot2XX: Int, body: Data?)
+}
+
+private extension HTTPURLResponse {
+    var headers: ClientHeader {
+        allHeaderFields.reduce(into: [:]) { headers, field in
+            guard let key = field.key as? String else { return }
+            headers[key] = String(describing: field.value)
+        }
+    }
 }
