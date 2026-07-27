@@ -11,6 +11,7 @@ public protocol SetStorage<Value>: Storage {
 
     func set(_ values: Set<Value>) -> Promise<Void, Error>
     func add(_ value: Value) -> Promise<Void, Error>
+
     func delete(_ value: Value) -> Promise<Void, Error>
     func get() -> Promise<Set<Value>, Error>
     func contains(_ value: Value) -> Promise<Bool, Error>

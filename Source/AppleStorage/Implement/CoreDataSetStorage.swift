@@ -400,7 +400,6 @@ public enum CoreDataSetStorageError: Error {
     case requestResultNotFound
 }
 
-// Must not be modified. Write new ItemVersion and write migration logic instead.
 @objc(SabyCoreDataSetStorageItemVersion1)
 final class SabyCoreDataSetStorageItemVersion1: NSManagedObject {
     @NSManaged var data: Data
