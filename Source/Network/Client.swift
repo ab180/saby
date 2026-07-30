@@ -68,6 +68,10 @@ public enum ClientMethod: String {
 
 public typealias ClientHeader = Dictionary<String, String>
 
+public protocol ClientError: Error {
+    var headers: ClientHeader? { get }
+}
+
 public typealias ClientResult<Response> = (
     code2XX: Int,
     headers: ClientHeader,
