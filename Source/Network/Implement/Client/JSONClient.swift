@@ -87,17 +87,10 @@ extension JSONClient {
                 let headers,
                 let data
             ) = error {
-                guard let data, let body = try? JSON.parse(data) else {
-                    throw JSONClientError.responseDataIsNotDecodable(
-                        code: codeNot2XX,
-                        headers: headers,
-                        body: data
-                    )
-                }
                 throw JSONClientError.statusCodeNot2XX(
                     codeNot2XX: codeNot2XX,
                     headers: headers,
-                    body: body
+                    body: data.flatMap { try? JSON.parse($0) }
                 )
             }
         }
@@ -108,7 +101,7 @@ public enum JSONClientError: ClientError {
     case requestFailed(error: Error, headers: ClientHeader?)
     case timeout(headers: ClientHeader?)
     case statusCodeNotFound(headers: ClientHeader?)
-    case statusCodeNot2XX(codeNot2XX: Int, headers: ClientHeader?, body: JSON)
+    case statusCodeNot2XX(codeNot2XX: Int, headers: ClientHeader?, body: JSON?)
     case bodyIsNotEncodable(headers: ClientHeader?)
     case responseDataIsNotDecodable(code: Int, headers: ClientHeader?, body: Data?)
 
