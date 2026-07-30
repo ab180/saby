@@ -60,13 +60,13 @@ final class JSONClientTest: XCTestCase {
         )
     }
     
-    func test__request_reponse_code_not_decodable() {
+    func test__request_response_not_decodable_returns_empty_object() {
         final class MockURLResultStorage: URLResultStorage {
             static var results: [URLResult] = [
                 URLResult(
                     url: URL(string: "https://mock.api.ab180.co/request")!,
                     code: 200,
-                    data: Data()
+                    data: Data("invalid".utf8)
                 )
             ]
         }
@@ -81,7 +81,9 @@ final class JSONClientTest: XCTestCase {
         
         Expect.promise(
             response,
-            state: .rejected(JSONClientError.responseDataIsNotDecodable(code: 200, body: Data())),
+            state: .resolved({
+                $0 == (200, [:], [:])
+            }),
             timeout: .seconds(2)
         )
     }
@@ -166,7 +168,7 @@ final class JSONClientTest: XCTestCase {
         )
     }
     
-    func test__request_response_nil() {
+    func test__request_response_nil_returns_empty_object() {
         final class MockURLResultStorage: URLResultStorage {
             static var results: [URLResult] = [
                 URLResult(
@@ -186,12 +188,14 @@ final class JSONClientTest: XCTestCase {
         
         Expect.promise(
             response,
-            state: .rejected(JSONClientError.responseDataIsNotDecodable(code: 200, body: nil)),
+            state: .resolved({
+                $0 == (200, [:], [:])
+            }),
             timeout: .seconds(2)
         )
     }
     
-    func test__request_response_empty() {
+    func test__request_response_empty_returns_empty_object() {
         final class MockURLResultStorage: URLResultStorage {
             static var results: [URLResult] = [
                 URLResult(
@@ -211,7 +215,9 @@ final class JSONClientTest: XCTestCase {
         
         Expect.promise(
             response,
-            state: .rejected(JSONClientError.responseDataIsNotDecodable(code: 200, body: Data())),
+            state: .resolved({
+                $0 == (200, [:], [:])
+            }),
             timeout: .seconds(2)
         )
     }
