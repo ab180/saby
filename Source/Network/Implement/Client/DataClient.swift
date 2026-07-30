@@ -69,25 +69,18 @@ extension DataClient {
             guard let pending else { return }
             
             if let error = error {
-                pending.reject(DataClientError.requestFailed(
-                    error: error,
-                    headers: (response as? HTTPURLResponse)?.headers
-                ))
+                pending.reject(error)
                 return
             }
             
             guard let response = response as? HTTPURLResponse else {
-                pending.reject(DataClientError.statusCodeNotFound(headers: nil))
+                pending.reject(DataClientError.statusCodeNotFound)
                 return
             }
             
             let code = response.statusCode
             guard code / 100 == 2 else {
-                pending.reject(DataClientError.statusCodeNot2XX(
-                    codeNot2XX: code,
-                    headers: response.headers,
-                    body: data
-                ))
+                pending.reject(DataClientError.statusCodeNot2XX(codeNot2XX: code, body: data))
                 return
             }
 
@@ -103,7 +96,7 @@ extension DataClient {
         if let timeout {
             let item = DispatchWorkItem { [weak task, weak pending] in
                 task?.cancel()
-                pending?.reject(DataClientError.timeout(headers: nil))
+                pending?.reject(DataClientError.timeout)
             }
             DispatchQueue.global().asyncAfter(
                 deadline: .now() + timeout.dispatchTime,
@@ -138,24 +131,10 @@ extension DataClient {
     }
 }
 
-public enum DataClientError: ClientError {
-    case requestFailed(error: Error, headers: ClientHeader?)
-    case timeout(headers: ClientHeader?)
-    case statusCodeNotFound(headers: ClientHeader?)
-    case statusCodeNot2XX(codeNot2XX: Int, headers: ClientHeader?, body: Data?)
-
-    public var headers: ClientHeader? {
-        switch self {
-        case .requestFailed(_, let headers):
-            return headers
-        case .timeout(let headers):
-            return headers
-        case .statusCodeNotFound(let headers):
-            return headers
-        case .statusCodeNot2XX(_, let headers, _):
-            return headers
-        }
-    }
+public enum DataClientError: Error {
+    case timeout
+    case statusCodeNotFound
+    case statusCodeNot2XX(codeNot2XX: Int, body: Data?)
 }
 
 private extension HTTPURLResponse {

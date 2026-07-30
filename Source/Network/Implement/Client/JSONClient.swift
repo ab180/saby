@@ -47,7 +47,7 @@ extension JSONClient {
         var bodyData: Data? = nil
         if let body {
             guard let body = try? body.datafy() else {
-                return Promise.rejected(JSONClientError.bodyIsNotEncodable(headers: nil))
+                return Promise.rejected(JSONClientError.bodyIsNotEncodable)
             }
             bodyData = body
         }
@@ -65,70 +65,33 @@ extension JSONClient {
                 if code2XX == 204 {
                     return (code2XX, headers, [:])
                 }
-                throw JSONClientError.responseDataIsNotDecodable(
-                    code: code2XX,
-                    headers: headers,
-                    body: data
-                )
+                throw JSONClientError.responseDataIsNotDecodable(code: code2XX, body: data)
             }
             
             
             return (code2XX, headers, body)
         }
         .catch { error in
-            if case DataClientError.requestFailed(let error, let headers) = error {
-                throw JSONClientError.requestFailed(error: error, headers: headers)
+            if case DataClientError.timeout = error {
+                throw JSONClientError.timeout
             }
-            else if case DataClientError.timeout(let headers) = error {
-                throw JSONClientError.timeout(headers: headers)
+            else if case DataClientError.statusCodeNotFound = error {
+                throw JSONClientError.statusCodeNotFound
             }
-            else if case DataClientError.statusCodeNotFound(let headers) = error {
-                throw JSONClientError.statusCodeNotFound(headers: headers)
-            }
-            else if case DataClientError.statusCodeNot2XX(
-                let codeNot2XX,
-                let headers,
-                let data
-            ) = error {
+            else if case DataClientError.statusCodeNot2XX(let codeNot2XX, let data) = error {
                 guard let data, let body = try? JSON.parse(data) else {
-                    throw JSONClientError.responseDataIsNotDecodable(
-                        code: codeNot2XX,
-                        headers: headers,
-                        body: data
-                    )
+                    throw JSONClientError.responseDataIsNotDecodable(code: codeNot2XX, body: data)
                 }
-                throw JSONClientError.statusCodeNot2XX(
-                    codeNot2XX: codeNot2XX,
-                    headers: headers,
-                    body: body
-                )
+                throw JSONClientError.statusCodeNot2XX(codeNot2XX: codeNot2XX, body: body)
             }
         }
     }
 }
 
-public enum JSONClientError: ClientError {
-    case requestFailed(error: Error, headers: ClientHeader?)
-    case timeout(headers: ClientHeader?)
-    case statusCodeNotFound(headers: ClientHeader?)
-    case statusCodeNot2XX(codeNot2XX: Int, headers: ClientHeader?, body: JSON)
-    case bodyIsNotEncodable(headers: ClientHeader?)
-    case responseDataIsNotDecodable(code: Int, headers: ClientHeader?, body: Data?)
-
-    public var headers: ClientHeader? {
-        switch self {
-        case .requestFailed(_, let headers):
-            return headers
-        case .timeout(let headers):
-            return headers
-        case .statusCodeNotFound(let headers):
-            return headers
-        case .statusCodeNot2XX(_, let headers, _):
-            return headers
-        case .bodyIsNotEncodable(let headers):
-            return headers
-        case .responseDataIsNotDecodable(_, let headers, _):
-            return headers
-        }
-    }
+public enum JSONClientError: Error {
+    case timeout
+    case statusCodeNotFound
+    case statusCodeNot2XX(codeNot2XX: Int, body: JSON)
+    case bodyIsNotEncodable
+    case responseDataIsNotDecodable(code: Int, body: Data?)
 }
