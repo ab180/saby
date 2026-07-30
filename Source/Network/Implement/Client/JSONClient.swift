@@ -62,10 +62,7 @@ extension JSONClient {
         )
         .then { code2XX, headers, data -> ClientResult<JSON> in
             guard let data, let body = try? JSON.parse(data) else {
-                if code2XX == 204 {
-                    return (code2XX, headers, [:])
-                }
-                throw JSONClientError.responseDataIsNotDecodable(code: code2XX, body: data)
+                return (code2XX, headers, [:])
             }
             
             
