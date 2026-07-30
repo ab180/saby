@@ -154,13 +154,13 @@ final class JSONClientTest: XCTestCase {
         )
     }
 
-    func test__request_response_code_not_2XX_with_undecodable_body() {
+    func test__request_response_code_204_with_empty_body() {
         final class MockURLResultStorage: URLResultStorage {
             static var results: [URLResult] = [
                 URLResult(
                     url: URL(string: "https://mock.api.ab180.co/request")!,
-                    code: 500,
-                    headers: ["X-Response-ID": "failure"],
+                    code: 204,
+                    headers: ["X-Response-ID": "success"],
                     data: Data()
                 )
             ]
@@ -176,16 +176,10 @@ final class JSONClientTest: XCTestCase {
 
         Expect.promise(
             response,
-            state: .rejected(JSONClientError.statusCodeNot2XX(
-                codeNot2XX: 500,
-                headers: ["X-Response-ID": "failure"],
-                body: nil
-            )),
+            state: .resolved({
+                $0 == (204, ["X-Response-ID": "success"], [:])
+            }),
             timeout: .seconds(2)
-        )
-        assertHeaders(
-            response,
-            expected: ["X-Response-ID": "failure"]
         )
     }
     
