@@ -10,7 +10,7 @@ import SabySize
 import Foundation
 
 public protocol ArrayStorage<Value>: Storage {
-    associatedtype Value: KeyIdentifiable
+    associatedtype Value: KeyIdentifiable & Sendable
     
     func add(_ value: Value) -> Promise<Void, Error>
     func add(_ values: [Value]) -> Promise<Void, Error>

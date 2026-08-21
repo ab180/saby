@@ -7,7 +7,7 @@ import SabyConcurrency
 import SabySize
 
 public protocol SetStorage<Value>: Storage {
-    associatedtype Value: Hashable
+    associatedtype Value: Hashable & Sendable
 
     func set(_ values: Set<Value>) -> Promise<Void, Error>
     func add(_ value: Value) -> Promise<Void, Error>
