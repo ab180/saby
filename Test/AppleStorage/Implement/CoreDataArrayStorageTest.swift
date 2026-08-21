@@ -11,7 +11,7 @@ import CoreData
 import SabyConcurrency
 @testable import SabyAppleStorage
 
-struct Value: Codable, KeyIdentifiable {
+struct Value: Codable, KeyIdentifiable, Sendable {
     let key: UUID
 }
 
@@ -28,28 +28,12 @@ class CoreDataArrayStorageTest: XCTestCase {
         try storage.clear().wait()
     }
     
-    func test__managing_programically() {
-        let expectation = self.expectation(description: "testManagingProgramically")
-        expectation.expectedFulfillmentCount = 1
-
+    func test__managing_programically() throws {
         let value = Value(key: UUID())
-
-        var count = 0
-        Promise.async {
-            self.storage.get(limit: .unlimited)
-        }.then {
-            count = $0.count
-            return self.storage.add(value)
-        }.then { _ in
-            self.storage.save()
-        }.then {
-            self.storage.get(limit: .unlimited)
-        }.then {
-            XCTAssertEqual($0.count, count + 1)
-            expectation.fulfill()
-        }
-
-        self.wait(for: [expectation], timeout: 5)
+        let count = try storage.get(limit: .unlimited).wait().count
+        try storage.add(value).wait()
+        try storage.save().wait()
+        XCTAssertEqual(try storage.get(limit: .unlimited).wait().count, count + 1)
     }
     
     func test__length() throws {
@@ -114,5 +98,26 @@ class CoreDataArrayStorageTest: XCTestCase {
         for (value, expect) in zip(values, expects) {
             XCTAssertEqual(value.key, expect.key)
         }
+    }
+
+    func test__reloads_existing_records() throws {
+        let storageName = "\(UUID())"
+        let first = CoreDataArrayStorage<Value>(
+            directoryURL: FileManager.default.temporaryDirectory,
+            storageName: storageName
+        )
+        let given = [Value(key: UUID()), Value(key: UUID())]
+        defer { try? first.clear().wait() }
+
+        try first.add(given).wait()
+        try first.save().wait()
+
+        let reloaded = CoreDataArrayStorage<Value>(
+            directoryURL: FileManager.default.temporaryDirectory,
+            storageName: storageName
+        )
+        let result = try reloaded.get(limit: .unlimited, order: .oldest).wait()
+
+        XCTAssertEqual(result.map(\.key), given.map(\.key))
     }
 }

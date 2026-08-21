@@ -13,13 +13,12 @@ private let STORAGE_VERSION = "Version1"
 private let STORAGE_ENCODING_VERSION_KEY = "SabyCoreDataSetStorageEncodingVersion"
 private let STORAGE_ENCODING_VERSION = 1
 
-public final class CoreDataSetStorage<Value: Codable & Hashable>: SetStorage {
+public final class CoreDataSetStorage<Value: Codable & Hashable & Sendable>: SetStorage {
     typealias Context = NSManagedObjectContext
 
     let entity: NSEntityDescription
 
-    let contextLoad: () -> Promise<Context, Error>
-    let contextPromise: Atomic<Promise<Context, Error>>
+    let contextPromise: Promise<Context, Error>
 
     let encoder: JSONEncoder = {
         let encoder = JSONEncoder.acceptingNonConfirmingFloat()
@@ -31,20 +30,17 @@ public final class CoreDataSetStorage<Value: Codable & Hashable>: SetStorage {
     public init(
         directoryURL: URL,
         storageName: String,
-        migration: @escaping () -> Promise<Void, Error>
+        migration: @escaping @Sendable () -> Promise<Void, Error>
     ) {
         let schema = SabyCoreDataSetStorageSchema()
 
         self.entity = schema.entity
-        self.contextLoad = {
-            Context.loadSetStorage(
-                directoryURL: directoryURL,
-                storageName: storageName,
-                migration: migration,
-                model: schema.model
-            )
-        }
-        self.contextPromise = Atomic(contextLoad())
+        self.contextPromise = Context.loadSetStorage(
+            directoryURL: directoryURL,
+            storageName: storageName,
+            migration: migration,
+            model: schema.model
+        )
     }
 }
 
@@ -263,15 +259,11 @@ extension CoreDataSetStorage {
 }
 
 extension CoreDataSetStorage {
-    fileprivate func execute<Result>(
+    fileprivate func execute<Result: Sendable>(
         block: @escaping (Context) throws -> Result
     ) -> Promise<Result, Error> {
-        let loadPromiseCapture = contextPromise.mutate {
-            let capture = !$0.isRejected ? $0 : contextLoad()
-            return capture
-        }
-
-        return loadPromiseCapture.then { context in
+        nonisolated(unsafe) let block = block
+        return contextPromise.then { context in
             Promise<Result, Error> { resolve, reject in
                 context.perform {
                     do {
@@ -356,10 +348,11 @@ private extension NSManagedObjectContext {
     static func loadSetStorage(
         directoryURL: URL,
         storageName: String,
-        migration: @escaping () -> Promise<Void, Error>,
+        migration: @Sendable () -> Promise<Void, Error>,
         model: NSManagedObjectModel
     ) -> Promise<NSManagedObjectContext, Error> {
-        migration().then {
+        nonisolated(unsafe) let model = model
+        return migration().then {
             let fileManager = FileManager.default
 
             guard directoryURL.isFileURL else {

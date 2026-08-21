@@ -9,7 +9,7 @@ import XCTest
 import SabyConcurrency
 @testable import SabyAppleStorage
 
-private struct DummyItem: Codable, Equatable {
+private struct DummyItem: Codable, Equatable, Sendable {
     var key: UUID
 }
 
@@ -56,29 +56,18 @@ final class FileValueStorageTest: XCTestCase {
     }
     
     func test__delete() throws {
-        let expectation = expectation(description: "test__delete")
-        expectation.expectedFulfillmentCount = 1
-        
         let testObjects = testObjects
         try testObjects.forEach {
             try storage.set($0).wait()
         }
 
-        storage.save()
-            .then { self.storage.clear() }
-            .then { self.storage.save() }
-            .then { self.storage.get() }
-            .then { XCTAssertEqual($0, nil) }
-            .then { expectation.fulfill() }
-            .catch { print($0) }
-        
-        wait(for: [expectation], timeout: 5)
+        try storage.save().wait()
+        try storage.clear().wait()
+        try storage.save().wait()
+        XCTAssertNil(try storage.get().wait())
     }
     
     func test__get() throws {
-        let expectation = expectation(description: "test__get")
-        expectation.expectedFulfillmentCount = 1
-        
         let testCount = testCount
         let testObjects = testObjects
         let randomIndex = (0 ..< testCount).randomElement()!
@@ -88,26 +77,15 @@ final class FileValueStorageTest: XCTestCase {
         
         try storage.set(testObjects[randomIndex]).wait()
         
-        storage.save()
-            .then { self.storage.get() }
-            .then { XCTAssertEqual($0, testObjects[randomIndex]) }
-            .then { expectation.fulfill() }
-        
-        wait(for: [expectation], timeout: 5)
+        try storage.save().wait()
+        XCTAssertEqual(try storage.get().wait(), testObjects[randomIndex])
     }
     
     func test__save() throws {
-        let expectation = expectation(description: "test__save")
-        expectation.expectedFulfillmentCount = 1
-        
         let value = DummyItem(key: UUID())
-        
-        Promise.async { self.storage.set(value) }
-            .then { self.storage.save() }
-            .then { self.storage.get() }
-            .then { XCTAssertEqual($0, value) }
-            .then { expectation.fulfill() }
-        
-        wait(for: [expectation], timeout: 5)
+
+        try storage.set(value).wait()
+        try storage.save().wait()
+        XCTAssertEqual(try storage.get().wait(), value)
     }
 }

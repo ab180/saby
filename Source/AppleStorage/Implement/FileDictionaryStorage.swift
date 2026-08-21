@@ -12,27 +12,27 @@ import SabyJSON
 private let STORAGE_VERSION = "Version1"
 
 public final class FileDictionaryStorage<
-    Key: Hashable & Codable,
-    Value: Codable
+    Key: Hashable & Codable & Sendable,
+    Value: Codable & Sendable
 >: DictionaryStorage {
     typealias Context = FileDictionaryStorageContext
 
     let fileLock = Lock()
     
-    let contextLoad: () -> Promise<Context<Key, Value>, Error>
-    let contextPromise: Atomic<Promise<Context<Key, Value>, Error>>
+    let contextPromise: Promise<Context<Key, Value>, Error>
     
     let encoder = JSONEncoder.acceptingNonConfirmingFloat()
 
-    public init(directoryURL: URL, storageName: String, migration: @escaping () -> Promise<Void, Error>) {
-        self.contextLoad = {
-            Context.load(
-                directoryURL: directoryURL,
-                storageName: storageName,
-                migration: migration
-            )
-        }
-        self.contextPromise = Atomic(contextLoad())
+    public init(
+        directoryURL: URL,
+        storageName: String,
+        migration: @escaping @Sendable () -> Promise<Void, Error>
+    ) {
+        self.contextPromise = Context.load(
+            directoryURL: directoryURL,
+            storageName: storageName,
+            migration: migration
+        )
     }
 }
 
@@ -101,15 +101,11 @@ extension FileDictionaryStorage {
 }
 
 extension FileDictionaryStorage {
-    fileprivate func execute<Result>(
+    fileprivate func execute<Result: Sendable>(
         block: @escaping (Context<Key, Value>) throws -> Result
     ) -> Promise<Result, Error> {
-        let loadPromiseCapture = self.contextPromise.mutate {
-            let capture = !$0.isRejected ? $0 : contextLoad()
-            return capture
-        }
-        
-        return loadPromiseCapture.then { context in
+        nonisolated(unsafe) let block = block
+        return contextPromise.then { context in
             Promise<Result, Error> { resolve, reject in
                 do {
                     resolve(try block(context))
@@ -122,7 +118,7 @@ extension FileDictionaryStorage {
     }
 }
 
-struct FileDictionaryStorageContext<Key: Hashable & Codable, Value: Codable> {
+struct FileDictionaryStorageContext<Key: Hashable & Codable & Sendable, Value: Codable & Sendable>: Sendable {
     let url: URL
     let values: Atomic<FileDictionaryStorageItemVersion1<Key, Value>>
     
@@ -134,9 +130,9 @@ struct FileDictionaryStorageContext<Key: Hashable & Codable, Value: Codable> {
     static func load(
         directoryURL: URL,
         storageName: String,
-        migration: @escaping () -> Promise<Void, Error>
+        migration: @Sendable () -> Promise<Void, Error>
     ) -> Promise<FileDictionaryStorageContext, Error> {
-        migration().then {
+        return migration().then {
             let decoder = JSONDecoder.acceptingNonConfirmingFloat()
             let fileManager = FileManager.default
             
@@ -181,5 +177,4 @@ struct FileDictionaryStorageContext<Key: Hashable & Codable, Value: Codable> {
 }
 
 // Must not be modified. Write new ItemVersion and write migration logic instead.
-typealias FileDictionaryStorageItemVersion1<Key: Hashable & Codable, Value: Codable> = [Key: Value]
-
+typealias FileDictionaryStorageItemVersion1<Key: Hashable & Codable & Sendable, Value: Codable & Sendable> = [Key: Value]

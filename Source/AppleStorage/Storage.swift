@@ -12,7 +12,11 @@ public protocol Storage {
     /// ``init(directoryURL:storageName:migration:)``
     /// execute migration and then create or load preference from
     /// `{Directory url}/{Storage name}_{Version name}` path.
-    init(directoryURL: URL, storageName: String, migration: @escaping () -> Promise<Void, Error>)
+    init(
+        directoryURL: URL,
+        storageName: String,
+        migration: @escaping @Sendable () -> Promise<Void, Error>
+    )
 }
 
 extension Storage {

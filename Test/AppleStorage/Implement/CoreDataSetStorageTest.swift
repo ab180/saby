@@ -7,11 +7,11 @@ import CoreData
 import XCTest
 @testable import SabyAppleStorage
 
-private struct SetValue: Codable, Hashable {
+private struct SetValue: Codable, Hashable, Sendable {
     let id: Int
 }
 
-private struct LegacySetValue: Codable, Hashable {
+private struct LegacySetValue: Codable, Hashable, Sendable {
     let first: Int
     let second: Int
 }

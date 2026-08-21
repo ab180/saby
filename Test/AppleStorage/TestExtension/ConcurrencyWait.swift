@@ -17,7 +17,6 @@ extension Promise {
         try waitPromise(self)
     }
 }
-
 extension Contract {
     func wait(_ block: () -> Void) throws -> Value {
         try waitContract(self, block)
