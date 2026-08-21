@@ -8,8 +8,8 @@
 import SabyConcurrency
 
 public protocol Emitter<Value, Failure> {
-    associatedtype Value
-    associatedtype Failure: Error
-    
+    associatedtype Value: Sendable
+    associatedtype Failure: Error & Sendable
+
     var contract: Contract<Value, Failure> { get }
 }
