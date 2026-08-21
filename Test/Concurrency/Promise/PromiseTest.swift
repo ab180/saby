@@ -173,6 +173,32 @@ final class PromiseTest: XCTestCase {
             XCTAssertEqual(value, 10)
         }
     }
+
+    func test__concurrent_completion_notifies_once() async {
+        let callbackQueue = DispatchQueue(label: #function)
+        let pending = Promise<Int, Error>.pending(on: callbackQueue)
+        let completionCount = Atomic(0)
+
+        pending.promise.subscribe(
+            on: callbackQueue,
+            onResolved: { _ in completionCount.mutate { $0 + 1 } },
+            onRejected: { _ in completionCount.mutate { $0 + 1 } },
+            onCanceled: { completionCount.mutate { $0 + 1 } }
+        )
+
+        DispatchQueue.concurrentPerform(iterations: 1_000) { index in
+            switch index % 3 {
+            case 0: pending.resolve(index)
+            case 1: pending.reject(SampleError.one)
+            default: pending.cancel()
+            }
+        }
+        callbackQueue.sync {}
+
+        XCTAssertEqual(completionCount.capture { $0 }, 1)
+        let isPending = await pending.promise.isPending
+        XCTAssertFalse(isPending)
+    }
     
     func test__cancel_deinit() async throws {
         let promises = WeakPromisePair()

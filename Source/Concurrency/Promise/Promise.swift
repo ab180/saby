@@ -36,10 +36,10 @@ public final class Promise<
 
     fileprivate var callbacks: Callbacks {
         Callbacks(
-            resolve: { [weak self] in self?.resolve($0) },
-            reject: { [weak self] in self?.reject($0) },
-            cancel: { [weak self] in self?.cancel() },
-            onCancel: { [weak self] in self?.subscribe(onCanceled: $0) }
+            resolve: { [self] in resolve($0) },
+            reject: { [self] in reject($0) },
+            cancel: { [self] in cancel() },
+            onCancel: { [self] in subscribe(onCanceled: $0) }
         )
     }
 }
@@ -374,29 +374,31 @@ extension Promise {
     private func observe(
         _ observer: @escaping @Sendable (PromiseState<Value, Failure>) -> Void
     ) {
-        lock.withLock {
+        let state: PromiseState<Value, Failure>? = lock.withLock {
             if storage.state.isPending {
                 storage.observers.append(observer)
-            } else {
-                observer(storage.state)
+                return nil
             }
+
+            return storage.state
+        }
+
+        if let state {
+            observer(state)
         }
     }
 
     private func complete(with state: PromiseState<Value, Failure>) {
-        let observers = lock.withLock {
+        let observers: [@Sendable (PromiseState<Value, Failure>) -> Void] = lock.withLock {
             guard storage.state.isPending else { return [] }
 
             storage.state = state
             let observers = storage.observers
             storage.observers.removeAll()
-            observers.forEach { $0(state) }
-
             return observers
         }
 
-        // Release observer captures after unlocking in case deinit reenters Promise.
-        withExtendedLifetime(observers) {}
+        observers.forEach { $0(state) }
     }
 }
 

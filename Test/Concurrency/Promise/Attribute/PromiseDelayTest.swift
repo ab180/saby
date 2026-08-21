@@ -10,51 +10,39 @@ import XCTest
 
 final class PromiseDelayTest: XCTestCase {
     func test__delay_create_short() {
-        let promise = Promise.race([
-            Promise.delay(.milliseconds(10)).then { 10 },
-            Promise { resolve, reject in
-                DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(100)) {
-                    resolve(20)
-                }
+        let delayed = Promise.delay(.milliseconds(10)).then { 10 }
+        let later = Promise<Int, Never> { resolve, _ in
+            DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(100)) {
+                resolve(20)
             }
-        ])
+        }
         
-        PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
+        expectResolutionOrder(delayed, later, equals: [10, 20])
     }
     
     func test__delay_create_long() {
-        let promise = Promise.race([
-            Promise.delay(.milliseconds(100)).then { 10 },
-            Promise { resolve, reject in
-                DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(10)) {
-                    resolve(20)
-                }
+        let delayed = Promise.delay(.milliseconds(100)).then { 10 }
+        let earlier = Promise<Int, Never> { resolve, _ in
+            DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(10)) {
+                resolve(20)
             }
-        ])
+        }
         
-        PromiseTest.expect(promise: promise, state: .resolved(20), timeout: .seconds(1))
+        expectResolutionOrder(delayed, earlier, equals: [20, 10])
     }
     
     func test__delay_short() {
-        let promise = Promise.race([
-            Promise.delay(.milliseconds(100)).then { 10 },
-            PromiseTest.make {
-                20
-            }.delay(.milliseconds(10))
-        ])
+        let delayed = Promise.delay(.milliseconds(100)).then { 10 }
+        let earlier = PromiseTest.make { 20 }.delay(.milliseconds(10))
         
-        PromiseTest.expect(promise: promise, state: .resolved(20), timeout: .seconds(1))
+        expectResolutionOrder(delayed, earlier, equals: [20, 10])
     }
 
     func test__delay_long() {
-        let promise = Promise.race([
-            Promise.delay(.milliseconds(10)).then { 10 },
-            PromiseTest.make {
-                20
-            }.delay(.milliseconds(100))
-        ])
+        let delayed = Promise.delay(.milliseconds(10)).then { 10 }
+        let later = PromiseTest.make { 20 }.delay(.milliseconds(100))
         
-        PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
+        expectResolutionOrder(delayed, later, equals: [10, 20])
     }
     
     func test__delay_cancel() {
@@ -87,5 +75,49 @@ final class PromiseDelayTest: XCTestCase {
         .delay(.milliseconds(0))
         
         PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
+    }
+
+    private func expectResolutionOrder<FirstFailure, SecondFailure>(
+        _ first: Promise<Int, FirstFailure>,
+        _ second: Promise<Int, SecondFailure>,
+        equals expected: [Int]
+    ) where
+        FirstFailure: Error & Sendable,
+        SecondFailure: Error & Sendable
+    {
+        let values = Atomic<[Int]>([])
+        let end = DispatchSemaphore(value: 0)
+
+        first.subscribe(
+            onResolved: { value in
+                values.mutate { $0 + [value] }
+                end.signal()
+            },
+            onRejected: { _ in
+                XCTFail("Expected resolution")
+                end.signal()
+            },
+            onCanceled: {
+                XCTFail("Expected resolution")
+                end.signal()
+            }
+        )
+        second.subscribe(
+            onResolved: { value in
+                values.mutate { $0 + [value] }
+                end.signal()
+            },
+            onRejected: { _ in
+                XCTFail("Expected resolution")
+                end.signal()
+            },
+            onCanceled: {
+                XCTFail("Expected resolution")
+                end.signal()
+            }
+        )
+
+        PromiseTest.expect(semaphore: end, count: 2, timeout: .seconds(1))
+        XCTAssertEqual(values.capture { $0 }, expected)
     }
 }
