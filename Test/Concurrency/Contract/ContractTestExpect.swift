@@ -27,7 +27,7 @@ extension ContractTest {
         }
     }
     
-    static func expect<Value: Equatable, Failure>(
+    static func expect<Value: Equatable & Sendable, Failure: Error & Sendable>(
         contract: Contract<Value, Failure>,
         state: State<Value>,
         timeout: DispatchTimeInterval,
@@ -98,36 +98,42 @@ extension ContractTest {
         }
     }
     
-    private class OnceToken {
-        var state: State = .pending
+    private final class OnceToken: Sendable {
+        private let lock = NSLock()
+        nonisolated(unsafe) private var state: State = .pending
         
         enum State {
             case pending
             case called
         }
+
+        func call(_ block: () -> Void) {
+            lock.lock()
+            guard case .pending = state else {
+                lock.unlock()
+                return
+            }
+            state = .called
+            lock.unlock()
+            block()
+        }
     }
     
     private static func once(
         token: OnceToken = OnceToken(),
-        block: @escaping () -> Void
-    ) -> () -> Void {
+        block: @escaping @Sendable () -> Void
+    ) -> @Sendable () -> Void {
         return {
-            if case .pending = token.state {
-                token.state = .called
-                block()
-            }
+            token.call(block)
         }
     }
     
     private static func once<Value>(
         token: OnceToken = OnceToken(),
-        block: @escaping (Value) -> Void
-    ) -> (Value) -> Void {
-        return {
-            if case .pending = token.state {
-                token.state = .called
-                block($0)
-            }
+        block: @escaping @Sendable (Value) -> Void
+    ) -> @Sendable (Value) -> Void {
+        return { value in
+            token.call { block(value) }
         }
     }
 }

@@ -152,7 +152,7 @@ final class ContractFilterTest: XCTestCase {
         let contract0 = Contract<Int, Never>()
         let promise0 = Promise<Void, Never>()
         
-        var actual = [Int]()
+        let actual = Atomic<[Int]>([])
         let contract = contract0
             .filter(schedule: .sync) { value in
                 promise0.then { _ in
@@ -164,9 +164,9 @@ final class ContractFilterTest: XCTestCase {
                     }
                 }
             }
-            .then {
-                actual.append($0)
-                return $0
+            .then { value in
+                actual.mutate { $0 + [value] }
+                return value
             }
         
         try contract.wait(until: { $0 == 10000 }) {
@@ -176,6 +176,6 @@ final class ContractFilterTest: XCTestCase {
             promise0.resolve(())
         }
         
-        XCTAssertEqual(actual, expect)
+        XCTAssertEqual(actual.capture { $0 }, expect)
     }
 }

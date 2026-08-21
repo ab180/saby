@@ -11,50 +11,83 @@ public final class Contract<
     Value: Sendable,
     Failure: Error & Sendable
 >: Sendable {
-    let state: ContractStateActor<Value, Failure>
-    private let events: AsyncStream<ContractEvent<Value, Failure>>.Continuation
+    fileprivate struct Callbacks: Sendable {
+        let resolve: @Sendable (Value) -> Void
+        let reject: @Sendable (Failure) -> Void
+        let cancel: @Sendable () -> Void
+        let onCancel: @Sendable (@escaping @Sendable () -> Void) -> Void
+    }
 
     let queue: DispatchQueue
+    private let lock = NSLock()
+    nonisolated(unsafe) private var storage: (
+        state: ContractState,
+        executeGroup: DispatchGroup,
+        subscribers: [ContractSubscriber<Value, Failure>],
+        cancelSubscribers: [@Sendable () -> Void]
+    )
 
     init(
         queue: DispatchQueue = .global(),
         state: ContractState = .executing
     ) {
-        let stateActor = ContractStateActor<Value, Failure>(
-            state: state,
-            queue: queue
-        )
-        let (eventStream, events) = AsyncStream.makeStream(
-            of: ContractEvent<Value, Failure>.self
-        )
-
-        self.state = stateActor
-        self.events = events
         self.queue = queue
-
-        Task {
-            for await event in eventStream {
-                await stateActor.receive(event)
-            }
-        }
+        self.storage = (
+            state: state,
+            executeGroup: DispatchGroup(),
+            subscribers: [],
+            cancelSubscribers: []
+        )
     }
 
-    deinit {
-        events.finish()
+    fileprivate var callbacks: Callbacks {
+        Callbacks(
+            resolve: { [self] in resolve($0) },
+            reject: { [self] in reject($0) },
+            cancel: { [self] in cancel() },
+            onCancel: { [self] in subscribe(onCanceled: $0) }
+        )
     }
 }
 
 extension Contract {
     func resolve(_ value: Value) {
-        events.yield(.resolve(value))
+        emit { $0.onResolved(value) }
     }
 
     func reject(_ error: Failure) {
-        events.yield(.reject(error))
+        emit { $0.onRejected(error) }
     }
 
     func cancel() {
-        events.yield(.cancel)
+        let cancellation: (
+            executeGroup: DispatchGroup,
+            subscribers: [ContractSubscriber<Value, Failure>],
+            cancelSubscribers: [@Sendable () -> Void]
+        )? = lock.withLock {
+            guard storage.state.isExecuting else { return nil }
+
+            storage.state = .canceled
+
+            let cancellation = (
+                executeGroup: storage.executeGroup,
+                subscribers: storage.subscribers,
+                cancelSubscribers: storage.cancelSubscribers
+            )
+            storage.subscribers.removeAll()
+            storage.cancelSubscribers.removeAll()
+            return cancellation
+        }
+
+        guard var cancellation else { return }
+
+        cancellation.subscribers.removeAll()
+
+        cancellation.cancelSubscribers.forEach { onCanceled in
+            cancellation.executeGroup.notify(queue: queue) {
+                onCanceled()
+            }
+        }
     }
 
     func subscribe(
@@ -68,30 +101,72 @@ extension Contract {
             onResolved: onResolved,
             onRejected: onRejected
         )
-        let cancelSubscriber = ContractCancelSubscriber(
-            queue: queue,
-            onCanceled: onCanceled
-        )
-        events.yield(.subscribe(
-            subscriber,
-            cancelSubscriber: cancelSubscriber
-        ))
+        let canceledGroup: DispatchGroup? = lock.withLock {
+            switch storage.state {
+            case .executing:
+                storage.subscribers.append(subscriber)
+                storage.cancelSubscribers.append(onCanceled)
+                return nil
+            case .canceled:
+                return storage.executeGroup
+            }
+        }
+
+        canceledGroup?.notify(queue: queue) {
+            onCanceled()
+        }
     }
 
     func subscribe(
         queue: DispatchQueue,
         onCanceled: @escaping @Sendable () -> Void
     ) {
-        let subscriber = ContractCancelSubscriber(
-            queue: queue,
-            onCanceled: onCanceled
-        )
-        events.yield(.subscribeCancel(subscriber))
+        let canceledGroup: DispatchGroup? = lock.withLock {
+            switch storage.state {
+            case .executing:
+                storage.cancelSubscribers.append(onCanceled)
+                return nil
+            case .canceled:
+                return storage.executeGroup
+            }
+        }
+
+        canceledGroup?.notify(queue: queue) {
+            onCanceled()
+        }
     }
 
-    func capture() async -> ContractState {
-        await withCheckedContinuation { continuation in
-            events.yield(.capture(continuation))
+    private func emit(
+        _ callback: @escaping @Sendable (
+            ContractSubscriber<Value, Failure>
+        ) -> Void
+    ) {
+        let delivery: (
+            current: DispatchGroup,
+            next: DispatchGroup,
+            subscribers: [ContractSubscriber<Value, Failure>]
+        )? = lock.withLock {
+            guard storage.state.isExecuting else { return nil }
+
+            let current = storage.executeGroup
+            let next = DispatchGroup()
+            let subscribers = storage.subscribers
+            subscribers.forEach { _ in next.enter() }
+            storage.executeGroup = next
+            return (
+                current: current,
+                next: next,
+                subscribers: subscribers
+            )
+        }
+
+        guard let delivery else { return }
+
+        delivery.subscribers.forEach { subscriber in
+            delivery.current.notify(queue: subscriber.queue) {
+                defer { delivery.next.leave() }
+                callback(subscriber)
+            }
         }
     }
 }
@@ -128,15 +203,11 @@ extension Contract {
 
 extension Contract {
     public var isExecuting: Bool {
-        get async {
-            await capture().isExecuting
-        }
+        get async { lock.withLock { storage.state.isExecuting } }
     }
 
     public var isCanceled: Bool {
-        get async {
-            await capture().isCanceled
-        }
+        get async { lock.withLock { storage.state.isCanceled } }
     }
 }
 
@@ -176,12 +247,13 @@ public final class ContractExecuting<
         cancelWhen: CancelWhen
     ) {
         let contract = Contract<Value, Failure>(queue: queue)
+        let callbacks = contract.callbacks
 
         self.contract = contract
-        self.resolve = { contract.resolve($0) }
-        self.reject = { contract.reject($0) }
-        self.cancel = { contract.cancel() }
-        self.onCancel = { contract.subscribe(queue: queue, onCanceled: $0) }
+        self.resolve = callbacks.resolve
+        self.reject = callbacks.reject
+        self.cancel = callbacks.cancel
+        self.onCancel = callbacks.onCancel
 
         self.cancelWhen = cancelWhen
     }
@@ -226,153 +298,9 @@ enum ContractState: Sendable {
 }
 
 extension ContractState {
-    var isExecuting: Bool {
-        guard case .executing = self else { return false }
-        return true
-    }
+    var isExecuting: Bool { if case .executing = self { true } else { false } }
 
-    var isCanceled: Bool {
-        guard case .canceled = self else { return false }
-        return true
-    }
-}
-
-actor ContractStateActor<
-    Value: Sendable,
-    Failure: Error & Sendable
-> {
-    private var state: ContractState
-    private let queue: DispatchQueue
-    private var executeGroup = DispatchGroup()
-    private var subscribers: [ContractSubscriber<Value, Failure>] = []
-    private var cancelSubscribers: [ContractCancelSubscriber] = []
-
-    init(
-        state: ContractState,
-        queue: DispatchQueue
-    ) {
-        self.state = state
-        self.queue = queue
-    }
-
-    func subscriberCount() -> Int {
-        subscribers.count
-    }
-
-    func receive(_ event: ContractEvent<Value, Failure>) {
-        switch event {
-        case .resolve(let value):
-            resolve(value)
-        case .reject(let error):
-            reject(error)
-        case .cancel:
-            cancel()
-        case .subscribe(let subscriber, let cancelSubscriber):
-            subscribe(
-                subscriber,
-                cancelSubscriber: cancelSubscriber
-            )
-        case .subscribeCancel(let subscriber):
-            subscribe(subscriber)
-        case .capture(let continuation):
-            continuation.resume(returning: state)
-        }
-    }
-
-    private func resolve(_ value: Value) {
-        guard case .executing = state else { return }
-
-        let current = executeGroup
-        let next = DispatchGroup()
-        let subscribers = self.subscribers
-
-        subscribers.forEach { subscriber in
-            next.enter()
-            current.notify(queue: subscriber.queue) {
-                subscriber.onResolved(value)
-                next.leave()
-            }
-        }
-
-        executeGroup = next
-    }
-
-    private func reject(_ error: Failure) {
-        guard case .executing = state else { return }
-
-        let current = executeGroup
-        let next = DispatchGroup()
-        let subscribers = self.subscribers
-
-        subscribers.forEach { subscriber in
-            next.enter()
-            current.notify(queue: subscriber.queue) {
-                subscriber.onRejected(error)
-                next.leave()
-            }
-        }
-
-        executeGroup = next
-    }
-
-    private func cancel() {
-        guard case .executing = state else { return }
-
-        state = .canceled
-
-        let current = executeGroup
-        let queue = self.queue
-        let cancelSubscribers = self.cancelSubscribers
-        subscribers.removeAll()
-        self.cancelSubscribers.removeAll()
-
-        cancelSubscribers.forEach { subscriber in
-            current.notify(queue: queue) {
-                subscriber.onCanceled()
-            }
-        }
-    }
-
-    private func subscribe(
-        _ subscriber: ContractSubscriber<Value, Failure>,
-        cancelSubscriber: ContractCancelSubscriber
-    ) {
-        switch state {
-        case .executing:
-            subscribers.append(subscriber)
-            cancelSubscribers.append(cancelSubscriber)
-        case .canceled:
-            executeGroup.notify(queue: cancelSubscriber.queue) {
-                cancelSubscriber.onCanceled()
-            }
-        }
-    }
-
-    private func subscribe(_ subscriber: ContractCancelSubscriber) {
-        switch state {
-        case .executing:
-            cancelSubscribers.append(subscriber)
-        case .canceled:
-            executeGroup.notify(queue: subscriber.queue) {
-                subscriber.onCanceled()
-            }
-        }
-    }
-}
-
-enum ContractEvent<
-    Value: Sendable,
-    Failure: Error & Sendable
->: Sendable {
-    case resolve(Value)
-    case reject(Failure)
-    case cancel
-    case subscribe(
-        ContractSubscriber<Value, Failure>,
-        cancelSubscriber: ContractCancelSubscriber
-    )
-    case subscribeCancel(ContractCancelSubscriber)
-    case capture(CheckedContinuation<ContractState, Never>)
+    var isCanceled: Bool { if case .canceled = self { true } else { false } }
 }
 
 struct ContractSubscriber<
@@ -382,11 +310,6 @@ struct ContractSubscriber<
     let queue: DispatchQueue
     let onResolved: @Sendable (Value) -> Void
     let onRejected: @Sendable (Failure) -> Void
-}
-
-struct ContractCancelSubscriber: Sendable {
-    let queue: DispatchQueue
-    let onCanceled: @Sendable () -> Void
 }
 
 public final class ContractSchedule: Sendable {
@@ -404,24 +327,18 @@ public final class ContractSchedule: Sendable {
     ) -> @Sendable (Value) -> Void {
         switch mode {
         case .async:
-            return { value in
-                block(value, {})
-            }
+            return { block($0, {}) }
         case .sync(let state):
             return { value in
-                state.schedule { finish in
-                    block(value, finish)
-                }
+                state.schedule { block(value, $0) }
             }
         }
     }
 
-    public static var async: ContractSchedule {
-        self.init(mode: .async)
-    }
+    public static var async: ContractSchedule { .init(mode: .async) }
 
     public static var sync: ContractSchedule {
-        self.init(mode: .sync(state: ContractScheduleState()))
+        .init(mode: .sync(state: ContractScheduleState()))
     }
 
     private enum Mode: Sendable {
@@ -435,34 +352,18 @@ fileprivate final class ContractScheduleState: Sendable {
         @escaping @Sendable () -> Void
     ) -> Void
 
-    private let operations: AsyncStream<Operation>.Continuation
-
-    init() {
-        let (operationStream, operations) = AsyncStream.makeStream(
-            of: Operation.self
-        )
-        self.operations = operations
-
-        Task {
-            var next = Promise<Void, Never>.resolved(())
-
-            for await operation in operationStream {
-                next = next.then { _ in
-                    Promise { resolve, _ in
-                        operation { resolve(()) }
-                    }
-                }
-            }
-        }
-    }
-
-    deinit {
-        operations.finish()
-    }
+    private let lock = NSLock()
+    nonisolated(unsafe) private var next = Promise<Void, Never>.resolved(())
 
     fileprivate func schedule(
         _ operation: @escaping Operation
     ) {
-        operations.yield(operation)
+        lock.withLock {
+            next = next.then { _ in
+                Promise { resolve, _ in
+                    operation { resolve(()) }
+                }
+            }
+        }
     }
 }

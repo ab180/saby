@@ -470,14 +470,14 @@ final class ContractThenTest: XCTestCase {
         let contract0 = Contract<Int, Never>()
         let promise0 = Promise<Void, Never>()
         
-        var actual = [Int]()
+        let actual = Atomic<[Int]>([])
         let contract = contract0
             .then(schedule: .sync) { value in
                 promise0.then { _ in value }
             }
-            .then {
-                actual.append($0)
-                return $0
+            .then { value in
+                actual.mutate { $0 + [value] }
+                return value
             }
         
         try contract.wait(until: { $0 == 10000 }) {
@@ -487,7 +487,7 @@ final class ContractThenTest: XCTestCase {
             promise0.resolve(())
         }
         
-        XCTAssertEqual(actual, expect)
+        XCTAssertEqual(actual.capture { $0 }, expect)
     }
     
     func test__then_schedule_sync_throw() throws {
@@ -496,7 +496,7 @@ final class ContractThenTest: XCTestCase {
         let contract0 = Contract<Int, Never>()
         let promise0 = Promise<Void, Never>()
         
-        var actual = [Int]()
+        let actual = Atomic<[Int]>([])
         let contract = contract0
             .then(schedule: .sync) { value in
                 promise0.then { _ in
@@ -508,9 +508,9 @@ final class ContractThenTest: XCTestCase {
                     }
                 }
             }
-            .then {
-                actual.append($0)
-                return $0
+            .then { value in
+                actual.mutate { $0 + [value] }
+                return value
             }
             .recover { _ in 0 }
         
@@ -521,6 +521,6 @@ final class ContractThenTest: XCTestCase {
             promise0.resolve(())
         }
         
-        XCTAssertEqual(actual, expect)
+        XCTAssertEqual(actual.capture { $0 }, expect)
     }
 }

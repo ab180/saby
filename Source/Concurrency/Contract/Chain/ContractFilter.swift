@@ -109,7 +109,10 @@ extension Contract {
         subscribe(
             queue: queue,
             onResolved: schedule { value, finish in
-                guard let promise = block(value) else { return }
+                guard let promise = block(value) else {
+                    finish()
+                    return
+                }
                 promise.subscribe(
                     on: queue,
                     onResolved: {

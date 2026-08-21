@@ -90,7 +90,7 @@ final class ContractRecoverTest: XCTestCase {
         let contract0 = Contract<Int, Never>()
         let promise0 = Promise<Void, Never>()
         
-        var actual = [Int]()
+        let actual = Atomic<[Int]>([])
         let contract = contract0
             .then { value -> Int in
                 throw IntError(value: value)
@@ -99,9 +99,9 @@ final class ContractRecoverTest: XCTestCase {
                 let error = error as! IntError
                 return promise0.then { _ in error.value }
             }
-            .then {
-                actual.append($0)
-                return $0
+            .then { value in
+                actual.mutate { $0 + [value] }
+                return value
             }
         
         try contract.wait(until: { $0 == 10000 }) {
@@ -111,7 +111,7 @@ final class ContractRecoverTest: XCTestCase {
             promise0.resolve(())
         }
         
-        XCTAssertEqual(actual, expect)
+        XCTAssertEqual(actual.capture { $0 }, expect)
     }
     
     func test__recover_schedule_sync_throw() throws {
@@ -124,7 +124,7 @@ final class ContractRecoverTest: XCTestCase {
         let contract0 = Contract<Int, Never>()
         let promise0 = Promise<Void, Never>()
         
-        var actual = [Int]()
+        let actual = Atomic<[Int]>([])
         let contract = contract0
             .then { value -> Int in
                 throw IntError(value: value)
@@ -140,9 +140,9 @@ final class ContractRecoverTest: XCTestCase {
                     }
                 }
             }
-            .then {
-                actual.append($0)
-                return $0
+            .then { value in
+                actual.mutate { $0 + [value] }
+                return value
             }
             .recover { _ in 0 }
         
@@ -153,6 +153,6 @@ final class ContractRecoverTest: XCTestCase {
             promise0.resolve(())
         }
         
-        XCTAssertEqual(actual, expect)
+        XCTAssertEqual(actual.capture { $0 }, expect)
     }
 }

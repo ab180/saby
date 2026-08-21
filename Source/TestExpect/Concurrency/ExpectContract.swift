@@ -17,7 +17,7 @@ extension Expect {
 }
 
 extension Expect {
-    public static func contract<Value, Failure>(
+    public static func contract<Value: Sendable, Failure: Error & Sendable>(
         _ actual: Contract<Value, Failure>,
         state: ContractState<(Value) -> Bool, Failure>,
         timeout: DispatchTimeInterval,
@@ -30,6 +30,7 @@ extension Expect {
         
         switch state {
         case .resolved(let expect):
+            nonisolated(unsafe) let expect = expect
             let token = OnceToken()
             actual.then(
                 once(token: token) { value -> Void in
@@ -65,7 +66,7 @@ extension Expect {
 }
 
 extension Expect {
-    public static func contract<Value: Equatable, Failure>(
+    public static func contract<Value: Equatable & Sendable, Failure: Error & Sendable>(
         _ actual: Contract<Value, Failure>,
         state: ContractState<Value, Failure>,
         timeout: DispatchTimeInterval,
@@ -121,8 +122,19 @@ extension Expect {
 }
 
 extension Expect {
-    fileprivate class OnceToken {
-        var state: State = .pending
+    fileprivate final class OnceToken: Sendable {
+        private let lock = NSLock()
+        nonisolated(unsafe) private var state: State = .pending
+
+        func callOnce(_ block: () -> Void) {
+            let shouldCall = lock.withLock {
+                guard case .pending = state else { return false }
+                state = .called
+                return true
+            }
+
+            if shouldCall { block() }
+        }
         
         enum State {
             case pending
@@ -130,15 +142,13 @@ extension Expect {
         }
     }
     
-    fileprivate static func once<Value>(
+    fileprivate static func once<Value: Sendable>(
         token: OnceToken = OnceToken(),
         block: @escaping (Value) -> Void
-    ) -> (Value) -> Void {
-        return {
-            if case .pending = token.state {
-                token.state = .called
-                block($0)
-            }
+    ) -> @Sendable (Value) -> Void {
+        nonisolated(unsafe) let block = block
+        return { value in
+            token.callOnce { block(value) }
         }
     }
 }

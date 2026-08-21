@@ -8,20 +8,21 @@
 import Foundation
 import SabyConcurrency
 
-public struct WaitContract {
+public struct WaitContract: Sendable {
     let timeout: DispatchTimeInterval
     
     public init(timeout: DispatchTimeInterval) {
         self.timeout = timeout
     }
 
-    public func callAsFunction<Value, Failure>(
+    public func callAsFunction<Value: Sendable, Failure: Error & Sendable>(
         _ contract: Contract<Value, Failure>,
         until: @escaping (Value) -> Bool = { _ in true },
         _ block: () throws -> Void
     ) throws -> Value {
-        var result: Value?
-        var failure: Error?
+        nonisolated(unsafe) let until = until
+        nonisolated(unsafe) var result: Value?
+        nonisolated(unsafe) var failure: Error?
         
         let lock = Lock()
         let semaphore = DispatchSemaphore(value: 0)
