@@ -11,14 +11,14 @@ extension Promise {
     @discardableResult
     public func `catch`(
         on queue: DispatchQueue? = nil,
-        _ block: @escaping (Failure) throws -> Void
+        _ block: @escaping @Sendable (Failure) throws -> Void
     ) -> Promise<Value, Error> {
         let queue = queue ?? self.queue
         
         let promiseReturn = Promise<Value, Error>(queue: self.queue)
         
         subscribe(
-            queue: queue,
+            on: queue,
             onResolved: { promiseReturn.resolve($0) },
             onRejected: {
                 do {
@@ -38,14 +38,14 @@ extension Promise {
     @discardableResult
     public func `catch`(
         on queue: DispatchQueue? = nil,
-        _ block: @escaping (Failure) -> Void
+        _ block: @escaping @Sendable (Failure) -> Void
     ) -> Promise<Value, Failure> {
         let queue = queue ?? self.queue
         
         let promiseReturn = Promise<Value, Failure>(queue: self.queue)
         
         subscribe(
-            queue: queue,
+            on: queue,
             onResolved: { promiseReturn.resolve($0) },
             onRejected: { block($0); promiseReturn.reject($0) },
             onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }

@@ -13,7 +13,7 @@ final class PromiseFinallyTest: XCTestCase {
         let end = DispatchSemaphore(value: 0)
         
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.finally {
             end.signal()
@@ -27,7 +27,7 @@ final class PromiseFinallyTest: XCTestCase {
         let end = DispatchSemaphore(value: 0)
         
         let promise =
-        Promise.async { () -> Int in
+        PromiseTest.make { () -> Int in
             throw PromiseTest.SampleError.one
         }.finally {
             end.signal()
@@ -39,16 +39,15 @@ final class PromiseFinallyTest: XCTestCase {
     
     func test__finally_cancel() {
         let end = DispatchSemaphore(value: 0)
-        var promiseCancel: (() -> Void)?
-        
-        let promise0 = Promise<Int, Error> { resolve, reject, cancel, _ in
-            promiseCancel = cancel
-            throw PromiseTest.SampleError.one
-        }
+        let pending = Promise<Int, Error>.pending()
+
+        let promise0 = pending.promise
         let promise1 = promise0.finally {
-            promiseCancel?()
+            pending.cancel()
             end.signal()
         }
+
+        pending.reject(PromiseTest.SampleError.one)
         
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
         PromiseTest.expect(promise: promise1, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))

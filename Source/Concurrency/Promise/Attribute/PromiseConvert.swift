@@ -11,7 +11,10 @@ extension Promise where
     Value == Never,
     Failure == Never
 {
-    public static func from<Result, ResultFailure>(
+    public static func from<
+        Result: Sendable,
+        ResultFailure: Error & Sendable
+    >(
         _ promise: Promise<Result, ResultFailure>?
     ) -> Promise<Result?, ResultFailure> {
         if let promise = promise {
@@ -28,7 +31,7 @@ extension Promise {
         let promiseReturn = Promise<Value?, Failure>(queue: self.queue)
         
         subscribe(
-            queue: queue,
+            on: queue,
             onResolved: { promiseReturn.resolve($0) },
             onRejected: { promiseReturn.reject($0) },
             onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
@@ -41,7 +44,7 @@ extension Promise {
         let promiseReturn = Promise<Void, Failure>(queue: self.queue)
         
         subscribe(
-            queue: queue,
+            on: queue,
             onResolved: { _ in promiseReturn.resolve(()) },
             onRejected: { promiseReturn.reject($0) },
             onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
@@ -50,11 +53,11 @@ extension Promise {
         return promiseReturn
     }
     
-    public func toPromiseAny() -> Promise<Any, Failure> {
-        let promiseReturn = Promise<Any, Failure>(queue: self.queue)
+    public func toPromiseAny() -> Promise<any Sendable, Failure> {
+        let promiseReturn = Promise<any Sendable, Failure>(queue: self.queue)
         
         subscribe(
-            queue: queue,
+            on: queue,
             onResolved: { promiseReturn.resolve($0) },
             onRejected: { promiseReturn.reject($0) },
             onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
@@ -69,7 +72,7 @@ extension Promise where Failure == Never {
         let promiseReturn = Promise<Value, Error>(queue: self.queue)
         
         subscribe(
-            queue: queue,
+            on: queue,
             onResolved: { promiseReturn.resolve($0) },
             onRejected: { _ in },
             onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
@@ -82,7 +85,7 @@ extension Promise where Failure == Never {
         let promiseReturn = Promise<Value?, Error>(queue: self.queue)
         
         subscribe(
-            queue: queue,
+            on: queue,
             onResolved: { promiseReturn.resolve($0) },
             onRejected: { _ in },
             onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
@@ -95,7 +98,7 @@ extension Promise where Failure == Never {
         let promiseReturn = Promise<Void, Error>(queue: self.queue)
         
         subscribe(
-            queue: queue,
+            on: queue,
             onResolved: { _ in promiseReturn.resolve(()) },
             onRejected: { _ in },
             onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
@@ -104,11 +107,11 @@ extension Promise where Failure == Never {
         return promiseReturn
     }
     
-    public func toPromiseAnyError() -> Promise<Any, Error> {
-        let promiseReturn = Promise<Any, Error>(queue: self.queue)
+    public func toPromiseAnyError() -> Promise<any Sendable, Error> {
+        let promiseReturn = Promise<any Sendable, Error>(queue: self.queue)
         
         subscribe(
-            queue: queue,
+            on: queue,
             onResolved: { promiseReturn.resolve($0) },
             onRejected: { _ in },
             onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }

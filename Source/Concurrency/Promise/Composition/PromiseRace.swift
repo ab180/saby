@@ -11,7 +11,10 @@ extension Promise where
     Value == Never,
     Failure == Never
 {
-    public static func race<Result, ResultFailure>(
+    public static func race<
+        Result: Sendable,
+        ResultFailure: Error & Sendable
+    >(
         on queue: DispatchQueue = .global(),
         _ promises: [Promise<Result, ResultFailure>]
     ) -> Promise<Result, ResultFailure> {
@@ -19,7 +22,7 @@ extension Promise where
         
         for promise in promises {
             promise.subscribe(
-                queue: queue,
+                on: queue,
                 onResolved: { promiseReturn.resolve($0) },
                 onRejected: { promiseReturn.reject($0) },
                 onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }

@@ -13,7 +13,7 @@ final class PromiseThenTest: XCTestCase {
         let end = DispatchSemaphore(value: 0)
         
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then { value in
             XCTAssertEqual(value, 10)
@@ -28,7 +28,7 @@ final class PromiseThenTest: XCTestCase {
         let end = DispatchSemaphore(value: 0)
         
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then { value in
             XCTAssertEqual(value, 10)
@@ -43,7 +43,7 @@ final class PromiseThenTest: XCTestCase {
     
     func test__then_return_void_from_reject() {
         let promise =
-        Promise.async { () -> Int in
+        PromiseTest.make { () -> Int in
             throw PromiseTest.SampleError.one
         }.then { value in
             XCTFail()
@@ -56,7 +56,7 @@ final class PromiseThenTest: XCTestCase {
         let end = DispatchSemaphore(value: 0)
         
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then { value -> Int in
             XCTAssertEqual(value, 10)
@@ -73,7 +73,7 @@ final class PromiseThenTest: XCTestCase {
         let end = DispatchSemaphore(value: 0)
         
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then { value -> Int in
             XCTAssertEqual(value, 10)
@@ -88,7 +88,7 @@ final class PromiseThenTest: XCTestCase {
     
     func test__then_return_value_from_reject() {
         let promise =
-        Promise.async { () -> Int in
+        PromiseTest.make { () -> Int in
             throw PromiseTest.SampleError.one
         }.then { value -> Int in
             XCTFail()
@@ -103,13 +103,13 @@ final class PromiseThenTest: XCTestCase {
         let end = DispatchSemaphore(value: 0)
         
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then { value -> Promise<Int, Error> in
             XCTAssertEqual(value, 10)
             end.signal()
             
-            return Promise.async {
+            return PromiseTest.make {
                 20
             }
         }
@@ -122,7 +122,7 @@ final class PromiseThenTest: XCTestCase {
         let end = DispatchSemaphore(value: 0)
         
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then { value -> Promise<Int, Error> in
             XCTAssertEqual(value, 10)
@@ -139,7 +139,7 @@ final class PromiseThenTest: XCTestCase {
         let end = DispatchSemaphore(value: 0)
         
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then { value -> Promise<Int, Error> in
             XCTAssertEqual(value, 10)
@@ -156,18 +156,17 @@ final class PromiseThenTest: XCTestCase {
     
     func test__then_return_promise_cancel() {
         let end = DispatchSemaphore(value: 0)
-        var promiseCancel: (() -> Void)?
+        let pending = Promise<Int, Error>.pending()
         let thenPromise = Promise<Void, Error>.pending().promise
-        
-        let promise0 = Promise<Int, Error> { resolve, reject, cancel, _ in
-            promiseCancel = cancel
-            resolve(10)
-        }
+
+        let promise0 = pending.promise
         let promise1 = promise0.then { _ in
-            promiseCancel?()
+            pending.cancel()
             end.signal()
             return thenPromise
         }
+
+        pending.resolve(10)
         
         PromiseTest.expect(semaphore: end, timeout: .seconds(1))
         PromiseTest.expect(promise: promise1, state: .pending, timeout: .seconds(1))
@@ -176,12 +175,12 @@ final class PromiseThenTest: XCTestCase {
     
     func test__then_return_promise_from_reject() {
         let promise =
-        Promise.async { () -> Int in
+        PromiseTest.make { () -> Int in
             throw PromiseTest.SampleError.one
         }.then { value -> Promise<Int, Error> in
             XCTFail()
             
-            return Promise.async {
+            return PromiseTest.make {
                 20
             }
         }
@@ -191,7 +190,7 @@ final class PromiseThenTest: XCTestCase {
     
     func test__never_then_return_value() {
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then {
             $0 + 10
@@ -202,7 +201,7 @@ final class PromiseThenTest: XCTestCase {
     
     func test__never_then_throw_error() {
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then { value -> Promise<Int, Error> in
             throw PromiseTest.SampleError.one
@@ -213,7 +212,7 @@ final class PromiseThenTest: XCTestCase {
     
     func test__never_then_return_resolved_promise() {
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then {
             Promise<Int, Error>.resolved($0 + 10)
@@ -224,7 +223,7 @@ final class PromiseThenTest: XCTestCase {
     
     func test__never_then_return_rejected_promise() {
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then { _ in
             Promise<Int, Error>.rejected(PromiseTest.SampleError.one)
@@ -236,7 +235,7 @@ final class PromiseThenTest: XCTestCase {
     
     func test__never_then_return_canceled_promise() {
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then { _ in
             Promise<Int, Never>.canceled()
@@ -248,7 +247,7 @@ final class PromiseThenTest: XCTestCase {
     
     func test__never_then_return_resolved_never_promise() {
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then {
             Promise<Int, Never>.resolved($0 + 10)
@@ -259,7 +258,7 @@ final class PromiseThenTest: XCTestCase {
     
     func test__never_then_return_canceled_never_promise() {
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then { _ in
             Promise<Int, Never>.canceled()

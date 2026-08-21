@@ -36,7 +36,7 @@ extension Promise {
         let promiseReturn = Promise<Value, Error>(queue: self.queue)
         
         subscribe(
-            queue: queue,
+            on: queue,
             onResolved: { promiseReturn.resolve($0) },
             onRejected: { promiseReturn.reject($0) },
             onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }

@@ -9,9 +9,9 @@ import Foundation
 
 extension Contract {
     @discardableResult
-    public func then<Result>(
+    public func then<Result: Sendable>(
         on queue: DispatchQueue? = nil,
-        _ block: @escaping (Value) throws -> Result
+        _ block: @escaping @Sendable (Value) throws -> Result
     ) -> Contract<Result, Error> {
         let queue = queue ?? self.queue
         
@@ -36,18 +36,24 @@ extension Contract {
     }
     
     @discardableResult
-    public func then<Result, ResultFailure>(
+    public func then<
+        Result: Sendable,
+        ResultFailure: Error & Sendable
+    >(
         on queue: DispatchQueue? = nil,
-        _ block: @escaping (Value) throws -> Promise<Result, ResultFailure>
+        _ block: @escaping @Sendable (Value) throws -> Promise<Result, ResultFailure>
     ) -> Contract<Result, Error> {
         then(on: queue, schedule: .async, block)
     }
     
     @discardableResult
-    public func then<Result, ResultFailure>(
+    public func then<
+        Result: Sendable,
+        ResultFailure: Error & Sendable
+    >(
         on queue: DispatchQueue? = nil,
         schedule: ContractSchedule = .async,
-        _ block: @escaping (Value) throws -> Promise<Result, ResultFailure>
+        _ block: @escaping @Sendable (Value) throws -> Promise<Result, ResultFailure>
     ) -> Contract<Result, Error> {
         let queue = queue ?? self.queue
         
@@ -59,7 +65,7 @@ extension Contract {
                 do {
                     let promise = try block(value)
                     promise.subscribe(
-                        queue: queue,
+                        on: queue,
                         onResolved: {
                             defer { finish() }
                             contract.resolve($0)
@@ -89,9 +95,9 @@ extension Contract {
 
 extension Contract where Failure == Never {
     @discardableResult
-    public func then<Result>(
+    public func then<Result: Sendable>(
         on queue: DispatchQueue? = nil,
-        _ block: @escaping (Value) -> Result
+        _ block: @escaping @Sendable (Value) -> Result
     ) -> Contract<Result, Never> {
         let queue = queue ?? self.queue
         
@@ -111,18 +117,24 @@ extension Contract where Failure == Never {
     }
     
     @discardableResult
-    public func then<Result, ResultFailure>(
+    public func then<
+        Result: Sendable,
+        ResultFailure: Error & Sendable
+    >(
         on queue: DispatchQueue? = nil,
-        _ block: @escaping (Value) -> Promise<Result, ResultFailure>
+        _ block: @escaping @Sendable (Value) -> Promise<Result, ResultFailure>
     ) -> Contract<Result, ResultFailure> {
         then(on: queue, schedule: .async, block)
     }
     
     @discardableResult
-    public func then<Result, ResultFailure>(
+    public func then<
+        Result: Sendable,
+        ResultFailure: Error & Sendable
+    >(
         on queue: DispatchQueue? = nil,
         schedule: ContractSchedule = .async,
-        _ block: @escaping (Value) -> Promise<Result, ResultFailure>
+        _ block: @escaping @Sendable (Value) -> Promise<Result, ResultFailure>
     ) -> Contract<Result, ResultFailure> {
         let queue = queue ?? self.queue
         
@@ -133,7 +145,7 @@ extension Contract where Failure == Never {
             onResolved: schedule { value, finish in
                 let promise = block(value)
                 promise.subscribe(
-                    queue: queue,
+                    on: queue,
                     onResolved: {
                         defer { finish() }
                         contract.resolve($0)

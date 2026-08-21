@@ -11,28 +11,33 @@ extension Promise where
     Value == Never,
     Failure == Never
 {
-    public static func all<Value0, Failure0>(
+    public static func all<
+        Value0: Sendable,
+        Failure0: Error & Sendable
+    >(
         on queue: DispatchQueue = .global(),
         _ promises: [Promise<Value0, Failure0>]
     ) -> Promise<[Value0], Failure0> {
         let promiseReturn = Promise<[Value0], Failure0>(queue: queue)
-        let resolve = {
-            var values = [Value0]()
-            for promise in promises {
-                if case .resolved(let value) = promise.state.capture({ $0 }) {
-                    values.append(value)
+        let resolve: @Sendable () -> Void = {
+            _ = Task {
+                var values = [Value0]()
+                for promise in promises {
+                    if case .resolved(let value) = await promise.capture() {
+                        values.append(value)
+                    }
+                    else {
+                        return
+                    }
                 }
-                else {
-                    return
-                }
+
+                promiseReturn.resolve(values)
             }
-            
-            promiseReturn.resolve(values)
         }
         
         for promise in promises {
             promise.subscribe(
-                queue: promise.queue,
+                on: promise.queue,
                 onResolved: { _ in resolve() },
                 onRejected: { promiseReturn.reject($0) },
                 onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
@@ -47,26 +52,28 @@ extension Promise where
     }
     
     @_documentation(visibility: internal)
-    public static func all<each PromiseValue>(
+    public static func all<each PromiseValue: Sendable>(
         on queue: DispatchQueue = .global(),
         _ promises: repeat Promise<each PromiseValue, Never>
     ) -> Promise<(repeat each PromiseValue), Never> {
         let promiseReturn = Promise<(repeat each PromiseValue), Never>(queue: queue)
         
-        let resolve = {
-            let captures = (repeat (each promises).state.capture({ $0 }).resolved)
-            
-            for capture in repeat each captures {
-                guard capture != nil else { return }
+        let resolve: @Sendable () -> Void = {
+            _ = Task {
+                let captures = (repeat await (each promises).capture().resolved)
+
+                for capture in repeat each captures {
+                    guard capture != nil else { return }
+                }
+
+                let resolved = (repeat (each captures)!)
+                promiseReturn.resolve(resolved)
             }
-            
-            let resolved = (repeat (each captures)!)
-            promiseReturn.resolve(resolved)
         }
         
         for promise in repeat each promises {
             promise.subscribe(
-                queue: queue,
+                on: queue,
                 onResolved: { _ in resolve() },
                 onRejected: { _ in },
                 onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
@@ -77,26 +84,31 @@ extension Promise where
     }
     
     @_documentation(visibility: internal)
-    public static func tryAll<each PromiseValue, each PromiseFailure>(
+    public static func tryAll<
+        each PromiseValue: Sendable,
+        each PromiseFailure: Error & Sendable
+    >(
         on queue: DispatchQueue = .global(),
         _ promises: repeat Promise<each PromiseValue, each PromiseFailure>
     ) -> Promise<(repeat each PromiseValue), Error> {
         let promiseReturn = Promise<(repeat each PromiseValue), Error>(queue: queue)
         
-        let resolve = {
-            let captures = (repeat (each promises).state.capture({ $0 }).resolved)
-            
-            for capture in repeat each captures {
-                guard capture != nil else { return }
+        let resolve: @Sendable () -> Void = {
+            _ = Task {
+                let captures = (repeat await (each promises).capture().resolved)
+
+                for capture in repeat each captures {
+                    guard capture != nil else { return }
+                }
+
+                let resolved = (repeat (each captures)!)
+                promiseReturn.resolve(resolved)
             }
-            
-            let resolved = (repeat (each captures)!)
-            promiseReturn.resolve(resolved)
         }
         
         for promise in repeat each promises {
             promise.subscribe(
-                queue: queue,
+                on: queue,
                 onResolved: { _ in resolve() },
                 onRejected: { promiseReturn.reject($0) },
                 onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }

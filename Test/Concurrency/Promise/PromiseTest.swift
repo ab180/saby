@@ -11,11 +11,8 @@ import XCTest
 final class PromiseTest: XCTestCase {
     func test__init() {
         let promise = Promise<Int, Error>()
-        
-        guard case .pending = promise.state.capture({ $0 }) else {
-            XCTFail("Promise is not pending")
-            return
-        }
+
+        PromiseTest.expect(promise: promise, state: .pending, timeout: .seconds(1))
     }
     
     func test__init_with_resolver_resolve() {
@@ -55,50 +52,6 @@ final class PromiseTest: XCTestCase {
         
         XCTAssertEqual(XCTWaiter().wait(for: [expect], timeout: 1), .completed)
         PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
-    }
-    
-    func test__init_with_return_value() {
-        let promise = Promise.async {
-            10
-        }
-        
-        PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
-    }
-    
-    func test__init_with_return_value_throw_error() {
-        let promise = Promise.async { () -> Int in
-            throw PromiseTest.SampleError.one
-        }
-        
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
-    }
-    
-    func test__init_with_return_promise_resolve() {
-        let promise = Promise.async {
-            Promise.async {
-                10
-            }
-        }
-        
-       PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
-    }
-    
-    func test__init_with_return_promise_reject() {
-        let promise = Promise.async {
-            Promise.async { () -> Int in
-                throw PromiseTest.SampleError.one
-            }
-        }
-        
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
-    }
-    
-    func test__init_with_return_promise_throw_error() {
-        let promise = Promise.async { () -> Promise<Int, Error> in
-            throw PromiseTest.SampleError.one
-        }
-        
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
     func test__resolve() {
@@ -166,29 +119,108 @@ final class PromiseTest: XCTestCase {
         
         PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
     }
+
+    func test__async_with_async_function() {
+        let promise: Promise<Int, Never> = Promise.async(Self.asyncValue)
+
+        PromiseTest.expect(
+            promise: promise,
+            state: .resolved(10),
+            timeout: .seconds(1)
+        )
+    }
+
+    func test__async_with_throwing_async_function() {
+        let promise: Promise<Int, Error> = Promise.async(Self.throwingAsyncValue)
+
+        PromiseTest.expect(
+            promise: promise,
+            state: .rejected(SampleError.one),
+            timeout: .seconds(1)
+        )
+    }
+
+    func test__state_properties() async {
+        let promise = Promise<Int, Error>()
+
+        let isPending = await promise.isPending
+        XCTAssertTrue(isPending)
+
+        promise.resolve(10)
+
+        let isResolved = await promise.isResolved
+        let isRejected = await promise.isRejected
+        let isCanceled = await promise.isCanceled
+        XCTAssertTrue(isResolved)
+        XCTAssertFalse(isRejected)
+        XCTAssertFalse(isCanceled)
+    }
+
+    func test__first_completion_wins() async {
+        for _ in 0..<500 {
+            let promise = Promise<Int, Error>()
+
+            promise.resolve(10)
+            promise.reject(SampleError.one)
+            promise.cancel()
+            promise.resolve(20)
+
+            guard case .resolved(let value) = await promise.capture() else {
+                XCTFail("Promise did not preserve its first completion")
+                return
+            }
+
+            XCTAssertEqual(value, 10)
+        }
+    }
     
-    func test__cancel_deinit() throws {
-        weak var promise0: Promise<Void, Never>?
-        weak var promise1: Promise<Void, Never>?
-        let result = Atomic(false)
+    func test__cancel_deinit() async throws {
+        let promises = WeakPromisePair()
+        let result = DispatchSemaphore(value: 0)
         
         try Promise<Void, Never> { resolve, reject in
-            defer { resolve(()) }
-            
             let promise00 = Promise<Void, Never>.resolved(())
             let promise11 = promise00.delay(.milliseconds(10)).then {
-                result.mutate { _ in true }
+                result.signal()
                 return ()
             }
-            
-            promise0 = promise00
-            promise1 = promise11
+
+            Task {
+                await promises.store(promise00, promise11)
+                resolve(())
+            }
         }.wait()
-    
+
+        let (promise0, promise1) = await promises.values()
         XCTAssertNil(promise0)
         XCTAssertNotNil(promise1)
         
         try promise1!.wait()
-        XCTAssertEqual(result.capture { $0 }, true)
+        XCTAssertEqual(result.wait(timeout: .now() + .seconds(1)), .success)
+    }
+
+    private static func asyncValue() async -> Int {
+        10
+    }
+
+    private static func throwingAsyncValue() async throws -> Int {
+        throw SampleError.one
+    }
+}
+
+private actor WeakPromisePair {
+    private weak var first: Promise<Void, Never>?
+    private weak var second: Promise<Void, Never>?
+
+    func store(
+        _ first: Promise<Void, Never>,
+        _ second: Promise<Void, Never>
+    ) {
+        self.first = first
+        self.second = second
+    }
+
+    func values() -> (Promise<Void, Never>?, Promise<Void, Never>?) {
+        (first, second)
     }
 }

@@ -7,109 +7,132 @@
 
 import Foundation
 
-public final class Promise<Value, Failure: Error> {
-    var state: Atomic<PromiseState<Value, Failure>>
-    
-    let queue: DispatchQueue
-    let pendingGroup: DispatchGroup
-    
-    init(queue: DispatchQueue = .global()) {
-        self.state = Atomic(.pending)
-        
-        self.queue = queue
-        self.pendingGroup = DispatchGroup()
-        
-        pendingGroup.enter()
+public final class Promise<
+    Value: Sendable,
+    Failure: Error & Sendable
+>: Sendable {
+    fileprivate struct Callbacks: Sendable {
+        let resolve: @Sendable (Value) -> Void
+        let reject: @Sendable (Failure) -> Void
+        let cancel: @Sendable () -> Void
+        let onCancel: @Sendable (@escaping @Sendable () -> Void) -> Void
     }
-    
-    deinit {
-        state.capture { state in
-            if case .pending = state {
-                pendingGroup.leave()
-            }
-        }
+
+    let queue: DispatchQueue
+
+    private let lock = NSLock()
+    nonisolated(unsafe) private var storage: (
+        state: PromiseState<Value, Failure>,
+        observers: [@Sendable (PromiseState<Value, Failure>) -> Void]
+    )
+
+    init(
+        queue: DispatchQueue = .global(),
+        state: PromiseState<Value, Failure> = .pending
+    ) {
+        self.queue = queue
+        self.storage = (state: state, observers: [])
+    }
+
+    fileprivate var callbacks: Callbacks {
+        Callbacks(
+            resolve: { [weak self] in self?.resolve($0) },
+            reject: { [weak self] in self?.reject($0) },
+            cancel: { [weak self] in self?.cancel() },
+            onCancel: { [weak self] in self?.subscribe(onCanceled: $0) }
+        )
+    }
+}
+
+extension Promise {
+    fileprivate convenience init(
+        on queue: DispatchQueue,
+        operation: @escaping @Sendable (
+            Callbacks
+        ) -> Void
+    ) {
+        self.init(queue: queue)
+
+        let callbacks = self.callbacks
+
+        queue.async { operation(callbacks) }
     }
 }
 
 extension Promise where Failure == Error {
-    public convenience init(
-        on queue: DispatchQueue = .global(),
-        _ block: @escaping (
-            _ resolve: @escaping (Value) -> Void,
-            _ reject: @escaping (Failure) -> Void
+    fileprivate convenience init(
+        on queue: DispatchQueue,
+        throwingOperation: @escaping @Sendable (
+            Callbacks
         ) throws -> Void
     ) {
-        self.init(queue: queue)
-
-        queue.async {
+        self.init(on: queue, operation: { callbacks in
             do {
-                try block({ self.resolve($0) }, { self.reject($0) })
-            } catch let error {
-                self.reject(error)
+                try throwingOperation(callbacks)
+            } catch {
+                callbacks.reject(error)
             }
-        }
+        })
     }
-    
+
     public convenience init(
         on queue: DispatchQueue = .global(),
-        _ block: @escaping (
-            _ resolve: @escaping (Value) -> Void,
-            _ reject: @escaping (Failure) -> Void,
-            _ cancel: @escaping () -> Void,
-            _ onCancel: @escaping (@escaping () -> Void) -> Void
+        _ function: @escaping @Sendable (
+            _ resolve: @escaping @Sendable (Value) -> Void,
+            _ reject: @escaping @Sendable (Failure) -> Void
         ) throws -> Void
     ) {
-        self.init(queue: queue)
+        self.init(on: queue, throwingOperation: { try function($0.resolve, $0.reject) })
+    }
 
-        queue.async {
-            do {
-                try block(
-                    { self.resolve($0) },
-                    { self.reject($0) },
-                    { [weak self] in self?.cancel() },
-                    { self.subscribe(queue: queue, onCanceled: $0) }
-                )
-            } catch let error {
-                self.reject(error)
-            }
-        }
+    public convenience init(
+        on queue: DispatchQueue = .global(),
+        _ function: @escaping @Sendable (
+            _ resolve: @escaping @Sendable (Value) -> Void,
+            _ reject: @escaping @Sendable (Failure) -> Void,
+            _ cancel: @escaping @Sendable () -> Void,
+            _ onCancel: @escaping @Sendable (@escaping @Sendable () -> Void) -> Void
+        ) throws -> Void
+    ) {
+        self.init(on: queue, throwingOperation: {
+            try function(
+                $0.resolve,
+                $0.reject,
+                $0.cancel,
+                $0.onCancel
+            )
+        })
     }
 }
 
 extension Promise where Failure == Never {
     public convenience init(
         on queue: DispatchQueue = .global(),
-        _ block: @escaping (
-            _ resolve: @escaping (Value) -> Void,
-            _ reject: @escaping (Failure) -> Void
+        _ function: @escaping @Sendable (
+            _ resolve: @escaping @Sendable (Value) -> Void,
+            _ reject: @escaping @Sendable (Failure) -> Void
         ) -> Void
     ) {
-        self.init(queue: queue)
-
-        queue.async {
-            block({ self.resolve($0) }, { _ in })
-        }
+        self.init(on: queue, operation: { function($0.resolve, $0.reject) })
     }
-    
+
     public convenience init(
         on queue: DispatchQueue = .global(),
-        _ block: @escaping (
-            _ resolve: @escaping (Value) -> Void,
-            _ reject: @escaping (Failure) -> Void,
-            _ cancel: @escaping () -> Void,
-            _ onCancel: @escaping (@escaping () -> Void) -> Void
+        _ function: @escaping @Sendable (
+            _ resolve: @escaping @Sendable (Value) -> Void,
+            _ reject: @escaping @Sendable (Failure) -> Void,
+            _ cancel: @escaping @Sendable () -> Void,
+            _ onCancel: @escaping @Sendable (@escaping @Sendable () -> Void) -> Void
         ) -> Void
     ) {
-        self.init(queue: queue)
-
-        queue.async {
-            block(
-                { self.resolve($0) },
-                { _ in },
-                { [weak self] in self?.cancel() },
-                { self.subscribe(queue: queue, onCanceled: $0) }
+        self.init(on: queue, operation: {
+            function(
+                $0.resolve,
+                $0.reject,
+                $0.cancel,
+                $0.onCancel
             )
-        }
+        })
     }
 }
 
@@ -117,230 +140,144 @@ extension Promise where
     Value == Never,
     Failure == Never
 {
-    public static func async<Result>(
+    public static func async<Result: Sendable>(
         on queue: DispatchQueue = .global(),
-        _ block: @escaping () throws -> Result
+        _ function: @escaping @Sendable () async throws -> Result
     ) -> Promise<Result, Error> {
-        let promise = Promise<Result, Error>()
+        Promise<Result, Error>(on: queue, operation: { callbacks in
+            let task = Task {
+                do {
+                    callbacks.resolve(try await function())
+                } catch {
+                    callbacks.reject(error)
+                }
+            }
 
-        queue.async {
-            do {
-                let value = try block()
-                promise.resolve(value)
-            }
-            catch {
-                promise.reject(error)
-            }
-        }
-        
-        return promise
+            callbacks.onCancel(task.cancel)
+        })
     }
-    
-    public static func async<Result, ResultFailure: Error>(
-        on queue: DispatchQueue = .global(),
-        _ block: @escaping () throws -> Promise<Result, ResultFailure>
-    ) -> Promise<Result, Error> {
-        let promise = Promise<Result, Error>()
 
-        queue.async {
-            do {
-                let valuePromise = try block()
-                valuePromise.subscribe(
-                    queue: queue,
-                    onResolved: { promise.resolve($0) },
-                    onRejected: { promise.reject($0) },
-                    onCanceled: { [weak promise] in promise?.cancel() }
-                )
-            } catch let error {
-                promise.reject(error)
-            }
-        }
-        
-        return promise
-    }
-    
-    public static func async<Result>(
+    public static func async<Result: Sendable>(
         on queue: DispatchQueue = .global(),
-        _ block: @escaping () -> Result
+        _ function: @escaping @Sendable () async -> Result
     ) -> Promise<Result, Never> {
-        let promise = Promise<Result, Never>()
-
-        queue.async {
-            let value = block()
-            promise.resolve(value)
-        }
-        
-        return promise
+        Promise<Result, Never>(on: queue, operation: { callbacks in
+            let task = Task { callbacks.resolve(await function()) }
+            callbacks.onCancel(task.cancel)
+        })
     }
-    
-    public static func async<Result>(
+
+    public static func async<Result: Sendable>(
         on queue: DispatchQueue = .global(),
-        _ block: @escaping () -> Promise<Result, Error>
+        _ function: @escaping @Sendable () throws -> Result
     ) -> Promise<Result, Error> {
-        let promise = Promise<Result, Error>()
-
-        queue.async {
-            let valuePromise = block()
-            valuePromise.subscribe(
-                queue: queue,
-                onResolved: { promise.resolve($0) },
-                onRejected: { promise.reject($0) },
-                onCanceled: { [weak promise] in promise?.cancel() }
-            )
-        }
-        
-        return promise
+        Promise<Result, Error>(on: queue, throwingOperation: {
+            $0.resolve(try function())
+        })
     }
-    
-    public static func async<Result>(
-        on queue: DispatchQueue = .global(),
-        _ block: @escaping () -> Promise<Result, Never>
-    ) -> Promise<Result, Never> {
-        let promise = Promise<Result, Never>()
 
-        queue.async {
-            let valuePromise = block()
-            valuePromise.subscribe(
-                queue: queue,
-                onResolved: { promise.resolve($0) },
-                onRejected: { _ in },
-                onCanceled: { [weak promise] in promise?.cancel() }
+    public static func async<
+        Result: Sendable,
+        ResultFailure: Error & Sendable
+    >(
+        on queue: DispatchQueue = .global(),
+        _ function: @escaping @Sendable () throws -> Promise<Result, ResultFailure>
+    ) -> Promise<Result, Error> {
+        Promise<Result, Error>(on: queue, throwingOperation: { callbacks in
+            let promise = try function()
+            promise.subscribe(
+                on: queue,
+                onResolved: callbacks.resolve,
+                onRejected: { callbacks.reject($0) },
+                onCanceled: callbacks.cancel
             )
-        }
-        
-        return promise
+            callbacks.onCancel(promise.cancel)
+        })
+    }
+
+    public static func async<Result: Sendable>(
+        on queue: DispatchQueue = .global(),
+        _ function: @escaping @Sendable () -> Result
+    ) -> Promise<Result, Never> {
+        Promise<Result, Never>(on: queue, operation: { $0.resolve(function()) })
+    }
+
+    public static func async<
+        Result: Sendable,
+        ResultFailure: Error & Sendable
+    >(
+        on queue: DispatchQueue = .global(),
+        _ function: @escaping @Sendable () -> Promise<Result, ResultFailure>
+    ) -> Promise<Result, ResultFailure> {
+        Promise<Result, ResultFailure>(on: queue, operation: { callbacks in
+            let promise = function()
+            promise.subscribe(
+                on: queue,
+                onResolved: callbacks.resolve,
+                onRejected: callbacks.reject,
+                onCanceled: callbacks.cancel
+            )
+            callbacks.onCancel(promise.cancel)
+        })
     }
 }
 
 extension Promise {
-    func resolve(_ value: Value) {
-        state.mutate { state in
-            if case .pending = state {
-                pendingGroup.leave()
-                return .resolved(value)
-            }
-            
-            return state
-        }
-    }
-    
-    func reject(_ error: Failure) {
-        state.mutate { state in
-            if case .pending = state {
-                pendingGroup.leave()
-                return .rejected(error)
-            }
-            
-            return state
-        }
-    }
-    
-    func cancel() {
-        state.mutate { state in
-            if case .pending = state {
-                pendingGroup.leave()
-                return .canceled
-            }
-            
-            return state
-        }
-    }
-    
-    func subscribe(
-        queue: DispatchQueue,
-        onResolved: @escaping (Value) -> Void,
-        onRejected: @escaping (Failure) -> Void,
-        onCanceled: @escaping () -> Void
-    ) {
-        let state = self.state
-        pendingGroup.notify(queue: queue) {
-            let state = state.capture { $0 }
-            
-            if case .resolved(let value) = state {
-                onResolved(value)
-            }
-            else if case .rejected(let error) = state {
-                onRejected(error)
-            }
-            else if case .canceled = state {
-                onCanceled()
-            }
-        }
-    }
-    
-    func subscribe(
-        queue: DispatchQueue,
-        onCanceled: @escaping () -> Void
-    ) {
-        let state = self.state
-        pendingGroup.notify(queue: queue) {
-            let state = state.capture { $0 }
-            
-            if case .canceled = state {
-                onCanceled()
-            }
-        }
+    func resolve(_ value: Value) { complete(with: .resolved(value)) }
+
+    func reject(_ error: Failure) { complete(with: .rejected(error)) }
+
+    func cancel() { complete(with: .canceled) }
+
+    func capture() async -> PromiseState<Value, Failure> {
+        lock.withLock { storage.state }
     }
 }
 
 extension Promise {
     public func subscribe(
         on queue: DispatchQueue? = nil,
-        onResolved: @escaping (Value) -> Void,
-        onRejected: @escaping (Failure) -> Void,
-        onCanceled: @escaping () -> Void
+        onResolved: @escaping @Sendable (Value) -> Void,
+        onRejected: @escaping @Sendable (Failure) -> Void,
+        onCanceled: @escaping @Sendable () -> Void
     ) {
         let queue = queue ?? self.queue
-        
-        subscribe(
-            queue: queue,
-            onResolved: onResolved,
-            onRejected: onRejected,
-            onCanceled: onCanceled
-        )
+
+        observe { state in
+            switch state {
+            case .pending:
+                break
+            case .resolved(let value):
+                queue.async { onResolved(value) }
+            case .rejected(let error):
+                queue.async { onRejected(error) }
+            case .canceled:
+                queue.async { onCanceled() }
+            }
+        }
     }
-    
+
     public func subscribe(
         on queue: DispatchQueue? = nil,
-        onCanceled: @escaping () -> Void
+        onCanceled: @escaping @Sendable () -> Void
     ) {
         let queue = queue ?? self.queue
-        
-        subscribe(
-            queue: queue,
-            onCanceled: onCanceled
-        )
+
+        observe { state in
+            guard state.isCanceled else { return }
+            queue.async { onCanceled() }
+        }
     }
 }
 
 extension Promise {
-    public var isPending: Bool {
-        let state = state.capture { $0 }
+    public var isPending: Bool { get async { await capture().isPending } }
 
-        guard case .pending = state else { return false }
-        return true
-    }
-    
-    public var isResolved: Bool {
-        let state = state.capture { $0 }
+    public var isResolved: Bool { get async { await capture().isResolved } }
 
-        guard case .resolved(_) = state else { return false }
-        return true
-    }
-    
-    public var isRejected: Bool {
-        let state = state.capture { $0 }
+    public var isRejected: Bool { get async { await capture().isRejected } }
 
-        guard case .rejected(_) = state else { return false }
-        return true
-    }
-    
-    public var isCanceled: Bool {
-        let state = state.capture { $0 }
-
-        guard case .canceled = state else { return false }
-        return true
-    }
+    public var isCanceled: Bool { get async { await capture().isCanceled } }
 }
 
 extension Promise {
@@ -353,64 +290,56 @@ extension Promise {
             cancelWhen: cancelWhen
         )
     }
-    
+
     public static func resolved(
         on queue: DispatchQueue = .global(),
         _ value: Value
     ) -> Promise<Value, Failure> {
-        let promise = Promise(queue: queue)
-        promise.state = Atomic(.resolved(value))
-        promise.pendingGroup.leave()
-        
-        return promise
+        Promise(queue: queue, state: .resolved(value))
     }
-    
+
     public static func rejected(
         on queue: DispatchQueue = .global(),
         _ error: Error
     ) -> Promise<Value, Error> where Failure == Error {
-        let promise = Promise<Value, Error>(queue: queue)
-        promise.state = Atomic(.rejected(error))
-        promise.pendingGroup.leave()
-        
-        return promise
+        Promise<Value, Error>(queue: queue, state: .rejected(error))
     }
-    
+
     public static func canceled(
         on queue: DispatchQueue = .global()
     ) -> Promise<Value, Failure> {
-        let promise = Promise(queue: queue)
-        promise.state = Atomic(.canceled)
-        promise.pendingGroup.leave()
-        
-        return promise
+        Promise(queue: queue, state: .canceled)
     }
 }
 
-public final class PromisePending<Value, Failure: Error> {
+public final class PromisePending<
+    Value: Sendable,
+    Failure: Error & Sendable
+>: Sendable {
     public let promise: Promise<Value, Failure>
-    public let resolve: (Value) -> Void
-    public let reject: (Failure) -> Void
-    public let cancel: () -> Void
-    public let onCancel: (@escaping () -> Void) -> Void
-    
+    public let resolve: @Sendable (Value) -> Void
+    public let reject: @Sendable (Failure) -> Void
+    public let cancel: @Sendable () -> Void
+    public let onCancel: @Sendable (@escaping @Sendable () -> Void) -> Void
+
     let cancelWhen: PromisePendingCancelWhen
-    
+
     init(
         queue: DispatchQueue,
         cancelWhen: PromisePendingCancelWhen
     ) {
         let promise = Promise<Value, Failure>(queue: queue)
-        
+        let callbacks = promise.callbacks
+
         self.promise = promise
-        self.resolve = { promise.resolve($0) }
-        self.reject = { promise.reject($0) }
-        self.cancel = { promise.cancel() }
-        self.onCancel = { promise.subscribe(queue: queue, onCanceled: $0) }
-        
+        self.resolve = callbacks.resolve
+        self.reject = callbacks.reject
+        self.cancel = callbacks.cancel
+        self.onCancel = callbacks.onCancel
+
         self.cancelWhen = cancelWhen
     }
-    
+
     deinit {
         if case .deinit = cancelWhen {
             cancel()
@@ -418,21 +347,57 @@ public final class PromisePending<Value, Failure: Error> {
     }
 }
 
-public enum PromisePendingCancelWhen {
+public enum PromisePendingCancelWhen: Sendable {
     case `deinit`
     case none
 }
 
-enum PromiseState<Value, Failure: Error> {
+enum PromiseState<
+    Value: Sendable,
+    Failure: Error & Sendable
+>: Sendable {
     case pending
     case resolved(_ value: Value)
     case rejected(_ error: Failure)
     case canceled
+
+    var isPending: Bool { if case .pending = self { true } else { false } }
+
+    var isResolved: Bool { if case .resolved = self { true } else { false } }
+
+    var isRejected: Bool { if case .rejected = self { true } else { false } }
+
+    var isCanceled: Bool { if case .canceled = self { true } else { false } }
 }
 
-struct PromiseCancelSubscriber {
-    let queue: DispatchQueue
-    let onCanceled: () -> Void
+extension Promise {
+    private func observe(
+        _ observer: @escaping @Sendable (PromiseState<Value, Failure>) -> Void
+    ) {
+        lock.withLock {
+            if storage.state.isPending {
+                storage.observers.append(observer)
+            } else {
+                observer(storage.state)
+            }
+        }
+    }
+
+    private func complete(with state: PromiseState<Value, Failure>) {
+        let observers = lock.withLock {
+            guard storage.state.isPending else { return [] }
+
+            storage.state = state
+            let observers = storage.observers
+            storage.observers.removeAll()
+            observers.forEach { $0(state) }
+
+            return observers
+        }
+
+        // Release observer captures after unlocking in case deinit reenters Promise.
+        withExtendedLifetime(observers) {}
+    }
 }
 
 public enum PromiseError: Error {

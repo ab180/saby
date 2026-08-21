@@ -11,7 +11,7 @@ extension Contract {
     @discardableResult
     public func finally(
         on queue: DispatchQueue? = nil,
-        _ block: @escaping () -> Void
+        _ block: @escaping @Sendable () -> Void
     ) -> Contract<Value, Failure> {
         let queue = queue ?? self.queue
         

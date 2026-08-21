@@ -9,6 +9,22 @@ import XCTest
 @testable import SabyConcurrency
 
 extension PromiseTest {
+    static func make<Value: Sendable>(
+        _ block: @escaping @Sendable () throws -> Value
+    ) -> Promise<Value, Error> {
+        Promise<Value, Error> { resolve, _ in
+            resolve(try block())
+        }
+    }
+
+    static func make<Value: Sendable>(
+        _ block: @escaping @Sendable () -> Value
+    ) -> Promise<Value, Never> {
+        Promise<Value, Never> { resolve, _ in
+            resolve(block())
+        }
+    }
+
     enum SampleError: Swift.Error {
         case one
         case two
@@ -22,8 +38,8 @@ extension PromiseTest {
         case canceled
     }
     
-    static func expect<Value, Failure>(promise: Promise<Value, Failure>,
-                              state: PromiseTest.State<(Value) -> Bool>,
+    static func expect<Value: Sendable, Failure: Error & Sendable>(promise: Promise<Value, Failure>,
+                              state: PromiseTest.State<@Sendable (Value) -> Bool>,
                               timeout: DispatchTimeInterval,
                               file: StaticString = #file,
                               line: UInt = #line)
@@ -35,7 +51,7 @@ extension PromiseTest {
         switch state {
         case .resolved(let expect):
             promise.subscribe(
-                queue: promise.queue,
+                on: promise.queue,
                 onResolved: { value in
                     XCTAssert(expect(value), message, file: file, line: line)
                     end.signal()
@@ -51,7 +67,7 @@ extension PromiseTest {
             )
         case .rejected(let expect):
             promise.subscribe(
-                queue: promise.queue,
+                on: promise.queue,
                 onResolved: { value in
                     XCTFail(message, file: file, line: line)
                     end.signal()
@@ -66,14 +82,16 @@ extension PromiseTest {
                 }
             )
         case .pending:
-            if case .pending = promise.state.capture({ $0 }) {} else {
-                XCTFail(message, file: file, line: line)
+            Task {
+                if await !promise.isPending {
+                    XCTFail(message, file: file, line: line)
+                }
+
+                end.signal()
             }
-            
-            end.signal()
         case .canceled:
             promise.subscribe(
-                queue: promise.queue,
+                on: promise.queue,
                 onCanceled: {
                     end.signal()
                 }
@@ -83,7 +101,7 @@ extension PromiseTest {
         PromiseTest.expect(semaphore: end, timeout: timeout, file: file, line: line)
     }
     
-    static func expect<Value: Equatable, Failure>(promise: Promise<Value, Failure>,
+    static func expect<Value: Equatable & Sendable, Failure: Error & Sendable>(promise: Promise<Value, Failure>,
                                          state: PromiseTest.State<Value>,
                                          timeout: DispatchTimeInterval,
                                          file: StaticString = #file,
@@ -96,7 +114,7 @@ extension PromiseTest {
         switch state {
         case .resolved(let expect):
             promise.subscribe(
-                queue: promise.queue,
+                on: promise.queue,
                 onResolved: { value in
                     XCTAssertEqual(value, expect, message, file: file, line: line)
                     end.signal()
@@ -120,7 +138,7 @@ extension PromiseTest {
             )
         case .rejected(let expect):
             promise.subscribe(
-                queue: promise.queue,
+                on: promise.queue,
                 onResolved: { value in
                     XCTFail(
                         "Promise is resolved",
@@ -143,14 +161,16 @@ extension PromiseTest {
                 }
             )
         case .pending:
-            if case .pending = promise.state.capture({ $0 }) {} else {
-                XCTFail(message, file: file, line: line)
+            Task {
+                if await !promise.isPending {
+                    XCTFail(message, file: file, line: line)
+                }
+
+                end.signal()
             }
-            
-            end.signal()
         case .canceled:
             promise.subscribe(
-                queue: promise.queue,
+                on: promise.queue,
                 onCanceled: {
                     end.signal()
                 }
