@@ -15,6 +15,7 @@ public final class FileValueStorage<Value: Codable & Sendable>: ValueStorage {
     typealias Context = FileValueStorageContext
     
     let contextPromise: Promise<Context<Value>, Error>
+    let tasks = PromiseTaskScope()
 
     public init(
         directoryURL: URL,
@@ -51,10 +52,13 @@ extension FileValueStorage {
     fileprivate func execute<Result: Sendable>(
         block: @escaping @Sendable (Context<Value>) async throws -> Result
     ) -> Promise<Result, Error> {
-        contextPromise.then { context in
-            Promise.async {
-                try await block(context)
-            }
+        let contextPromise = self.contextPromise
+
+        return tasks.promise {
+            let context = try await contextPromise.value(
+                cancelOnTaskCancellation: false
+            )
+            return try await block(context)
         }
     }
 }

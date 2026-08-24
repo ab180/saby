@@ -18,6 +18,7 @@ public final class FileDictionaryStorage<
     typealias Context = FileDictionaryStorageContext
     
     let contextPromise: Promise<Context<Key, Value>, Error>
+    let tasks = PromiseTaskScope()
 
     public init(
         directoryURL: URL,
@@ -63,10 +64,13 @@ extension FileDictionaryStorage {
     fileprivate func execute<Result: Sendable>(
         block: @escaping @Sendable (Context<Key, Value>) async throws -> Result
     ) -> Promise<Result, Error> {
-        contextPromise.then { context in
-            Promise.async {
-                try await block(context)
-            }
+        let contextPromise = self.contextPromise
+
+        return tasks.promise {
+            let context = try await contextPromise.value(
+                cancelOnTaskCancellation: false
+            )
+            return try await block(context)
         }
     }
 }

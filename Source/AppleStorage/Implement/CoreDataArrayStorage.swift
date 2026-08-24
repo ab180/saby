@@ -18,6 +18,7 @@ public final class CoreDataArrayStorage<Value: Codable & KeyIdentifiable & Senda
     typealias Item = SabyCoreDataArrayStorageItemVersion1
 
     let contextPromise: Promise<Context, Error>
+    let tasks = PromiseTaskScope()
 
     public init(
         directoryURL: URL,
@@ -213,11 +214,14 @@ extension CoreDataArrayStorage {
     fileprivate func execute<Result: Sendable>(
         block: @escaping @Sendable (Context) throws -> Result
     ) -> Promise<Result, Error> {
-        contextPromise.then { context in
-            Promise.async {
-                try await context.perform {
-                    try block(context)
-                }
+        let contextPromise = self.contextPromise
+
+        return tasks.promise {
+            let context = try await contextPromise.value(
+                cancelOnTaskCancellation: false
+            )
+            return try await context.perform {
+                try block(context)
             }
         }
     }
