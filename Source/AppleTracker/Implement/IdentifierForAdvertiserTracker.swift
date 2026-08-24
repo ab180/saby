@@ -32,7 +32,7 @@ public final class IdentifierForAdvertiserTracker: Tracker {
     }
 }
 
-public struct IdentifierForAdvertiser {
+public struct IdentifierForAdvertiser: Sendable {
     public let identifier: String
     public let limitAdTracking: Bool
 }

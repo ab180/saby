@@ -36,7 +36,7 @@ public final class ScreenFetcher: Fetcher {
     }
 }
 
-public struct Screen {
+public struct Screen: Sendable {
     public let width: Double
     public let height: Double
     public let scale: Double

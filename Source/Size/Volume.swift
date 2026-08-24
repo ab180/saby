@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct Volume: Codable, Comparable, Equatable {
+public struct Volume: Codable, Comparable, Equatable, Sendable {
     public let byte: Double
     
     public init(byte: Double) {

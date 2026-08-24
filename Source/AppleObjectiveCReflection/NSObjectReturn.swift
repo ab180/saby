@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum NSObjectReturn<Actual> {
+public enum NSObjectReturn<Actual>: Sendable {
     case reference(Actual.Type)
     case value(Actual.Type)
     case void(Actual.Type)

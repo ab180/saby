@@ -32,7 +32,7 @@ public final class TrackingAuthorizationTracker: Tracker {
     }
 }
 
-public enum TrackingAuthorization: UInt {
+public enum TrackingAuthorization: UInt, Sendable {
     case notDetermined = 0
     case restricted = 1
     case denied = 2
