@@ -90,7 +90,8 @@ final class ContractRecoverTest: XCTestCase {
         let contract0 = Contract<Int, Never>()
         let promise0 = Promise<Void, Never>()
         
-        let actual = Atomic<[Int]>([])
+        let lock = NSLock()
+        nonisolated(unsafe) var actual: [Int] = []
         let contract = contract0
             .then { value -> Int in
                 throw IntError(value: value)
@@ -100,7 +101,7 @@ final class ContractRecoverTest: XCTestCase {
                 return promise0.then { _ in error.value }
             }
             .then { value in
-                actual.mutate { $0 + [value] }
+                lock.withLock { actual.append(value) }
                 return value
             }
         
@@ -111,7 +112,7 @@ final class ContractRecoverTest: XCTestCase {
             promise0.resolve(())
         }
         
-        XCTAssertEqual(actual.capture { $0 }, expect)
+        XCTAssertEqual(lock.withLock { actual }, expect)
     }
     
     func test__recover_schedule_sync_throw() throws {
@@ -124,7 +125,8 @@ final class ContractRecoverTest: XCTestCase {
         let contract0 = Contract<Int, Never>()
         let promise0 = Promise<Void, Never>()
         
-        let actual = Atomic<[Int]>([])
+        let lock = NSLock()
+        nonisolated(unsafe) var actual: [Int] = []
         let contract = contract0
             .then { value -> Int in
                 throw IntError(value: value)
@@ -141,7 +143,7 @@ final class ContractRecoverTest: XCTestCase {
                 }
             }
             .then { value in
-                actual.mutate { $0 + [value] }
+                lock.withLock { actual.append(value) }
                 return value
             }
             .recover { _ in 0 }
@@ -153,6 +155,6 @@ final class ContractRecoverTest: XCTestCase {
             promise0.resolve(())
         }
         
-        XCTAssertEqual(actual.capture { $0 }, expect)
+        XCTAssertEqual(lock.withLock { actual }, expect)
     }
 }

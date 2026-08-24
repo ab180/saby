@@ -3,7 +3,6 @@
 Airbridge SDK core library for swift.
 
 - Concurrency
-    - Atomic: Access to single value without data race
     - Contract: Handle multiple values asynchronously
     - Promise: Handle single value asynchronously
 - Expect: Assert instance status

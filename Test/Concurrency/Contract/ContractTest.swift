@@ -12,17 +12,18 @@ final class ContractTest: XCTestCase {
     func test__repeated_resolve_and_reject_are_delivered_in_order() {
         let contract = Contract<Int, SampleError>()
         let queue = DispatchQueue(label: #function)
-        let values = Atomic<[String]>([])
+        let lock = NSLock()
+        nonisolated(unsafe) var values: [String] = []
         let callbacks = DispatchSemaphore(value: 0)
 
         contract.subscribe(
             on: queue,
             onResolved: { value in
-                values.mutate { $0 + ["resolve:\(value)"] }
+                lock.withLock { values.append("resolve:\(value)") }
                 callbacks.signal()
             },
             onRejected: { error in
-                values.mutate { $0 + ["reject:\(error)"] }
+                lock.withLock { values.append("reject:\(error)") }
                 callbacks.signal()
             },
             onCanceled: {}
@@ -36,7 +37,7 @@ final class ContractTest: XCTestCase {
             XCTAssertEqual(callbacks.wait(timeout: .now() + 1), .success)
         }
 
-        XCTAssertEqual(values.capture { $0 }, [
+        XCTAssertEqual(lock.withLock { values }, [
             "resolve:1",
             "reject:one",
             "resolve:2",
@@ -47,15 +48,16 @@ final class ContractTest: XCTestCase {
     func test__cancel_waits_for_prior_events_and_suppresses_later_events() {
         let contract = Contract<Int, SampleError>()
         let queue = DispatchQueue(label: #function)
-        let values = Atomic<[String]>([])
+        let lock = NSLock()
+        nonisolated(unsafe) var values: [String] = []
         let canceled = DispatchSemaphore(value: 0)
 
         contract.subscribe(
             on: queue,
-            onResolved: { value in values.mutate { $0 + ["resolve:\(value)"] } },
-            onRejected: { error in values.mutate { $0 + ["reject:\(error)"] } },
+            onResolved: { value in lock.withLock { values.append("resolve:\(value)") } },
+            onRejected: { error in lock.withLock { values.append("reject:\(error)") } },
             onCanceled: {
-                values.mutate { $0 + ["cancel"] }
+                lock.withLock { values.append("cancel") }
                 canceled.signal()
             }
         )
@@ -68,22 +70,19 @@ final class ContractTest: XCTestCase {
         XCTAssertEqual(canceled.wait(timeout: .now() + 1), .success)
         queue.sync {}
 
-        XCTAssertEqual(values.capture { $0 }, ["resolve:1", "reject:one", "cancel"])
+        XCTAssertEqual(lock.withLock { values }, ["resolve:1", "reject:one", "cancel"])
     }
 
     func test__concurrent_cancel_notifies_each_subscriber_once() {
         let contract = Contract<Int, SampleError>()
         let queue = DispatchQueue(label: #function)
-        let callbackCounts = Atomic(Array(repeating: 0, count: 32))
+        let lock = NSLock()
+        nonisolated(unsafe) var callbackCounts = Array(repeating: 0, count: 32)
         let callbacks = DispatchSemaphore(value: 0)
 
         for index in 0..<32 {
             contract.subscribe(on: queue) {
-                callbackCounts.mutate { values in
-                    var values = values
-                    values[index] += 1
-                    return values
-                }
+                lock.withLock { callbackCounts[index] += 1 }
                 callbacks.signal()
             }
         }
@@ -95,14 +94,15 @@ final class ContractTest: XCTestCase {
             XCTAssertEqual(callbacks.wait(timeout: .now() + 1), .success)
         }
 
-        XCTAssertEqual(callbackCounts.capture { $0 }, Array(repeating: 1, count: 32))
+        XCTAssertEqual(lock.withLock { callbackCounts }, Array(repeating: 1, count: 32))
     }
 
     func test__concurrent_subscribe_emit_and_cancel_notifies_every_subscriber_once() {
         let iterationCount = 256
         let contract = Contract<Int, SampleError>()
         let queue = DispatchQueue(label: #function, attributes: .concurrent)
-        let callbackCounts = Atomic(Array(repeating: 0, count: iterationCount))
+        let lock = NSLock()
+        nonisolated(unsafe) var callbackCounts = Array(repeating: 0, count: iterationCount)
         let callbacks = DispatchGroup()
 
         DispatchQueue.concurrentPerform(iterations: iterationCount) { index in
@@ -112,11 +112,7 @@ final class ContractTest: XCTestCase {
                 onResolved: { _ in },
                 onRejected: { _ in },
                 onCanceled: {
-                    callbackCounts.mutate { values in
-                        var values = values
-                        values[index] += 1
-                        return values
-                    }
+                    lock.withLock { callbackCounts[index] += 1 }
                     callbacks.leave()
                 }
             )
@@ -131,7 +127,7 @@ final class ContractTest: XCTestCase {
         contract.cancel()
         XCTAssertEqual(callbacks.wait(timeout: .now() + 5), .success)
         XCTAssertEqual(
-            callbackCounts.capture { $0 },
+            lock.withLock { callbackCounts },
             Array(repeating: 1, count: iterationCount)
         )
     }
@@ -140,17 +136,18 @@ final class ContractTest: XCTestCase {
         let contract = Contract<Int, SampleError>.canceled()
         let queue = DispatchQueue(label: #function)
         let marker = QueueMarker()
-        let callbackMarker = Atomic<UInt8?>(nil)
+        let lock = NSLock()
+        nonisolated(unsafe) var callbackMarker: UInt8?
         let canceled = DispatchSemaphore(value: 0)
         queue.setSpecific(key: marker.key, value: 1)
 
         contract.subscribe(on: queue) {
-            callbackMarker.mutate { _ in DispatchQueue.getSpecific(key: marker.key) }
+            lock.withLock { callbackMarker = DispatchQueue.getSpecific(key: marker.key) }
             canceled.signal()
         }
         XCTAssertEqual(canceled.wait(timeout: .now() + 1), .success)
 
-        XCTAssertEqual(callbackMarker.capture { $0 }, 1)
+        XCTAssertEqual(lock.withLock { callbackMarker }, 1)
     }
 
     func test__active_cancel_uses_contract_queue() {
@@ -158,31 +155,33 @@ final class ContractTest: XCTestCase {
         let subscriberQueue = DispatchQueue(label: "\(#function).subscriber")
         let contract = Contract<Int, SampleError>.executing(on: contractQueue).contract
         let marker = QueueMarker()
-        let callbackMarker = Atomic<UInt8?>(nil)
+        let lock = NSLock()
+        nonisolated(unsafe) var callbackMarker: UInt8?
         let canceled = DispatchSemaphore(value: 0)
         contractQueue.setSpecific(key: marker.key, value: 1)
         subscriberQueue.setSpecific(key: marker.key, value: 2)
 
         contract.subscribe(on: subscriberQueue) {
-            callbackMarker.mutate { _ in DispatchQueue.getSpecific(key: marker.key) }
+            lock.withLock { callbackMarker = DispatchQueue.getSpecific(key: marker.key) }
             canceled.signal()
         }
         contract.cancel()
         XCTAssertEqual(canceled.wait(timeout: .now() + 1), .success)
 
-        XCTAssertEqual(callbackMarker.capture { $0 }, 1)
+        XCTAssertEqual(lock.withLock { callbackMarker }, 1)
     }
 
     func test__callback_can_resolve_reentrantly_without_deadlock() {
         let contract = Contract<Int, SampleError>()
         let queue = DispatchQueue(label: #function)
-        let values = Atomic<[Int]>([])
+        let lock = NSLock()
+        nonisolated(unsafe) var values: [Int] = []
         let callbacks = DispatchSemaphore(value: 0)
 
         contract.subscribe(
             on: queue,
             onResolved: { value in
-                values.mutate { $0 + [value] }
+                lock.withLock { values.append(value) }
                 if value == 1 {
                     contract.resolve(2)
                 }
@@ -196,7 +195,7 @@ final class ContractTest: XCTestCase {
         XCTAssertEqual(callbacks.wait(timeout: .now() + 1), .success)
         XCTAssertEqual(callbacks.wait(timeout: .now() + 1), .success)
 
-        XCTAssertEqual(values.capture { $0 }, [1, 2])
+        XCTAssertEqual(lock.withLock { values }, [1, 2])
     }
 
     func test__subscriber_deinit_can_reenter_contract_during_cancel() {

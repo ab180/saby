@@ -152,7 +152,8 @@ final class ContractFilterTest: XCTestCase {
         let contract0 = Contract<Int, Never>()
         let promise0 = Promise<Void, Never>()
         
-        let actual = Atomic<[Int]>([])
+        let lock = NSLock()
+        nonisolated(unsafe) var actual: [Int] = []
         let contract = contract0
             .filter(schedule: .sync) { value in
                 promise0.then { _ in
@@ -165,7 +166,7 @@ final class ContractFilterTest: XCTestCase {
                 }
             }
             .then { value in
-                actual.mutate { $0 + [value] }
+                lock.withLock { actual.append(value) }
                 return value
             }
         
@@ -176,6 +177,6 @@ final class ContractFilterTest: XCTestCase {
             promise0.resolve(())
         }
         
-        XCTAssertEqual(actual.capture { $0 }, expect)
+        XCTAssertEqual(lock.withLock { actual }, expect)
     }
 }

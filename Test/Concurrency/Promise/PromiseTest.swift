@@ -177,13 +177,14 @@ final class PromiseTest: XCTestCase {
     func test__concurrent_completion_notifies_once() async {
         let callbackQueue = DispatchQueue(label: #function)
         let pending = Promise<Int, Error>.pending(on: callbackQueue)
-        let completionCount = Atomic(0)
+        let lock = NSLock()
+        nonisolated(unsafe) var completionCount = 0
 
         pending.promise.subscribe(
             on: callbackQueue,
-            onResolved: { _ in completionCount.mutate { $0 + 1 } },
-            onRejected: { _ in completionCount.mutate { $0 + 1 } },
-            onCanceled: { completionCount.mutate { $0 + 1 } }
+            onResolved: { _ in lock.withLock { completionCount += 1 } },
+            onRejected: { _ in lock.withLock { completionCount += 1 } },
+            onCanceled: { lock.withLock { completionCount += 1 } }
         )
 
         DispatchQueue.concurrentPerform(iterations: 1_000) { index in
@@ -195,7 +196,7 @@ final class PromiseTest: XCTestCase {
         }
         callbackQueue.sync {}
 
-        XCTAssertEqual(completionCount.capture { $0 }, 1)
+        XCTAssertEqual(lock.withLock { completionCount }, 1)
         let isPending = await pending.promise.isPending
         XCTAssertFalse(isPending)
     }

@@ -85,12 +85,13 @@ final class PromiseDelayTest: XCTestCase {
         FirstFailure: Error & Sendable,
         SecondFailure: Error & Sendable
     {
-        let values = Atomic<[Int]>([])
+        let lock = NSLock()
+        nonisolated(unsafe) var values: [Int] = []
         let end = DispatchSemaphore(value: 0)
 
         first.subscribe(
             onResolved: { value in
-                values.mutate { $0 + [value] }
+                lock.withLock { values.append(value) }
                 end.signal()
             },
             onRejected: { _ in
@@ -104,7 +105,7 @@ final class PromiseDelayTest: XCTestCase {
         )
         second.subscribe(
             onResolved: { value in
-                values.mutate { $0 + [value] }
+                lock.withLock { values.append(value) }
                 end.signal()
             },
             onRejected: { _ in
@@ -118,6 +119,6 @@ final class PromiseDelayTest: XCTestCase {
         )
 
         PromiseTest.expect(semaphore: end, count: 2, timeout: .seconds(1))
-        XCTAssertEqual(values.capture { $0 }, expected)
+        XCTAssertEqual(lock.withLock { values }, expected)
     }
 }
