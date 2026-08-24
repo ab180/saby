@@ -11,13 +11,16 @@ import SabyConcurrency
 import SabyJSON
 import SabyTime
 
-public final class JSONClient: Client {
+public final class JSONClient: Client, Sendable {
     let client: DataClient
+    let tasks: PromiseTaskScope
     
     init(
-        client: DataClient
+        client: DataClient,
+        cancelWhen: PromisePendingCancelWhen
     ) {
         self.client = client
+        self.tasks = PromiseTaskScope(cancelWhen: cancelWhen)
     }
 }
 
@@ -27,7 +30,7 @@ extension JSONClient {
         optionBlock: (inout URLSessionConfiguration) -> Void = { _ in }
     ) {
         let client = DataClient(cancelWhen: cancelWhen, optionBlock: optionBlock)
-        self.init(client: client)
+        self.init(client: client, cancelWhen: cancelWhen)
     }
 }
     
@@ -52,34 +55,36 @@ extension JSONClient {
             bodyData = body
         }
         
-        return client.request(
-            url: url,
-            method: method,
-            header: header,
-            body: bodyData,
-            timeout: timeout,
-            optionBlock: optionBlock
-        )
-        .then { code2XX, headers, data -> ClientResult<JSON> in
-            guard let data, let body = try? JSON.parse(data) else {
-                throw JSONClientError.responseDataIsNotDecodable(code: code2XX, body: data)
-            }
-            
-            
-            return (code2XX, headers, body)
-        }
-        .catch { error in
-            if case DataClientError.timeout = error {
-                throw JSONClientError.timeout
-            }
-            else if case DataClientError.statusCodeNotFound = error {
-                throw JSONClientError.statusCodeNotFound
-            }
-            else if case DataClientError.statusCodeNot2XX(let codeNot2XX, let data) = error {
+        var request = URLRequest(url: url)
+        request.httpMethod = method.rawValue
+        header.forEach { request.setValue($1, forHTTPHeaderField: $0) }
+        request.httpBody = bodyData
+        optionBlock(&request)
+
+        let requestSnapshot = request
+        let session = client.session
+        let timeout = timeout.map(\.nanoseconds)
+
+        return tasks.promise {
+            do {
+                let (code, headers, data) = try await session.result(
+                    for: requestSnapshot,
+                    timeout: timeout
+                )
                 guard let data, let body = try? JSON.parse(data) else {
-                    throw JSONClientError.responseDataIsNotDecodable(code: codeNot2XX, body: data)
+                    throw JSONClientError.responseDataIsNotDecodable(code: code, body: data)
                 }
-                throw JSONClientError.statusCodeNot2XX(codeNot2XX: codeNot2XX, body: body)
+
+                return (code, headers, body)
+            } catch DataClientError.timeout {
+                throw JSONClientError.timeout
+            } catch DataClientError.statusCodeNotFound {
+                throw JSONClientError.statusCodeNotFound
+            } catch DataClientError.statusCodeNot2XX(let code, let data) {
+                guard let data, let body = try? JSON.parse(data) else {
+                    throw JSONClientError.responseDataIsNotDecodable(code: code, body: data)
+                }
+                throw JSONClientError.statusCodeNot2XX(codeNot2XX: code, body: body)
             }
         }
     }
