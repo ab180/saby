@@ -110,4 +110,27 @@ final class FileDictionaryStorageTest: XCTestCase {
             XCTAssertEqual(try storage.get(key: $0.0).wait(), $0.1)
         }
     }
+
+    func test__concurrent_set() throws {
+        let entries = testObjects
+        let promises = entries.map { storage.set(key: $0.0, value: $0.1) }
+
+        try promises.forEach { try $0.wait() }
+
+        XCTAssertEqual(try storage.get(limit: .unlimited).wait().count, entries.count)
+    }
+
+    func test__reload() throws {
+        let key = UUID().uuidString
+        let value = DummyItem(key: UUID())
+        try storage.set(key: key, value: value).wait()
+        try storage.save().wait()
+
+        let reloaded = FileDictionaryStorage<String, DummyItem>(
+            directoryURL: directoryURL,
+            storageName: storageName
+        )
+
+        XCTAssertEqual(try reloaded.get(key: key).wait(), value)
+    }
 }

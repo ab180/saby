@@ -88,4 +88,27 @@ final class FileValueStorageTest: XCTestCase {
         try storage.save().wait()
         XCTAssertEqual(try storage.get().wait(), value)
     }
+
+    func test__reload() throws {
+        let value = DummyItem(key: UUID())
+
+        try storage.set(value).wait()
+        try storage.save().wait()
+
+        let reloaded = FileValueStorage<DummyItem>(
+            directoryURL: directoryURL,
+            storageName: storageName
+        )
+        XCTAssertEqual(try reloaded.get().wait(), value)
+    }
+
+    func test__concurrent_set() throws {
+        let values = testObjects
+
+        try values
+            .map(storage.set)
+            .forEach { try $0.wait() }
+
+        XCTAssertTrue(values.contains(try storage.get().wait()!))
+    }
 }
