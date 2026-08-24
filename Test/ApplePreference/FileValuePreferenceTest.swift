@@ -6,10 +6,9 @@
 //
 
 import XCTest
-import SabyConcurrency
 @testable import SabyApplePreference
 
-private struct DummyItem: Codable, Equatable {
+private struct DummyItem: Codable, Equatable, Sendable {
     var key: UUID
 }
 
@@ -44,48 +43,65 @@ final class FileValuePreferenceTest: XCTestCase {
         }
     }
     
-    func test__set() throws {
-        try testObjects.forEach {
-            try preference.set($0)
+    func test__set() async throws {
+        for object in testObjects {
+            try await preference.set(object)
         }
         
-        try preference.save()
+        try await preference.save()
         
-        let value = try preference.get()
+        let value = try await preference.get()
         XCTAssertNotEqual(value, nil)
     }
     
-    func test__delete() throws {
+    func test__delete() async throws {
         let testObjects = testObjects
-        try testObjects.forEach {
-            try preference.set($0)
+        for object in testObjects {
+            try await preference.set(object)
         }
 
-        try preference.save()
-        try preference.clear()
-        try preference.save()
-        XCTAssertEqual(try preference.get(), nil)
+        try await preference.save()
+        try await preference.clear()
+        try await preference.save()
+        let value = try await preference.get()
+        XCTAssertNil(value)
     }
     
-    func test__get() throws {
+    func test__get() async throws {
         let testCount = testCount
         let testObjects = testObjects
         let randomIndex = (0 ..< testCount).randomElement()!
-        try testObjects.forEach {
-            try preference.set($0)
+        for object in testObjects {
+            try await preference.set(object)
         }
         
-        try preference.set(testObjects[randomIndex])
+        try await preference.set(testObjects[randomIndex])
         
-        try preference.save()
-        XCTAssertEqual(try preference.get(), testObjects[randomIndex])
+        try await preference.save()
+        let value = try await preference.get()
+        XCTAssertEqual(value, testObjects[randomIndex])
     }
     
-    func test__save() throws {
+    func test__save() async throws {
         let value = DummyItem(key: UUID())
         
-        try preference.set(value)
-        try preference.save()
-        XCTAssertEqual(try preference.get(), value)
+        try await preference.set(value)
+        try await preference.save()
+        let storedValue = try await preference.get()
+        XCTAssertEqual(storedValue, value)
+    }
+
+    func test__reload() async throws {
+        let value = DummyItem(key: UUID())
+
+        try await preference.set(value)
+        try await preference.save()
+
+        let reloaded = FileValuePreference<DummyItem>(
+            directoryURL: directoryURL,
+            storageName: storageName
+        )
+        let storedValue = try await reloaded.get()
+        XCTAssertEqual(storedValue, value)
     }
 }

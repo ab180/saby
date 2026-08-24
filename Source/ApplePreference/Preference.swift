@@ -11,7 +11,11 @@ public protocol Preference {
     /// ``init(directoryURL:storageName:migration:)``
     /// execute migration and then create or load preference from
     /// `{Directory url}/{Storage name}_{Version name}` path.
-    init(directoryURL: URL, storageName: String, migration: @escaping () throws -> Void)
+    init(
+        directoryURL: URL,
+        storageName: String,
+        migration: @escaping @Sendable () throws -> Void
+    )
 }
 
 extension Preference {

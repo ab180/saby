@@ -189,7 +189,7 @@ package
             path: "Source/AppleStorage"),
         .target(
             name: "SabyApplePreference",
-            dependencies: ["SabyConcurrency", "SabyJSON"],
+            dependencies: ["SabyJSON"],
             path: "Source/ApplePreference"),
         .target(
             name: "SabyAppleTracker",

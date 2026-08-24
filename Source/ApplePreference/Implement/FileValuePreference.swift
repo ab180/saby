@@ -6,84 +6,81 @@
 //
 
 import Foundation
-import SabyConcurrency
 import SabyJSON
 
 private let STORAGE_VERSION = "Version1"
 
-public final class FileValuePreference<Value: Codable>: ValuePreference {
+public actor FileValuePreference<Value: Codable & Sendable>: ValuePreference {
     typealias Context = FileValuePreferenceContext
-    
-    let fileLock = Lock()
-    
-    let contextLoad: () throws -> Context<Value>
-    let context: Atomic<Context<Value>?>
-    
-    let encoder = JSONEncoder.acceptingNonConfirmingFloat()
 
-    public init(directoryURL: URL, storageName: String, migration: @escaping () throws -> Void) {
-        self.contextLoad = {
-            try Context.load(
-                directoryURL: directoryURL,
-                storageName: storageName,
-                migration: migration
-            )
-        }
-        self.context = Atomic(try? contextLoad())
+    private let directoryURL: URL
+    private let storageName: String
+    private let migration: @Sendable () throws -> Void
+    private var context: Context<Value>?
+
+    public init(
+        directoryURL: URL,
+        storageName: String,
+        migration: @escaping @Sendable () throws -> Void
+    ) {
+        self.directoryURL = directoryURL
+        self.storageName = storageName
+        self.migration = migration
+        self.context = try? Context.load(
+            directoryURL: directoryURL,
+            storageName: storageName,
+            migration: migration
+        )
     }
 }
 
 extension FileValuePreference {
-    public func set(_ value: Value) throws -> Void {
-        try execute { context in
-            _ = context.value.mutate { _ in
-                value
-            }
-        }
+    public func set(_ value: Value) async throws -> Void {
+        try execute { $0.value = value }
     }
     
-    public func clear() throws -> Void {
-        try execute { context in
-            _ = context.value.mutate { _ in
-                nil
-            }
-        }
+    public func clear() async throws -> Void {
+        try execute { $0.value = nil }
     }
 
-    public func get() throws -> Value? {
-        try execute { context in
-            context.value.capture { $0 }
-        }
+    public func get() async throws -> Value? {
+        try execute { $0.value }
     }
 
-    public func save() throws -> Void {
+    public func save() async throws -> Void {
         try execute { context in
-            let values = context.value.capture { $0 }
-            let data = try self.encoder.encode(values)
-            
-            self.fileLock.lock()
+            let data = try JSONEncoder.acceptingNonConfirmingFloat().encode(context.value)
             try data.write(to: context.url)
-            self.fileLock.unlock()
         }
     }
 }
 
 extension FileValuePreference {
     fileprivate func execute<Result>(
-        block: (Context<Value>) throws -> Result
+        block: (inout Context<Value>) throws -> Result
     ) throws -> Result {
-        let current = try context.capture { $0 } ?? contextLoad()
-        context.mutate { _ in current }
-        
-        return try block(current)
+        var context: Context<Value>
+        if let current = self.context {
+            context = current
+        } else {
+            context = try Context.load(
+                directoryURL: directoryURL,
+                storageName: storageName,
+                migration: migration
+            )
+        }
+
+        let result = try block(&context)
+        self.context = context
+        return result
     }
 }
 
-struct FileValuePreferenceContext<Value: Codable> {
+struct FileValuePreferenceContext<Value: Codable & Sendable>: Sendable {
     let url: URL
-    let value: Atomic<FileValuePreferenceItemVersion1<Value>?>
+    var value: FileValuePreferenceItemVersion1<Value>?
     
-    private init(url: URL, value: Atomic<FileValuePreferenceItemVersion1<Value>?>) {
+    private init(url: URL, value: FileValuePreferenceItemVersion1<Value>?) {
         self.url = url
         self.value = value
     }
@@ -91,7 +88,7 @@ struct FileValuePreferenceContext<Value: Codable> {
     static func load(
         directoryURL: URL,
         storageName: String,
-        migration: () throws -> Void
+        migration: @Sendable () throws -> Void
     ) throws -> FileValuePreferenceContext {
         try migration()
         
@@ -113,7 +110,7 @@ struct FileValuePreferenceContext<Value: Codable> {
         if !fileManager.fileExists(atPath: url.path) {
             return FileValuePreferenceContext(
                 url: url,
-                value: Atomic(nil)
+                value: nil
             )
         }
         
@@ -126,16 +123,16 @@ struct FileValuePreferenceContext<Value: Codable> {
         else {
             return FileValuePreferenceContext(
                 url: url,
-                value: Atomic(nil)
+                value: nil
             )
         }
         
         return FileValuePreferenceContext(
             url: url,
-            value: Atomic(value)
+            value: value
         )
     }
 }
 
 // Must not be modified. Write new ItemVersion and write migration logic instead.
-typealias FileValuePreferenceItemVersion1<Value: Codable> = Value
+typealias FileValuePreferenceItemVersion1<Value: Codable & Sendable> = Value
