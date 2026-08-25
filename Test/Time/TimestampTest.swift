@@ -11,6 +11,13 @@ import Testing
 
 @Suite
 struct TimestampTest {
+    @Test func sendable() async {
+        let timestamp = Timestamp(secondFrom1970: 100)
+        let captured = await Task.detached { timestamp }.value
+
+        #expect(captured == timestamp)
+    }
+
     @Test func nowCreate() {
         #expect(Int(Timestamp.now().secondFrom1970) == Int(Date().timeIntervalSince1970))
     }
