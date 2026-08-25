@@ -24,16 +24,17 @@ public final class AppleAdsAttributionTokenFetcher: Fetcher {
     }
     
     public func fetch() -> Promise<AppleAdsAttributionToken, Error> {
-        Promise.async {
-            try self.classAAAttribution.attributionToken()
+        let classAAAttribution = self.classAAAttribution
+
+        return Promise.async {
+            try await classAAAttribution.attributionToken()
         }
     }
 }
 
 public typealias AppleAdsAttributionToken = String
 
-private final class ClassAAAttribution {
-    private let classAAAttribution: NSObjectClass
+private actor ClassAAAttribution {
     private let methodAttributionTokenWithError: NSObjectClassMethod
     
     init?() {
@@ -48,7 +49,6 @@ private final class ClassAAAttribution {
             return nil
         }
         
-        self.classAAAttribution = classAAAttribution
         self.methodAttributionTokenWithError = methodAttributionTokenWithError
     }
     

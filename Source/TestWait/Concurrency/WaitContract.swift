@@ -20,47 +20,60 @@ public struct WaitContract: Sendable {
         until: @escaping (Value) -> Bool = { _ in true },
         _ block: () throws -> Void
     ) throws -> Value {
-        nonisolated(unsafe) let until = until
-        nonisolated(unsafe) var result: Value?
-        nonisolated(unsafe) var failure: Error?
-        
-        let lock = Lock()
-        let semaphore = DispatchSemaphore(value: 0)
+        let state = WaitContractState<Value, Failure>(until: until)
+
         contract.subscribe(
-            onResolved: {
-                lock.lock()
-                defer { lock.unlock() }
-                
-                if until($0), result == nil {
-                    result = $0
-                    semaphore.signal()
-                }
-            },
-            onRejected: {
-                lock.lock()
-                defer { lock.unlock() }
-                
-                if failure == nil {
-                    failure = $0
-                    semaphore.signal()
-                }
-            },
+            onResolved: { state.resolve($0) },
+            onRejected: { state.reject($0) },
             onCanceled: {}
         )
         try block()
 
-        if case .timedOut = semaphore.wait(timeout: .now() + timeout) {
-            throw WaitPromiseError.timeout
-        }
-        
-        if let failure {
-            throw failure
-        }
-        
-        return result!
+        return try state.wait(timeout: timeout)
     }
 }
 
-public enum WaitContractError: Error {
-    case timeout
+private final class WaitContractState<
+    Value: Sendable,
+    Failure: Error & Sendable
+>: @unchecked Sendable {
+    private let lock = NSLock()
+    private let semaphore = DispatchSemaphore(value: 0)
+    private let until: (Value) -> Bool
+    private var result: Result<Value, Failure>?
+
+    init(until: @escaping (Value) -> Bool) {
+        self.until = until
+    }
+
+    func resolve(_ value: Value) {
+        complete(.success(value), where: until(value))
+    }
+
+    func reject(_ error: Failure) {
+        complete(.failure(error), where: true)
+    }
+
+    func wait(timeout: DispatchTimeInterval) throws -> Value {
+        if case .timedOut = semaphore.wait(timeout: .now() + timeout) {
+            throw WaitError.timeout
+        }
+
+        return try lock.withLock { try result!.get() }
+    }
+
+    private func complete(
+        _ result: Result<Value, Failure>,
+        where condition: Bool
+    ) {
+        let completed = lock.withLock {
+            guard condition, self.result == nil else { return false }
+            self.result = result
+            return true
+        }
+
+        if completed {
+            semaphore.signal()
+        }
+    }
 }

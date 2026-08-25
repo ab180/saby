@@ -26,8 +26,10 @@ public final class TrackingAuthorizationTracker: Tracker {
     }
     
     public func track() -> Promise<TrackingAuthorization, Error> {
-        Promise.async {
-            try self.tracker.track()
+        let tracker = self.tracker
+
+        return Promise.async {
+            try await tracker.track()
         }
     }
 }
@@ -39,8 +41,7 @@ public enum TrackingAuthorization: UInt, Sendable {
     case authorized = 3
 }
 
-private final class TrackerReflection {
-    private let classTracker: NSObjectClass
+private actor TrackerReflection {
     private let methodTrackCode: NSObjectClassMethod
     
     init?() {
@@ -55,7 +56,6 @@ private final class TrackerReflection {
             return nil
         }
         
-        self.classTracker = classTracker
         self.methodTrackCode = methodTrackCode
     }
     
@@ -80,7 +80,7 @@ private final class TrackerReflection {
     }
 }
 
-public enum TrackingAuthorizationTrackerError: Error {
+private enum TrackingAuthorizationTrackerError: Error {
     case unmatchedType
 }
 

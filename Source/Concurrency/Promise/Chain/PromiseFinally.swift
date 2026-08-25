@@ -14,16 +14,22 @@ extension Promise {
         _ block: @escaping @Sendable () -> Void
     ) -> Promise<Value, Failure> {
         let queue = queue ?? self.queue
-        
+
         let promiseReturn = Promise<Value, Failure>(queue: self.queue)
-        
+
         subscribe(
             on: queue,
-            onResolved: { block(); promiseReturn.resolve($0) },
-            onRejected: { block(); promiseReturn.reject($0) },
+            onResolved: {
+                block()
+                promiseReturn.resolve($0)
+            },
+            onRejected: {
+                block()
+                promiseReturn.reject($0)
+            },
             onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
         )
-        
+
         return promiseReturn
     }
 }

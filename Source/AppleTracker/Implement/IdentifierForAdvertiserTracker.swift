@@ -21,13 +21,15 @@ public final class IdentifierForAdvertiserTracker: Tracker {
         guard let tracker = TrackerReflection() else {
             return nil
         }
-        
+
         self.tracker = tracker
     }
     
     public func track() -> Promise<IdentifierForAdvertiser, Error> {
-        Promise.async {
-            try self.tracker.track()
+        let tracker = self.tracker
+
+        return Promise.async {
+            try await tracker.track()
         }
     }
 }
@@ -37,10 +39,7 @@ public struct IdentifierForAdvertiser: Sendable {
     public let limitAdTracking: Bool
 }
 
-private final class TrackerReflection {
-    private let classTracker: NSObjectClass
-    private let methodShared: NSObjectClassMethod
-    private let instanceTracker: NSObjectInstance
+private actor TrackerReflection {
     private let methodTrackIdentifier: NSObjectInstanceMethod
     private let methodTrackLimitAdTracking: NSObjectInstanceMethod
     
@@ -74,9 +73,6 @@ private final class TrackerReflection {
             return nil
         }
         
-        self.classTracker = classTracker
-        self.methodShared = methodShared
-        self.instanceTracker = instanceTracker
         self.methodTrackIdentifier = methodTrackIdentifier
         self.methodTrackLimitAdTracking = methodTrackLimitAdTracking
     }
@@ -114,7 +110,7 @@ private final class TrackerReflection {
     }
 }
 
-public enum IdentifierForAdvertiserTrackerError: Error {
+private enum IdentifierForAdvertiserTrackerError: Error {
     case unmatchedType
 }
 

@@ -15,7 +15,6 @@ public final class Contract<
         let resolve: @Sendable (Value) -> Void
         let reject: @Sendable (Failure) -> Void
         let cancel: @Sendable () -> Void
-        let onCancel: @Sendable (@escaping @Sendable () -> Void) -> Void
     }
 
     let queue: DispatchQueue
@@ -27,13 +26,10 @@ public final class Contract<
         cancelSubscribers: [@Sendable () -> Void]
     )
 
-    init(
-        queue: DispatchQueue = .global(),
-        state: ContractState = .executing
-    ) {
+    init(queue: DispatchQueue = .global()) {
         self.queue = queue
         self.storage = (
-            state: state,
+            state: .executing,
             executeGroup: DispatchGroup(),
             subscribers: [],
             cancelSubscribers: []
@@ -44,8 +40,7 @@ public final class Contract<
         Callbacks(
             resolve: { [self] in resolve($0) },
             reject: { [self] in reject($0) },
-            cancel: { [self] in cancel() },
-            onCancel: { [self] in subscribe(onCanceled: $0) }
+            cancel: { [self] in cancel() }
         )
     }
 }
@@ -202,16 +197,6 @@ extension Contract {
 }
 
 extension Contract {
-    public var isExecuting: Bool {
-        get async { lock.withLock { storage.state.isExecuting } }
-    }
-
-    public var isCanceled: Bool {
-        get async { lock.withLock { storage.state.isCanceled } }
-    }
-}
-
-extension Contract {
     public static func executing(
         on queue: DispatchQueue = .global(),
         cancelWhen: ContractExecuting<Value, Failure>.CancelWhen = .none
@@ -222,11 +207,6 @@ extension Contract {
         )
     }
 
-    public static func canceled(
-        on queue: DispatchQueue = .global()
-    ) -> Contract<Value, Failure> {
-        Contract(queue: queue, state: .canceled)
-    }
 }
 
 public final class ContractExecuting<
@@ -237,7 +217,6 @@ public final class ContractExecuting<
     public let resolve: @Sendable (Value) -> Void
     public let reject: @Sendable (Failure) -> Void
     public let cancel: @Sendable () -> Void
-    public let onCancel: @Sendable (@escaping @Sendable () -> Void) -> Void
 
     let cancelWhen: CancelWhen
     let subscribeQueue = DispatchQueue(label: "co.ab180.saby")
@@ -253,7 +232,6 @@ public final class ContractExecuting<
         self.resolve = callbacks.resolve
         self.reject = callbacks.reject
         self.cancel = callbacks.cancel
-        self.onCancel = callbacks.onCancel
 
         self.cancelWhen = cancelWhen
     }
@@ -272,22 +250,16 @@ public final class ContractExecuting<
 
 extension ContractExecuting {
     public func subscribe(
-        _ contract: Contract<Value, Failure>
-    ) {
-        weak let weakSelf = self.contract
-        contract.subscribe(
-            on: subscribeQueue,
-            onResolved: { weakSelf?.resolve($0) },
-            onRejected: { weakSelf?.reject($0) },
-            onCanceled: { weakSelf?.cancel() }
-        )
-    }
-
-    public func subscribe(
         _ contracts: [Contract<Value, Failure>]
     ) {
-        contracts.forEach {
-            subscribe($0)
+        weak let weakSelf = contract
+        contracts.forEach { contract in
+            contract.subscribe(
+                on: subscribeQueue,
+                onResolved: { weakSelf?.resolve($0) },
+                onRejected: { weakSelf?.reject($0) },
+                onCanceled: { weakSelf?.cancel() }
+            )
         }
     }
 }
@@ -299,8 +271,6 @@ enum ContractState: Sendable {
 
 extension ContractState {
     var isExecuting: Bool { if case .executing = self { true } else { false } }
-
-    var isCanceled: Bool { if case .canceled = self { true } else { false } }
 }
 
 struct ContractSubscriber<

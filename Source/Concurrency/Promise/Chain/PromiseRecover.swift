@@ -14,36 +14,34 @@ extension Promise {
         _ block: @escaping @Sendable (Failure) throws -> Value
     ) -> Promise<Value, Error> {
         let queue = queue ?? self.queue
-        
+
         let promiseReturn = Promise<Value, Error>(queue: self.queue)
-        
+
         subscribe(
             on: queue,
             onResolved: { promiseReturn.resolve($0) },
             onRejected: {
                 do {
-                    let value = try block($0)
-                    promiseReturn.resolve(value)
-                }
-                catch let error {
+                    promiseReturn.resolve(try block($0))
+                } catch {
                     promiseReturn.reject(error)
                 }
             },
             onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
         )
-        
+
         return promiseReturn
     }
-    
+
     @discardableResult
     public func recover<ResultFailure: Error & Sendable>(
         on queue: DispatchQueue? = nil,
         _ block: @escaping @Sendable (Failure) throws -> Promise<Value, ResultFailure>
     ) -> Promise<Value, Error> {
         let queue = queue ?? self.queue
-        
+
         let promiseReturn = Promise<Value, Error>(queue: self.queue)
-        
+
         subscribe(
             on: queue,
             onResolved: { promiseReturn.resolve($0) },
@@ -56,14 +54,13 @@ extension Promise {
                         onRejected: { promiseReturn.reject($0) },
                         onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
                     )
-                }
-                catch let error {
+                } catch {
                     promiseReturn.reject(error)
                 }
             },
             onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
         )
-        
+
         return promiseReturn
     }
 }
@@ -75,37 +72,33 @@ extension Promise {
         _ block: @escaping @Sendable (Failure) -> Value
     ) -> Promise<Value, Never> {
         let queue = queue ?? self.queue
-        
+
         let promiseReturn = Promise<Value, Never>(queue: self.queue)
-        
+
         subscribe(
             on: queue,
             onResolved: { promiseReturn.resolve($0) },
-            onRejected: {
-                let value = block($0)
-                promiseReturn.resolve(value)
-            },
+            onRejected: { promiseReturn.resolve(block($0)) },
             onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
         )
-        
+
         return promiseReturn
     }
-    
+
     @discardableResult
     public func recover<ResultFailure: Error & Sendable>(
         on queue: DispatchQueue? = nil,
         _ block: @escaping @Sendable (Failure) -> Promise<Value, ResultFailure>
     ) -> Promise<Value, ResultFailure> {
         let queue = queue ?? self.queue
-        
+
         let promiseReturn = Promise<Value, ResultFailure>(queue: self.queue)
-        
+
         subscribe(
             on: queue,
             onResolved: { promiseReturn.resolve($0) },
             onRejected: {
-                let promise = block($0)
-                promise.subscribe(
+                block($0).subscribe(
                     on: queue,
                     onResolved: { promiseReturn.resolve($0) },
                     onRejected: { promiseReturn.reject($0) },
@@ -114,7 +107,7 @@ extension Promise {
             },
             onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
         )
-        
+
         return promiseReturn
     }
 }

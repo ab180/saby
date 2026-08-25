@@ -12,27 +12,18 @@ extension Promise where
     Failure == Never
 {
     public static func all<
-        Value0: Sendable,
-        Failure0: Error & Sendable
+        ElementValue: Sendable,
+        ElementFailure: Error & Sendable
     >(
         on queue: DispatchQueue = .global(),
-        _ promises: [Promise<Value0, Failure0>]
-    ) -> Promise<[Value0], Failure0> {
-        let promiseReturn = Promise<[Value0], Failure0>(queue: queue)
+        _ promises: [Promise<ElementValue, ElementFailure>]
+    ) -> Promise<[ElementValue], ElementFailure> {
+        let promiseReturn = Promise<[ElementValue], ElementFailure>(queue: queue)
         let resolve: @Sendable () -> Void = {
-            _ = Task {
-                var values = [Value0]()
-                for promise in promises {
-                    if case .resolved(let value) = await promise.capture() {
-                        values.append(value)
-                    }
-                    else {
-                        return
-                    }
-                }
+            let values = promises.compactMap { $0.capture().resolved }
+            guard values.count == promises.count else { return }
 
-                promiseReturn.resolve(values)
-            }
+            promiseReturn.resolve(values)
         }
         
         for promise in promises {
@@ -59,16 +50,14 @@ extension Promise where
         let promiseReturn = Promise<(repeat each PromiseValue), Never>(queue: queue)
         
         let resolve: @Sendable () -> Void = {
-            _ = Task {
-                let captures = (repeat await (each promises).capture().resolved)
+            let captures = (repeat (each promises).capture().resolved)
 
-                for capture in repeat each captures {
-                    guard capture != nil else { return }
-                }
-
-                let resolved = (repeat (each captures)!)
-                promiseReturn.resolve(resolved)
+            for capture in repeat each captures {
+                guard capture != nil else { return }
             }
+
+            let resolved = (repeat (each captures)!)
+            promiseReturn.resolve(resolved)
         }
         
         for promise in repeat each promises {
@@ -94,16 +83,14 @@ extension Promise where
         let promiseReturn = Promise<(repeat each PromiseValue), Error>(queue: queue)
         
         let resolve: @Sendable () -> Void = {
-            _ = Task {
-                let captures = (repeat await (each promises).capture().resolved)
+            let captures = (repeat (each promises).capture().resolved)
 
-                for capture in repeat each captures {
-                    guard capture != nil else { return }
-                }
-
-                let resolved = (repeat (each captures)!)
-                promiseReturn.resolve(resolved)
+            for capture in repeat each captures {
+                guard capture != nil else { return }
             }
+
+            let resolved = (repeat (each captures)!)
+            promiseReturn.resolve(resolved)
         }
         
         for promise in repeat each promises {

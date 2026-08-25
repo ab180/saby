@@ -24,7 +24,7 @@ public struct WaitMockFunction {
         var callArgument: Argument?
         var callResult: Result?
         
-        let lock = Lock()
+        let lock = NSLock()
         let semaphore = DispatchSemaphore(value: 0)
         let callback = mock.callback
         mock.callback = { argument, result in
@@ -42,13 +42,9 @@ public struct WaitMockFunction {
         try block()
 
         if case .timedOut = semaphore.wait(timeout: .now() + timeout) {
-            throw WaitMockFunctionError.timeout
+            throw WaitError.timeout
         }
         
         return (argument: callArgument!, result: callResult!)
     }
-}
-
-public enum WaitMockFunctionError: Error {
-    case timeout
 }

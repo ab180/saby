@@ -229,7 +229,7 @@ extension Promise {
 
     func cancel() { complete(with: .canceled) }
 
-    func capture() async -> PromiseState<Value, Failure> {
+    func capture() -> PromiseState<Value, Failure> {
         lock.withLock { storage.state }
     }
 }
@@ -271,13 +271,7 @@ extension Promise {
 }
 
 extension Promise {
-    public var isPending: Bool { get async { await capture().isPending } }
-
-    public var isResolved: Bool { get async { await capture().isResolved } }
-
-    public var isRejected: Bool { get async { await capture().isRejected } }
-
-    public var isCanceled: Bool { get async { await capture().isCanceled } }
+    public var isResolved: Bool { get async { capture().isResolved } }
 }
 
 extension Promise {
@@ -305,11 +299,6 @@ extension Promise {
         Promise<Value, Error>(queue: queue, state: .rejected(error))
     }
 
-    public static func canceled(
-        on queue: DispatchQueue = .global()
-    ) -> Promise<Value, Failure> {
-        Promise(queue: queue, state: .canceled)
-    }
 }
 
 public final class PromisePending<

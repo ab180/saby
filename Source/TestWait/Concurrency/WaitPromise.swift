@@ -32,10 +32,10 @@ public struct WaitPromise: Sendable {
 private final class WaitPromiseState<
     Value: Sendable,
     Failure: Error & Sendable
->: Sendable {
+>: @unchecked Sendable {
     private let lock = NSLock()
     private let semaphore = DispatchSemaphore(value: 0)
-    nonisolated(unsafe) private var result: WaitPromiseResult<Value, Failure>?
+    private var result: WaitPromiseResult<Value, Failure>?
 
     func complete(_ result: WaitPromiseResult<Value, Failure>) {
         let completed = lock.withLock {
@@ -51,7 +51,7 @@ private final class WaitPromiseState<
 
     func wait(timeout: DispatchTimeInterval) throws -> Value {
         if case .timedOut = semaphore.wait(timeout: .now() + timeout) {
-            throw WaitPromiseError.timeout
+            throw WaitError.timeout
         }
 
         switch lock.withLock({ result })! {
@@ -71,6 +71,6 @@ private enum WaitPromiseResult<
     case rejected(Failure)
 }
 
-public enum WaitPromiseError: Error {
+enum WaitError: Error {
     case timeout
 }
