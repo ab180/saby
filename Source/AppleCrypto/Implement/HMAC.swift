@@ -10,7 +10,7 @@
 import Foundation
 import CommonCrypto
 
-public enum HMAC: MessageAuthenticationCode {
+public enum HMAC {
     public static func code(message: String, key: String, hash: Hash) -> String {
         var result = Array<UInt8>(repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
         

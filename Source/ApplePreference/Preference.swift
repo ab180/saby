@@ -26,6 +26,6 @@ extension Preference {
     }
 }
 
-public enum PreferenceError: Error {
+enum PreferenceError: Error {
     case directoryURLIsNotFileURL
 }

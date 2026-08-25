@@ -50,17 +50,6 @@ extension Timestamp {
         timestamp
     }
     
-    public var minuteFrom1970: Double {
-        timestamp / 60
-    }
-    
-    public var hourFrom1970: Double {
-        timestamp / 60 / 60
-    }
-    
-    public var dayFrom1970: Double {
-        timestamp / 24 / 60 / 60
-    }
 }
 
 extension Timestamp {

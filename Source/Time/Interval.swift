@@ -70,14 +70,6 @@ extension Interval {
         interval
     }
     
-    public var minute: Double {
-        interval / 60
-    }
-    
-    public var hour: Double {
-        interval / 60 / 60
-    }
-    
     public var day: Double {
         interval / 24 / 60 / 60
     }

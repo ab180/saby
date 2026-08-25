@@ -6,6 +6,5 @@
 //
 
 extension Repository {
-    public typealias SelfProtocol = Repository<Self.Query, Self.Result>
     public typealias AnyProtocol = any Repository<Self.Query, Self.Result>
 }

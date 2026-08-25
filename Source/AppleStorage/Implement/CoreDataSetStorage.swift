@@ -388,7 +388,7 @@ private extension NSManagedObjectContext {
     }
 }
 
-public enum CoreDataSetStorageError: Error {
+enum CoreDataSetStorageError: Error {
     case batchDeleteFailed
     case persistentStoreNotFound
     case requestResultNotFound

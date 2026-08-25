@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum Hex: Encode {
+public enum Hex {
     public static func encode(data: Data) -> String {
         data.reduce("") { $0 + String(format: "%02x", $1) }
     }

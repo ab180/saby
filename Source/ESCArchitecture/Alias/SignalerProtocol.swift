@@ -6,6 +6,5 @@
 //
 
 extension Signaler {
-    public typealias SelfProtocol = Signaler<Self.Value, Self.Failure>
     public typealias AnyProtocol = any Signaler<Self.Value, Self.Failure>
 }

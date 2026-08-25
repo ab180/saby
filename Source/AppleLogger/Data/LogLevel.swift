@@ -11,27 +11,12 @@ import os
 ///
 /// It basically follows Apple's unified logging system.
 /// `default` is the lowest level while `fault` is the highest.
-public enum LogLevel: Comparable, CaseIterable {
+public enum LogLevel: Comparable {
     case debug
     case info
     case warning
     case error
     case fault
-    
-    public var name: String {
-        switch self {
-        case .debug:
-            return "Debug"
-        case .info:
-            return "Info"
-        case .warning:
-            return "Warning"
-        case .error:
-            return "Error"
-        case .fault:
-            return "Fault"
-        }
-    }
     
     var osLogType: OSLogType {
         switch self {
@@ -64,4 +49,3 @@ public enum LogLevel: Comparable, CaseIterable {
         return self >= level
     }
 }
-

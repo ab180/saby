@@ -27,6 +27,6 @@ extension Storage {
     }
 }
 
-public enum StorageError: Error {
+enum StorageError: Error {
     case directoryURLIsNotFileURL
 }

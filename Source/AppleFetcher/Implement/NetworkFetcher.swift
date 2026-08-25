@@ -31,7 +31,6 @@ public final class NetworkFetcher: Fetcher {
 
 public struct IP {
     public let address: String
-    public let interface: String
     public let version: IP.Version
 }
 
@@ -101,7 +100,7 @@ extension NetworkFetcher {
             
             guard let ip else { continue }
             
-            ipList.append(IP(address: ip, interface: interfaceName, version: protocolVersion))
+            ipList.append(IP(address: ip, version: protocolVersion))
         }
         
         return ipList

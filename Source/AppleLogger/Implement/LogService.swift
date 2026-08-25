@@ -57,14 +57,3 @@ public struct OSLogService: LogService {
         }
     }
 }
-
-public struct PrintLogService: LogService {
-    public let setting: LoggerSetting
-    
-    public func log(level: LogLevel, _ message: String) {
-        let message = "[\(setting.subsystem)/\(setting.category)/\(level.name)] \(message)"
-        log(level: level, message) {
-            print($0)
-        }
-    }
-}

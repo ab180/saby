@@ -92,15 +92,6 @@ extension CoreDataArrayStorage {
         }
     }
 
-    public func get(key: UUID) -> Promise<Value?, Error> {
-        execute { context in
-            let request: NSFetchRequest<Item> = Self.createRequest(key: key)
-            let items = try context.fetch(request)
-            guard let data = items.first?.data else { return nil }
-            return try JSONDecoder.acceptingNonConfirmingFloat().decode(Value.self, from: data)
-        }
-    }
-    
     public func get(limit: Limit) -> Promise<[Value], Error> {
         let fetchLimit = limit.count
         return execute { context in
@@ -299,7 +290,7 @@ extension NSManagedObjectContext {
     }
 }
 
-public enum CoreDataArrayStorageError: Error {
+enum CoreDataArrayStorageError: Error {
     case failedOnParsingDeleteResult
     case requestResultNotFound
 }
