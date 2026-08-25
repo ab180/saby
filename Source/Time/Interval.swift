@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct Interval: Codable, Comparable, Equatable {
+public struct Interval: Codable, Comparable, Equatable, Sendable {
     let interval: TimeInterval
     
     public init(second: TimeInterval) {

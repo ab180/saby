@@ -11,6 +11,10 @@ import Testing
 
 @Suite
 struct IntervalTest {
+    @Test func sendable() {
+        requireSendable(Interval.self)
+    }
+
     @Test func millisecondCreate() {
         #expect(Interval.millisecond(100) == Interval(second: 0.1))
     }
@@ -51,3 +55,5 @@ struct IntervalTest {
         #expect(Interval(second: 8640000).dispatchTime == .seconds(8640000))
     }
 }
+
+private func requireSendable<Value: Sendable>(_: Value.Type) {}

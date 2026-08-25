@@ -63,7 +63,6 @@ extension DataClient {
 
         let requestSnapshot = request
         let session = self.session
-        let timeout = timeout.map(\.nanoseconds)
 
         return tasks.promise {
             try await session.result(
@@ -85,7 +84,7 @@ struct DataClientResponse: Sendable {
 extension URLSession {
     func result(
         for request: URLRequest,
-        timeout: UInt64?
+        timeout: Interval?
     ) async throws -> ClientResult<Data?> {
         guard let timeout else {
             return try await response(for: request).result
@@ -94,7 +93,7 @@ extension URLSession {
         return try await withThrowingTaskGroup(of: DataClientResponse.self) { group in
             group.addTask { try await self.response(for: request) }
             group.addTask {
-                try await Task.sleep(nanoseconds: timeout)
+                try await Task.sleep(nanoseconds: timeout.nanoseconds)
                 throw DataClientError.timeout
             }
 

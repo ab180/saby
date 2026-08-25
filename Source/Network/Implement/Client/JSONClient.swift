@@ -63,7 +63,6 @@ extension JSONClient {
 
         let requestSnapshot = request
         let session = client.session
-        let timeout = timeout.map(\.nanoseconds)
 
         return tasks.promise {
             do {
