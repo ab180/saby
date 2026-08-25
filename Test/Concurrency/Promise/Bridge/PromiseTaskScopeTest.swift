@@ -3,14 +3,16 @@
 //  SabyConcurrencyTest
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import SabyConcurrency
 
-final class PromiseTaskScopeTest: XCTestCase {
+@Suite(.serialized) struct PromiseTaskScopeTest {
     enum SampleError: Error {
         case one
     }
 
+    @Test
     func test__promise_resolves_async_value() async {
         let scope = PromiseTaskScope()
         let promise = scope.promise {
@@ -18,7 +20,7 @@ final class PromiseTaskScopeTest: XCTestCase {
             10
         }
 
-        PromiseTest.expect(
+        await PromiseTest.expect(
             promise: promise,
             state: .resolved(10),
             timeout: .seconds(1)
@@ -26,6 +28,7 @@ final class PromiseTaskScopeTest: XCTestCase {
         await assertIsEmpty(scope)
     }
 
+    @Test
     func test__promise_rejects_async_error() async {
         let scope = PromiseTaskScope()
         let promise = scope.promise {
@@ -33,7 +36,7 @@ final class PromiseTaskScopeTest: XCTestCase {
             throw SampleError.one
         }
 
-        PromiseTest.expect(
+        await PromiseTest.expect(
             promise: promise,
             state: .rejected(SampleError.one),
             timeout: .seconds(1)
@@ -41,6 +44,7 @@ final class PromiseTaskScopeTest: XCTestCase {
         await assertIsEmpty(scope)
     }
 
+    @Test
     func test__promise_cancel_cancels_task() async {
         let scope = PromiseTaskScope()
         let promise: Promise<Int, Error> = scope.promise {
@@ -50,7 +54,7 @@ final class PromiseTaskScopeTest: XCTestCase {
 
         promise.cancel()
 
-        PromiseTest.expect(
+        await PromiseTest.expect(
             promise: promise,
             state: .canceled,
             timeout: .seconds(1)
@@ -58,7 +62,8 @@ final class PromiseTaskScopeTest: XCTestCase {
         await assertIsEmpty(scope)
     }
 
-    func test__deinit_scope_cancels_task() {
+    @Test
+    func test__deinit_scope_cancels_task() async {
         var scope: PromiseTaskScope? = PromiseTaskScope(cancelWhen: .deinit)
         let promise: Promise<Int, Error> = scope!.promise {
             try await Task.sleep(nanoseconds: 1_000_000_000)
@@ -67,14 +72,15 @@ final class PromiseTaskScopeTest: XCTestCase {
 
         scope = nil
 
-        PromiseTest.expect(
+        await PromiseTest.expect(
             promise: promise,
             state: .canceled,
             timeout: .seconds(1)
         )
     }
 
-    func test__none_scope_allows_task_to_complete() {
+    @Test
+    func test__none_scope_allows_task_to_complete() async {
         var scope: PromiseTaskScope? = PromiseTaskScope(cancelWhen: .none)
         let promise: Promise<Int, Error> = scope!.promise {
             try await Task.sleep(nanoseconds: 1_000_000)
@@ -83,7 +89,7 @@ final class PromiseTaskScopeTest: XCTestCase {
 
         scope = nil
 
-        PromiseTest.expect(
+        await PromiseTest.expect(
             promise: promise,
             state: .resolved(10),
             timeout: .seconds(1)
@@ -104,6 +110,6 @@ private extension PromiseTaskScopeTest {
             try? await Task.sleep(nanoseconds: 1_000_000)
         }
 
-        XCTFail("PromiseTaskScope did not release its task", file: file, line: line)
+        Issue.record("PromiseTaskScope did not release its task")
     }
 }

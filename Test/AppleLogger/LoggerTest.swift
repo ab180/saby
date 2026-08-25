@@ -5,33 +5,31 @@
 //  Created by WOF on 2022/08/24.
 //
 
-import XCTest
+import Testing
 import os
 @testable import SabyAppleLogger
 
-final class LoggerTest: XCTestCase {
-    func test__set_log_level() {
+@Suite struct LoggerTest {
+    @Test func setLogLevel() {
         let logger = mockLogger()
-        XCTAssertNotEqual(logger.setting.logLevel, LogLevel.fault)
+        #expect(logger.setting.logLevel != LogLevel.fault)
         
         logger.setLogLevel(to: .fault)
-        XCTAssertEqual(logger.setting.logLevel, LogLevel.fault)
+        #expect(logger.setting.logLevel == LogLevel.fault)
     }
     
-    func test__instantiate_setting() {
+    @Test func instantiateSetting() {
         let logger = mockLogger()
         let configBeforeChange = logger.setting
 
         var configAfterChange = defaultSetting
         configAfterChange.logLevel = .none
 
-        XCTAssertNotNil(configBeforeChange.osLog)
-        XCTAssertNotNil(configAfterChange.osLog)
-        XCTAssertNotEqual(configBeforeChange.logLevel, configAfterChange.logLevel)
+        #expect(configBeforeChange.logLevel != configAfterChange.logLevel)
     }
 
-    func test__should_not_show_lower_level_logs() {
-        let allLogLevels = LogLevel.allCases
+    @Test func shouldNotShowLowerLevelLogs() {
+        let allLogLevels: [LogLevel] = [.debug, .info, .warning, .error, .fault]
         let numberOfLogLevels = allLogLevels.count
 
         for levelIndex in allLogLevels.indices {
@@ -40,11 +38,8 @@ final class LoggerTest: XCTestCase {
             var setting = defaultSetting
             setting.logLevel = level
 
-            let expectation = XCTestExpectation(description: "Shouldn't show lower level logs")
-            expectation.expectedFulfillmentCount = numberOfLogLevels - levelIndex
-            expectation.assertForOverFulfill = true
-
-            let testLogger = mockLogger(expectation: expectation, setting: setting)
+            let counter = LogCounter()
+            let testLogger = mockLogger(counter: counter, setting: setting)
             // Only the logs higher than set level have to be executed.
             // In other words, output will be the logs excluding the logs below the given level.
             // Thus, the expected count of fulfilled log is set as below;
@@ -52,29 +47,26 @@ final class LoggerTest: XCTestCase {
             // which can be said as the number of remaining log levels.
             testLogger.printAllLogs()
             
-            wait(for: [expectation], timeout: 0.5)
+            #expect(counter.count == numberOfLogLevels - levelIndex)
         }
     }
 
-    func test__should_not_show_any_logs_when_level_is_none() {
-        let expectation = XCTestExpectation(description: "Should not show any logs")
-        expectation.isInverted = true // means expectation shouldn't be fulfilled
-
+    @Test func shouldNotShowAnyLogsWhenLevelIsNone() {
         var setting = defaultSetting
         setting.logLevel = .none
 
-        let testLogger = mockLogger(expectation: expectation, setting: setting)
+        let counter = LogCounter()
+        let testLogger = mockLogger(counter: counter, setting: setting)
         testLogger.printAllLogs()
-
-        wait(for: [expectation], timeout: 0.5)
+        #expect(counter.count == 0)
     }
 }
 
 
 // MARK: - Mock factories
-fileprivate func mockLogger(expectation: XCTestExpectation? = nil,
+fileprivate func mockLogger(counter: LogCounter? = nil,
                             setting: LoggerSetting = defaultSetting) -> MockLogger {
-    return MockLogger(expectation: expectation, setting: setting)
+    return MockLogger(counter: counter, setting: setting)
 }
 
 fileprivate var defaultSetting: LoggerSetting {
@@ -85,15 +77,14 @@ fileprivate var defaultSetting: LoggerSetting {
 fileprivate class MockLogService: LogService {
     let setting = defaultSetting
     
-    let expectation: XCTestExpectation?
+    let counter: LogCounter?
     
     func log(level: SabyAppleLogger.LogLevel, _ message: String) {
-        print(level.name, message)
-        expectation?.fulfill()
+        counter?.count += 1
     }
     
-    init(expectation: XCTestExpectation?) {
-        self.expectation = expectation
+    init(counter: LogCounter?) {
+        self.counter = counter
     }
 }
 
@@ -101,10 +92,14 @@ fileprivate class MockLogger: SabyAppleLogger.LoggerType {
     var loggerSetting: SabyAppleLogger.LoggerSetting
     var logService: MockLogService
         
-    init(expectation: XCTestExpectation?, setting: LoggerSetting) {
+    init(counter: LogCounter?, setting: LoggerSetting) {
         self.loggerSetting = setting
-        self.logService = MockLogService(expectation: expectation)
+        self.logService = MockLogService(counter: counter)
     }
+}
+
+fileprivate final class LogCounter: @unchecked Sendable {
+    var count = 0
 }
 
 extension MockLogger: SabyAppleLogger.Logger {

@@ -5,16 +5,18 @@
 //  Created by WOF on 2022/07/24.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import SabyConcurrency
 
-final class ContractFilterTest: XCTestCase {
-    func test__filter_bool() {
+@Suite(.serialized) struct ContractFilterTest {
+    @Test
+    func test__filter_bool() async {
         let contract0 = Contract<Int, Error>()
 
         let contract = contract0.filter { $0 % 2 == 0 }
         
-        ContractTest.expect(
+        await ContractTest.expect(
             contract: contract,
             state: .resolved(2),
             timeout: .seconds(1)
@@ -24,12 +26,13 @@ final class ContractFilterTest: XCTestCase {
         }
     }
     
-    func test__filter_non_null() {
+    @Test
+    func test__filter_non_null() async {
         let contract0 = Contract<String, Error>()
 
         let contract = contract0.filter { URL(string: $0) }
         
-        ContractTest.expect(
+        await ContractTest.expect(
             contract: contract,
             state: .resolved(URL(string: "https://a.example")!),
             timeout: .seconds(1)
@@ -39,12 +42,13 @@ final class ContractFilterTest: XCTestCase {
         }
     }
     
-    func test__filter_promise() {
+    @Test
+    func test__filter_promise() async {
         let contract0 = Contract<String, Error>()
 
         let contract = contract0.filter { Promise.resolved(URL(string: $0)) }
         
-        ContractTest.expect(
+        await ContractTest.expect(
             contract: contract,
             state: .resolved(URL(string: "https://a.example")!),
             timeout: .seconds(1)
@@ -54,8 +58,9 @@ final class ContractFilterTest: XCTestCase {
         }
     }
     
-    func test__filter_promise_cancel() {
-        let end = DispatchSemaphore(value: 0)
+    @Test
+    func test__filter_promise_cancel() async {
+        let end = AsyncLatch()
         let filterPromise = Promise<Int, Never>.pending().promise
         
         let contract0 = Contract<String, Error>()
@@ -66,23 +71,24 @@ final class ContractFilterTest: XCTestCase {
             return filterPromise
         }
         
-        ContractTest.expect(
+        await ContractTest.expect(
             contract: contract,
             state: .canceled,
             timeout: .seconds(1)
         ) {
             contract0.resolve("10")
         }
-        PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: filterPromise, state: .pending, timeout: .seconds(1))
+        #expect(await end.wait(timeout: .seconds(1)))
+        await PromiseTest.expect(promise: filterPromise, state: .pending, timeout: .seconds(1))
     }
     
-    func test__never_filter_bool() {
+    @Test
+    func test__never_filter_bool() async {
         let contract0 = Contract<Int, Never>()
 
         let contract = contract0.filter { $0 % 2 == 0 }
         
-        ContractTest.expect(
+        await ContractTest.expect(
             contract: contract,
             state: .resolved(2),
             timeout: .seconds(1)
@@ -92,12 +98,13 @@ final class ContractFilterTest: XCTestCase {
         }
     }
     
-    func test__never_filter_non_null() {
+    @Test
+    func test__never_filter_non_null() async {
         let contract0 = Contract<String, Never>()
 
         let contract = contract0.filter { URL(string: $0) }
         
-        ContractTest.expect(
+        await ContractTest.expect(
             contract: contract,
             state: .resolved(URL(string: "https://a.example")!),
             timeout: .seconds(1)
@@ -107,12 +114,13 @@ final class ContractFilterTest: XCTestCase {
         }
     }
     
-    func test__never_filter_promise() {
+    @Test
+    func test__never_filter_promise() async {
         let contract0 = Contract<String, Never>()
 
         let contract = contract0.filter { Promise<URL?, Never>.resolved(URL(string: $0)) }
         
-        ContractTest.expect(
+        await ContractTest.expect(
             contract: contract,
             state: .resolved(URL(string: "https://a.example")!),
             timeout: .seconds(1)
@@ -122,8 +130,9 @@ final class ContractFilterTest: XCTestCase {
         }
     }
     
-    func test__never_filter_promise_cancel() {
-        let end = DispatchSemaphore(value: 0)
+    @Test
+    func test__never_filter_promise_cancel() async {
+        let end = AsyncLatch()
         let filterPromise = Promise<Int, Never>.pending().promise
         
         let contract0 = Contract<String, Never>()
@@ -134,26 +143,26 @@ final class ContractFilterTest: XCTestCase {
             return filterPromise
         }
         
-        ContractTest.expect(
+        await ContractTest.expect(
             contract: contract,
             state: .canceled,
             timeout: .seconds(1)
         ) {
             contract0.resolve("10")
         }
-        PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: filterPromise, state: .pending, timeout: .seconds(1))
+        #expect(await end.wait(timeout: .seconds(1)))
+        await PromiseTest.expect(promise: filterPromise, state: .pending, timeout: .seconds(1))
     }
     
-    func test__filter_schedule_sync() throws {
+    @Test
+    func test__filter_schedule_sync() async throws {
         let expect = (0...10000)
             .compactMap { $0 % 2 == 0 ? $0 : nil }
         
         let contract0 = Contract<Int, Never>()
         let promise0 = Promise<Void, Never>()
         
-        let lock = NSLock()
-        nonisolated(unsafe) var actual: [Int] = []
+        let actual = LockedBox<[Int]>([])
         let contract = contract0
             .filter(schedule: .sync) { value in
                 promise0.then { _ in
@@ -166,17 +175,17 @@ final class ContractFilterTest: XCTestCase {
                 }
             }
             .then { value in
-                lock.withLock { actual.append(value) }
+                actual.withValue { $0.append(value) }
                 return value
             }
         
-        try contract.wait(until: { $0 == 10000 }) {
+        try await contract.testValue(until: { $0 == 10000 }) {
             (0...10000).forEach {
                 contract0.resolve($0)
             }
             promise0.resolve(())
         }
         
-        XCTAssertEqual(lock.withLock { actual }, expect)
+        #expect(actual.value == expect)
     }
 }

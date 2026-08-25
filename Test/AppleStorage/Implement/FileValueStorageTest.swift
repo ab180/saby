@@ -5,7 +5,8 @@
 //  Created by WOF on 2023/02/23.
 //
 
-import XCTest
+import Foundation
+import Testing
 import SabyConcurrency
 @testable import SabyAppleStorage
 
@@ -13,11 +14,11 @@ private struct DummyItem: Codable, Equatable, Sendable {
     var key: UUID
 }
 
-final class FileValueStorageTest: XCTestCase {
-    fileprivate let testCount = 500
-    fileprivate var storage: FileValueStorage<DummyItem>!
-    fileprivate let directoryURL = FileManager.default.temporaryDirectory
-    fileprivate var storageName: String!
+struct FileValueStorageTest {
+    private let testCount = 500
+    private let storage: FileValueStorage<DummyItem>
+    private let directoryURL = FileManager.default.temporaryDirectory
+    private let storageName: String
     
     fileprivate var testObjects: [DummyItem] {
         var result: [DummyItem] = []
@@ -28,87 +29,80 @@ final class FileValueStorageTest: XCTestCase {
         return result
     }
     
-    override func setUpWithError() throws {
-        storageName = UUID().uuidString
+    init() {
+        let storageName = UUID().uuidString
+        self.storageName = storageName
         storage = FileValueStorage<DummyItem>(
             directoryURL: directoryURL,
             storageName: storageName
         )
     }
     
-    override func tearDownWithError() throws {
-        let fileURL = directoryURL
-        
-        if FileManager.default.fileExists(atPath: fileURL.absoluteString) {
-            try FileManager.default.removeItem(at: fileURL)
-        }
-    }
-    
-    func test__set() throws {
-        try testObjects.forEach {
-            try storage.set($0).wait()
+    @Test func set() async throws {
+        for object in testObjects {
+            try await storage.set(object).value()
         }
         
-        try storage.save().wait()
+        try await storage.save().value()
         
-        let value = try storage.get().wait()
-        XCTAssertNotEqual(value, nil)
+        let value = try await storage.get().value()
+        #expect(value != nil)
     }
     
-    func test__delete() throws {
+    @Test func delete() async throws {
         let testObjects = testObjects
-        try testObjects.forEach {
-            try storage.set($0).wait()
+        for object in testObjects {
+            try await storage.set(object).value()
         }
 
-        try storage.save().wait()
-        try storage.clear().wait()
-        try storage.save().wait()
-        XCTAssertNil(try storage.get().wait())
+        try await storage.save().value()
+        try await storage.clear().value()
+        try await storage.save().value()
+        #expect(try await storage.get().value() == nil)
     }
     
-    func test__get() throws {
+    @Test func get() async throws {
         let testCount = testCount
         let testObjects = testObjects
         let randomIndex = (0 ..< testCount).randomElement()!
-        try testObjects.forEach {
-            try storage.set($0).wait()
+        for object in testObjects {
+            try await storage.set(object).value()
         }
         
-        try storage.set(testObjects[randomIndex]).wait()
+        try await storage.set(testObjects[randomIndex]).value()
         
-        try storage.save().wait()
-        XCTAssertEqual(try storage.get().wait(), testObjects[randomIndex])
+        try await storage.save().value()
+        #expect(try await storage.get().value() == testObjects[randomIndex])
     }
     
-    func test__save() throws {
+    @Test func save() async throws {
         let value = DummyItem(key: UUID())
 
-        try storage.set(value).wait()
-        try storage.save().wait()
-        XCTAssertEqual(try storage.get().wait(), value)
+        try await storage.set(value).value()
+        try await storage.save().value()
+        #expect(try await storage.get().value() == value)
     }
 
-    func test__reload() throws {
+    @Test func reload() async throws {
         let value = DummyItem(key: UUID())
 
-        try storage.set(value).wait()
-        try storage.save().wait()
+        try await storage.set(value).value()
+        try await storage.save().value()
 
         let reloaded = FileValueStorage<DummyItem>(
             directoryURL: directoryURL,
             storageName: storageName
         )
-        XCTAssertEqual(try reloaded.get().wait(), value)
+        #expect(try await reloaded.get().value() == value)
     }
 
-    func test__concurrent_set() throws {
+    @Test func concurrent_set() async throws {
         let values = testObjects
 
-        try values
-            .map(storage.set)
-            .forEach { try $0.wait() }
+        for promise in values.map(storage.set) {
+            try await promise.value()
+        }
 
-        XCTAssertTrue(values.contains(try storage.get().wait()!))
+        #expect(values.contains(try await storage.get().value()!))
     }
 }

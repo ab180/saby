@@ -1,196 +1,98 @@
-//
-//  PromiseTestExpect.swift
-//  SabyConcurrencyTest
-//
-//  Created by WOF on 2020/04/08.
-//
-
-import XCTest
+import Foundation
+import Testing
 @testable import SabyConcurrency
 
 extension PromiseTest {
-    static func make<Value: Sendable>(
-        _ block: @escaping @Sendable () throws -> Value
-    ) -> Promise<Value, Error> {
-        Promise<Value, Error> { resolve, _ in
-            resolve(try block())
-        }
+    static func make<Value: Sendable>(_ block: @escaping @Sendable () throws -> Value) -> Promise<Value, Error> {
+        Promise<Value, Error> { resolve, _ in resolve(try block()) }
     }
 
-    static func make<Value: Sendable>(
-        _ block: @escaping @Sendable () -> Value
-    ) -> Promise<Value, Never> {
-        Promise<Value, Never> { resolve, _ in
-            resolve(block())
-        }
+    static func make<Value: Sendable>(_ block: @escaping @Sendable () -> Value) -> Promise<Value, Never> {
+        Promise<Value, Never> { resolve, _ in resolve(block()) }
     }
 
-    enum SampleError: Swift.Error {
-        case one
-        case two
-        case three
+    static func canceled<Value: Sendable, Failure: Error & Sendable>() -> Promise<Value, Failure> {
+        let pending = Promise<Value, Failure>.pending()
+        pending.cancel()
+        return pending.promise
     }
-    
+
+    enum SampleError: Error { case one, two, three }
     enum State<Value> {
         case pending
-        case resolved(_ value: Value)
-        case rejected(_ error: Swift.Error)
+        case resolved(Value)
+        case rejected(Error)
         case canceled
     }
-    
-    static func expect<Value: Sendable, Failure: Error & Sendable>(promise: Promise<Value, Failure>,
-                              state: PromiseTest.State<@Sendable (Value) -> Bool>,
-                              timeout: DispatchTimeInterval,
-                              file: StaticString = #file,
-                              line: UInt = #line)
-    {
-        let message = "Promise is not expected state \(state)"
-        
-        let end = DispatchSemaphore(value: 0)
-        
-        switch state {
-        case .resolved(let expect):
-            promise.subscribe(
-                on: promise.queue,
-                onResolved: { value in
-                    XCTAssert(expect(value), message, file: file, line: line)
-                    end.signal()
-                },
-                onRejected: { error in
-                    XCTFail(message, file: file, line: line)
-                    end.signal()
-                },
-                onCanceled: {
-                    XCTFail(message, file: file, line: line)
-                    end.signal()
-                }
-            )
-        case .rejected(let expect):
-            promise.subscribe(
-                on: promise.queue,
-                onResolved: { value in
-                    XCTFail(message, file: file, line: line)
-                    end.signal()
-                },
-                onRejected: { error in
-                    XCTAssertEqual(error.localizedDescription, expect.localizedDescription, file: file, line: line)
-                    end.signal()
-                },
-                onCanceled: {
-                    XCTFail(message, file: file, line: line)
-                    end.signal()
-                }
-            )
-        case .pending:
-            Task {
-                if await !promise.isPending {
-                    XCTFail(message, file: file, line: line)
-                }
 
-                end.signal()
-            }
-        case .canceled:
-            promise.subscribe(
-                on: promise.queue,
-                onCanceled: {
-                    end.signal()
-                }
-            )
-        }
-        
-        PromiseTest.expect(semaphore: end, timeout: timeout, file: file, line: line)
+    private enum Completion<Value> {
+        case resolved(Value)
+        case rejected(Error)
+        case canceled
     }
-    
-    static func expect<Value: Equatable & Sendable, Failure: Error & Sendable>(promise: Promise<Value, Failure>,
-                                         state: PromiseTest.State<Value>,
-                                         timeout: DispatchTimeInterval,
-                                         file: StaticString = #file,
-                                         line: UInt = #line)
-    {
-        let message = "Promise is not expected state \(state)"
-        
-        let end = DispatchSemaphore(value: 0)
-        
-        switch state {
-        case .resolved(let expect):
-            promise.subscribe(
-                on: promise.queue,
-                onResolved: { value in
-                    XCTAssertEqual(value, expect, message, file: file, line: line)
-                    end.signal()
-                },
-                onRejected: { error in
-                    XCTFail(
-                        "Promise is rejected",
-                        file: file,
-                        line: line
-                    )
-                    end.signal()
-                },
-                onCanceled: {
-                    XCTFail(
-                        "Promise is canceled",
-                        file: file,
-                        line: line
-                    )
-                    end.signal()
-                }
-            )
-        case .rejected(let expect):
-            promise.subscribe(
-                on: promise.queue,
-                onResolved: { value in
-                    XCTFail(
-                        "Promise is resolved",
-                        file: file,
-                        line: line
-                    )
-                    end.signal()
-                },
-                onRejected: { error in
-                    XCTAssertEqual(error.localizedDescription, expect.localizedDescription, file: file, line: line)
-                    end.signal()
-                },
-                onCanceled: {
-                    XCTFail(
-                        "Promise is canceled",
-                        file: file,
-                        line: line
-                    )
-                    end.signal()
-                }
-            )
-        case .pending:
-            Task {
-                if await !promise.isPending {
-                    XCTFail(message, file: file, line: line)
-                }
 
-                end.signal()
-            }
-        case .canceled:
-            promise.subscribe(
-                on: promise.queue,
-                onCanceled: {
-                    end.signal()
-                }
-            )
+    static func expect<Value: Sendable, Failure: Error & Sendable>(
+        promise: Promise<Value, Failure>,
+        state: State<@Sendable (Value) -> Bool>,
+        timeout: DispatchTimeInterval,
+        file: StaticString = #fileID,
+        line: UInt = #line
+    ) async {
+        if case .pending = state {
+            #expect(promise.capture().isPending)
+            return
         }
-        
-        PromiseTest.expect(semaphore: end, timeout: timeout, file: file, line: line)
+        guard let completion = await completion(of: promise, timeout: timeout) else {
+            Issue.record("Promise timed out", sourceLocation: sourceLocation(file: file, line: line))
+            return
+        }
+        switch (state, completion) {
+        case let (.resolved(expect), .resolved(value)): #expect(expect(value))
+        case let (.rejected(expect), .rejected(error)): #expect(error.localizedDescription == expect.localizedDescription)
+        case (.canceled, .canceled): break
+        default: Issue.record("Promise completed in an unexpected state")
+        }
     }
-    
-    static func expect(semaphore: DispatchSemaphore,
-                       count: Int = 1,
-                       timeout: DispatchTimeInterval,
-                       message: String = "test is timeout",
-                       file: StaticString = #file,
-                       line: UInt = #line)
-    {
-        for _ in 0..<count {
-            if case .timedOut = semaphore.wait(timeout: .now() + timeout) {
-                XCTFail(message, file: file, line: line)
-            }
+
+    static func expect<Value: Equatable & Sendable, Failure: Error & Sendable>(
+        promise: Promise<Value, Failure>,
+        state: State<Value>,
+        timeout: DispatchTimeInterval,
+        file: StaticString = #fileID,
+        line: UInt = #line
+    ) async {
+        if case .pending = state {
+            #expect(promise.capture().isPending)
+            return
         }
+        guard let completion = await completion(of: promise, timeout: timeout) else {
+            Issue.record("Promise timed out", sourceLocation: sourceLocation(file: file, line: line))
+            return
+        }
+        switch (state, completion) {
+        case let (.resolved(expect), .resolved(value)): #expect(value == expect)
+        case let (.rejected(expect), .rejected(error)): #expect(error.localizedDescription == expect.localizedDescription)
+        case (.canceled, .canceled): break
+        default: Issue.record("Promise completed in an unexpected state")
+        }
+    }
+
+    private static func completion<Value: Sendable, Failure: Error & Sendable>(
+        of promise: Promise<Value, Failure>,
+        timeout: DispatchTimeInterval
+    ) async -> Completion<Value>? {
+        let result = LockedBox<Completion<Value>?>(nil)
+        let completed = AsyncLatch()
+        promise.subscribe(
+            on: promise.queue,
+            onResolved: { value in result.withValue { $0 = .resolved(value) }; completed.signal() },
+            onRejected: { error in result.withValue { $0 = .rejected(error) }; completed.signal() },
+            onCanceled: { result.withValue { $0 = .canceled }; completed.signal() }
+        )
+        return await completed.wait(timeout: timeout) ? result.value : nil
+    }
+
+    private static func sourceLocation(file: StaticString, line: UInt) -> SourceLocation {
+        SourceLocation(fileID: String(describing: file), filePath: String(describing: file), line: Int(line), column: 1)
     }
 }

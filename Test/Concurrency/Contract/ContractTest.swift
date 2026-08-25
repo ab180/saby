@@ -5,25 +5,26 @@
 //  Created by WOF on 2022/07/06.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import SabyConcurrency
 
-final class ContractTest: XCTestCase {
-    func test__repeated_resolve_and_reject_are_delivered_in_order() {
+@Suite(.serialized) struct ContractTest {
+    @Test
+    func test__repeated_resolve_and_reject_are_delivered_in_order() async {
         let contract = Contract<Int, SampleError>()
         let queue = DispatchQueue(label: #function)
-        let lock = NSLock()
-        nonisolated(unsafe) var values: [String] = []
-        let callbacks = DispatchSemaphore(value: 0)
+        let values = LockedBox<[String]>([])
+        let callbacks = AsyncLatch()
 
         contract.subscribe(
             on: queue,
             onResolved: { value in
-                lock.withLock { values.append("resolve:\(value)") }
+                values.withValue { $0.append("resolve:\(value)") }
                 callbacks.signal()
             },
             onRejected: { error in
-                lock.withLock { values.append("reject:\(error)") }
+                values.withValue { $0.append("reject:\(error)") }
                 callbacks.signal()
             },
             onCanceled: {}
@@ -34,10 +35,10 @@ final class ContractTest: XCTestCase {
         contract.resolve(2)
         contract.reject(.two)
         for _ in 0..<4 {
-            XCTAssertEqual(callbacks.wait(timeout: .now() + 1), .success)
+            #expect(await callbacks.wait(timeout: .seconds(1)))
         }
 
-        XCTAssertEqual(lock.withLock { values }, [
+        #expect(values.value == [
             "resolve:1",
             "reject:one",
             "resolve:2",
@@ -45,19 +46,19 @@ final class ContractTest: XCTestCase {
         ])
     }
 
-    func test__cancel_waits_for_prior_events_and_suppresses_later_events() {
+    @Test
+    func test__cancel_waits_for_prior_events_and_suppresses_later_events() async {
         let contract = Contract<Int, SampleError>()
         let queue = DispatchQueue(label: #function)
-        let lock = NSLock()
-        nonisolated(unsafe) var values: [String] = []
-        let canceled = DispatchSemaphore(value: 0)
+        let values = LockedBox<[String]>([])
+        let canceled = AsyncLatch()
 
         contract.subscribe(
             on: queue,
-            onResolved: { value in lock.withLock { values.append("resolve:\(value)") } },
-            onRejected: { error in lock.withLock { values.append("reject:\(error)") } },
+            onResolved: { value in values.withValue { $0.append("resolve:\(value)") } },
+            onRejected: { error in values.withValue { $0.append("reject:\(error)") } },
             onCanceled: {
-                lock.withLock { values.append("cancel") }
+                values.withValue { $0.append("cancel") }
                 canceled.signal()
             }
         )
@@ -67,22 +68,22 @@ final class ContractTest: XCTestCase {
         contract.cancel()
         contract.resolve(2)
         contract.reject(.two)
-        XCTAssertEqual(canceled.wait(timeout: .now() + 1), .success)
+        #expect(await canceled.wait(timeout: .seconds(1)))
         queue.sync {}
 
-        XCTAssertEqual(lock.withLock { values }, ["resolve:1", "reject:one", "cancel"])
+        #expect(values.value == ["resolve:1", "reject:one", "cancel"])
     }
 
-    func test__concurrent_cancel_notifies_each_subscriber_once() {
+    @Test
+    func test__concurrent_cancel_notifies_each_subscriber_once() async {
         let contract = Contract<Int, SampleError>()
         let queue = DispatchQueue(label: #function)
-        let lock = NSLock()
-        nonisolated(unsafe) var callbackCounts = Array(repeating: 0, count: 32)
-        let callbacks = DispatchSemaphore(value: 0)
+        let callbackCounts = LockedBox(Array(repeating: 0, count: 32))
+        let callbacks = AsyncLatch()
 
         for index in 0..<32 {
             contract.subscribe(on: queue) {
-                lock.withLock { callbackCounts[index] += 1 }
+                callbackCounts.withValue { $0[index] += 1 }
                 callbacks.signal()
             }
         }
@@ -91,29 +92,28 @@ final class ContractTest: XCTestCase {
             contract.cancel()
         }
         for _ in 0..<32 {
-            XCTAssertEqual(callbacks.wait(timeout: .now() + 1), .success)
+            #expect(await callbacks.wait(timeout: .seconds(1)))
         }
 
-        XCTAssertEqual(lock.withLock { callbackCounts }, Array(repeating: 1, count: 32))
+        #expect(callbackCounts.value == Array(repeating: 1, count: 32))
     }
 
-    func test__concurrent_subscribe_emit_and_cancel_notifies_every_subscriber_once() {
+    @Test
+    func test__concurrent_subscribe_emit_and_cancel_notifies_every_subscriber_once() async {
         let iterationCount = 256
         let contract = Contract<Int, SampleError>()
         let queue = DispatchQueue(label: #function, attributes: .concurrent)
-        let lock = NSLock()
-        nonisolated(unsafe) var callbackCounts = Array(repeating: 0, count: iterationCount)
-        let callbacks = DispatchGroup()
+        let callbackCounts = LockedBox(Array(repeating: 0, count: iterationCount))
+        let callbacks = AsyncLatch()
 
         DispatchQueue.concurrentPerform(iterations: iterationCount) { index in
-            callbacks.enter()
             contract.subscribe(
                 on: queue,
                 onResolved: { _ in },
                 onRejected: { _ in },
                 onCanceled: {
-                    lock.withLock { callbackCounts[index] += 1 }
-                    callbacks.leave()
+                    callbackCounts.withValue { $0[index] += 1 }
+                    callbacks.signal()
                 }
             )
 
@@ -125,63 +125,65 @@ final class ContractTest: XCTestCase {
         }
 
         contract.cancel()
-        XCTAssertEqual(callbacks.wait(timeout: .now() + 5), .success)
-        XCTAssertEqual(
-            lock.withLock { callbackCounts },
+        #expect(await callbacks.wait(count: iterationCount, timeout: .seconds(5)))
+        #expect(
+            callbackCounts.value ==
             Array(repeating: 1, count: iterationCount)
         )
     }
 
-    func test__late_subscriber_to_canceled_contract_is_notified_on_requested_queue() {
-        let contract = Contract<Int, SampleError>.canceled()
+    @Test
+    func test__late_subscriber_to_canceled_contract_is_notified_on_requested_queue() async {
+        let executing = Contract<Int, SampleError>.executing()
+        let contract = executing.contract
         let queue = DispatchQueue(label: #function)
         let marker = QueueMarker()
-        let lock = NSLock()
-        nonisolated(unsafe) var callbackMarker: UInt8?
-        let canceled = DispatchSemaphore(value: 0)
+        let callbackMarker = LockedBox<UInt8?>(nil)
+        let canceled = AsyncLatch()
         queue.setSpecific(key: marker.key, value: 1)
+        executing.cancel()
 
         contract.subscribe(on: queue) {
-            lock.withLock { callbackMarker = DispatchQueue.getSpecific(key: marker.key) }
+            callbackMarker.withValue { $0 = DispatchQueue.getSpecific(key: marker.key) }
             canceled.signal()
         }
-        XCTAssertEqual(canceled.wait(timeout: .now() + 1), .success)
+        #expect(await canceled.wait(timeout: .seconds(1)))
 
-        XCTAssertEqual(lock.withLock { callbackMarker }, 1)
+        #expect(callbackMarker.value == 1)
     }
 
-    func test__active_cancel_uses_contract_queue() {
+    @Test
+    func test__active_cancel_uses_contract_queue() async {
         let contractQueue = DispatchQueue(label: "\(#function).contract")
         let subscriberQueue = DispatchQueue(label: "\(#function).subscriber")
         let contract = Contract<Int, SampleError>.executing(on: contractQueue).contract
         let marker = QueueMarker()
-        let lock = NSLock()
-        nonisolated(unsafe) var callbackMarker: UInt8?
-        let canceled = DispatchSemaphore(value: 0)
+        let callbackMarker = LockedBox<UInt8?>(nil)
+        let canceled = AsyncLatch()
         contractQueue.setSpecific(key: marker.key, value: 1)
         subscriberQueue.setSpecific(key: marker.key, value: 2)
 
         contract.subscribe(on: subscriberQueue) {
-            lock.withLock { callbackMarker = DispatchQueue.getSpecific(key: marker.key) }
+            callbackMarker.withValue { $0 = DispatchQueue.getSpecific(key: marker.key) }
             canceled.signal()
         }
         contract.cancel()
-        XCTAssertEqual(canceled.wait(timeout: .now() + 1), .success)
+        #expect(await canceled.wait(timeout: .seconds(1)))
 
-        XCTAssertEqual(lock.withLock { callbackMarker }, 1)
+        #expect(callbackMarker.value == 1)
     }
 
-    func test__callback_can_resolve_reentrantly_without_deadlock() {
+    @Test
+    func test__callback_can_resolve_reentrantly_without_deadlock() async {
         let contract = Contract<Int, SampleError>()
         let queue = DispatchQueue(label: #function)
-        let lock = NSLock()
-        nonisolated(unsafe) var values: [Int] = []
-        let callbacks = DispatchSemaphore(value: 0)
+        let values = LockedBox<[Int]>([])
+        let callbacks = AsyncLatch()
 
         contract.subscribe(
             on: queue,
             onResolved: { value in
-                lock.withLock { values.append(value) }
+                values.withValue { $0.append(value) }
                 if value == 1 {
                     contract.resolve(2)
                 }
@@ -192,17 +194,18 @@ final class ContractTest: XCTestCase {
         )
 
         contract.resolve(1)
-        XCTAssertEqual(callbacks.wait(timeout: .now() + 1), .success)
-        XCTAssertEqual(callbacks.wait(timeout: .now() + 1), .success)
+        #expect(await callbacks.wait(timeout: .seconds(1)))
+        #expect(await callbacks.wait(timeout: .seconds(1)))
 
-        XCTAssertEqual(lock.withLock { values }, [1, 2])
+        #expect(values.value == [1, 2])
     }
 
-    func test__subscriber_deinit_can_reenter_contract_during_cancel() {
+    @Test
+    func test__subscriber_deinit_can_reenter_contract_during_cancel() async {
         let contract = Contract<Int, SampleError>()
         let queue = DispatchQueue(label: #function)
-        let tokenDeinitialized = DispatchSemaphore(value: 0)
-        let cancelReturned = DispatchSemaphore(value: 0)
+        let tokenDeinitialized = AsyncLatch()
+        let cancelReturned = AsyncLatch()
 
         do {
             let token = DeinitToken { [weak contract] in
@@ -222,28 +225,30 @@ final class ContractTest: XCTestCase {
             cancelReturned.signal()
         }
 
-        XCTAssertEqual(tokenDeinitialized.wait(timeout: .now() + 1), .success)
-        XCTAssertEqual(cancelReturned.wait(timeout: .now() + 1), .success)
+        #expect(await tokenDeinitialized.wait(timeout: .seconds(1)))
+        #expect(await cancelReturned.wait(timeout: .seconds(1)))
     }
 
-    func test__executing_deinit_cancels_contract() {
-        let canceled = DispatchSemaphore(value: 0)
+    @Test
+    func test__executing_deinit_cancels_contract() async {
+        let canceled = AsyncLatch()
         weak var weakExecuting: ContractExecuting<Int, SampleError>?
 
         do {
             let executing = Contract<Int, SampleError>.executing(cancelWhen: .deinit)
             weakExecuting = executing
-            executing.onCancel { canceled.signal() }
+            executing.contract.subscribe { canceled.signal() }
         }
 
-        XCTAssertNil(weakExecuting)
-        XCTAssertEqual(canceled.wait(timeout: .now() + 1), .success)
+        #expect(weakExecuting == nil)
+        #expect(await canceled.wait(timeout: .seconds(1)))
     }
     
-    func test__resolve() {
+    @Test
+    func test__resolve() async {
         let contract = Contract<Int, Error>()
         
-        ContractTest.expect(
+        await ContractTest.expect(
             contract: contract,
             state: .resolved(10),
             timeout: .seconds(1)
@@ -252,10 +257,11 @@ final class ContractTest: XCTestCase {
         }
     }
     
-    func test__reject() {
+    @Test
+    func test__reject() async {
         let contract = Contract<Int, Error>()
         
-        ContractTest.expect(
+        await ContractTest.expect(
             contract: contract,
             state: .rejected(SampleError.one),
             timeout: .seconds(1)
@@ -264,10 +270,13 @@ final class ContractTest: XCTestCase {
         }
     }
     
-    func test__cancel() {
-        let contract = Contract<Int, Error>.canceled()
+    @Test
+    func test__cancel() async {
+        let executing = Contract<Int, Error>.executing()
+        let contract = executing.contract
+        executing.cancel()
         
-        ContractTest.expect(
+        await ContractTest.expect(
             contract: contract,
             state: .canceled,
             timeout: .seconds(1)
@@ -276,10 +285,11 @@ final class ContractTest: XCTestCase {
         }
     }
     
-    func test__executing_resolve() {
+    @Test
+    func test__executing_resolve() async {
         let executing = Contract<Int, Error>.executing()
         
-        ContractTest.expect(
+        await ContractTest.expect(
             contract: executing.contract,
             state: .resolved(10),
             timeout: .seconds(1)
@@ -288,10 +298,11 @@ final class ContractTest: XCTestCase {
         }
     }
     
-    func test__executing_reject() {
+    @Test
+    func test__executing_reject() async {
         let executing = Contract<Int, Error>.executing()
         
-        ContractTest.expect(
+        await ContractTest.expect(
             contract: executing.contract,
             state: .rejected(SampleError.one),
             timeout: .seconds(1)
@@ -300,34 +311,35 @@ final class ContractTest: XCTestCase {
         }
     }
     
-    func test__executing_cancel() {
-        let expect = XCTestExpectation()
-        expect.expectedFulfillmentCount = 1
+    @Test
+    func test__executing_cancel() async {
+        let canceled = AsyncLatch()
         
         let executing = Contract<Int, Error>.executing()
 
-        ContractTest.expect(
+        await ContractTest.expect(
             contract: executing.contract,
             state: .canceled,
             timeout: .seconds(1)
         ) {
-            executing.onCancel {
-                expect.fulfill()
+            executing.contract.subscribe {
+                canceled.signal()
             }
             executing.contract.cancel()
         }
 
-        XCTAssertEqual(XCTWaiter().wait(for: [expect], timeout: 1), .completed)
+        #expect(await canceled.wait(timeout: .seconds(1)))
     }
     
-    func test__executing_subscribe() {
+    @Test
+    func test__executing_subscribe() async {
         let executing = Contract<Int, Error>.executing()
         let contract0 = Contract<Int, Error>()
         let contract1 = Contract<Int, Error>()
         
         executing.subscribe([contract0, contract1])
         
-        ContractTest.expect(
+        await ContractTest.expect(
             contract: executing.contract,
             state: .resolved(10),
             timeout: .seconds(1)
@@ -335,7 +347,7 @@ final class ContractTest: XCTestCase {
             contract0.resolve(10)
         }
         
-        ContractTest.expect(
+        await ContractTest.expect(
             contract: executing.contract,
             state: .resolved(20),
             timeout: .seconds(1)
@@ -343,7 +355,7 @@ final class ContractTest: XCTestCase {
             contract1.resolve(20)
         }
 
-        ContractTest.expect(
+        await ContractTest.expect(
             contract: executing.contract,
             state: .rejected(ContractTest.SampleError.one),
             timeout: .seconds(1)
@@ -351,7 +363,7 @@ final class ContractTest: XCTestCase {
             contract0.reject(ContractTest.SampleError.one)
         }
 
-        ContractTest.expect(
+        await ContractTest.expect(
             contract: executing.contract,
             state: .rejected(ContractTest.SampleError.two),
             timeout: .seconds(1)
@@ -359,7 +371,7 @@ final class ContractTest: XCTestCase {
             contract1.reject(ContractTest.SampleError.two)
         }
         
-        ContractTest.expect(
+        await ContractTest.expect(
             contract: executing.contract,
             state: .canceled,
             timeout: .seconds(1)
@@ -367,7 +379,7 @@ final class ContractTest: XCTestCase {
             contract0.cancel()
         }
         
-        ContractTest.expect(
+        await ContractTest.expect(
             contract: executing.contract,
             state: .canceled,
             timeout: .seconds(1)

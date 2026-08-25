@@ -1,139 +1,50 @@
-//
-//  ContractTestExpect.swift
-//  SabyConcurrencyTest
-//
-//  Created by WOF on 2022/07/21.
-//
-
-import XCTest
+import Foundation
+import Testing
 @testable import SabyConcurrency
 
 extension ContractTest {
-    enum SampleError: Error {
-        case one
-        case two
-        case three
-    }
-    
-    enum State<Value> {
-        case resolved(_ value: Value)
-        case rejected(_ error: Error)
-        case canceled
-    }
-    
-    enum Message<Value> {
-        static func unexpected(value: Value) -> String {
-            "Contract provide unexpected: \(value)"
-        }
-    }
-    
+    enum SampleError: Error { case one, two, three }
+    enum State<Value> { case resolved(Value), rejected(Error), canceled }
+    private enum Completion<Value> { case resolved(Value), rejected(Error), canceled }
+
     static func expect<Value: Equatable & Sendable, Failure: Error & Sendable>(
         contract: Contract<Value, Failure>,
         state: State<Value>,
         timeout: DispatchTimeInterval,
         block: () -> Void,
-        file: StaticString = #file,
+        file: StaticString = #fileID,
         line: UInt = #line
-    ) {
-        let end = DispatchSemaphore(value: 0)
-        let message = Message.unexpected(value: state)
-        
-        switch state {
-        case .resolved(let expect):
-            let token = OnceToken()
-            contract.subscribe(
-                queue: contract.queue,
-                onResolved: once(token: token) { value -> Void in
-                    XCTAssertEqual(value, expect, message, file: file, line: line)
-                    end.signal()
-                },
-                onRejected: once(token: token) { error -> Void in
-                    XCTFail(message, file: file, line: line)
-                    end.signal()
-                },
-                onCanceled: once(token: token) {
-                    XCTFail(message, file: file, line: line)
-                    end.signal()
-                }
-            )
-        case .rejected(let expect):
-            let token = OnceToken()
-            contract.subscribe(
-                queue: contract.queue,
-                onResolved: once(token: token) { value -> Void in
-                    XCTFail(message, file: file, line: line)
-                    end.signal()
-                },
-                onRejected: once(token: token) { error -> Void in
-                    XCTAssertEqual(error.localizedDescription, expect.localizedDescription, file: file, line: line)
-                    end.signal()
-                },
-                onCanceled: once(token: token) {
-                    XCTFail(message, file: file, line: line)
-                    end.signal()
-                }
-            )
-        case .canceled:
-            let token = OnceToken()
-            contract.subscribe(
-                queue: contract.queue,
-                onCanceled: once(token: token) {
-                    end.signal()
-                }
-            )
-        }
-        
-        block()
-        expect(semaphore: end, timeout: timeout, file: file, line: line)
-    }
-    
-    private static func expect(
-        semaphore: DispatchSemaphore,
-        timeout: DispatchTimeInterval,
-        file: StaticString,
-        line: UInt
-    ) {
-        if case .timedOut = semaphore.wait(timeout: .now() + timeout) {
-            XCTFail("test is failed with timeout: \(timeout)", file: file, line: line)
-        }
-    }
-    
-    private final class OnceToken: Sendable {
-        private let lock = NSLock()
-        nonisolated(unsafe) private var state: State = .pending
-        
-        enum State {
-            case pending
-            case called
-        }
-
-        func call(_ block: () -> Void) {
-            lock.lock()
-            guard case .pending = state else {
-                lock.unlock()
-                return
+    ) async {
+        let result = LockedBox<Completion<Value>?>(nil)
+        let completed = AsyncLatch()
+        let record: @Sendable (Completion<Value>) -> Void = { completion in
+            let isFirst = result.withValue { current in
+                guard current == nil else { return false }
+                current = completion
+                return true
             }
-            state = .called
-            lock.unlock()
-            block()
+            if isFirst { completed.signal() }
+        }
+        contract.subscribe(
+            on: contract.queue,
+            onResolved: { record(.resolved($0)) },
+            onRejected: { record(.rejected($0)) },
+            onCanceled: { record(.canceled) }
+        )
+        block()
+        guard await completed.wait(timeout: timeout), let completion = result.value else {
+            Issue.record("Contract timed out", sourceLocation: sourceLocation(file: file, line: line))
+            return
+        }
+        switch (state, completion) {
+        case let (.resolved(expect), .resolved(value)): #expect(value == expect)
+        case let (.rejected(expect), .rejected(error)): #expect(error.localizedDescription == expect.localizedDescription)
+        case (.canceled, .canceled): break
+        default: Issue.record("Contract completed in an unexpected state")
         }
     }
-    
-    private static func once(
-        token: OnceToken = OnceToken(),
-        block: @escaping @Sendable () -> Void
-    ) -> @Sendable () -> Void {
-        return {
-            token.call(block)
-        }
-    }
-    
-    private static func once<Value>(
-        token: OnceToken = OnceToken(),
-        block: @escaping @Sendable (Value) -> Void
-    ) -> @Sendable (Value) -> Void {
-        return { value in
-            token.call { block(value) }
-        }
+
+    private static func sourceLocation(file: StaticString, line: UInt) -> SourceLocation {
+        SourceLocation(fileID: String(describing: file), filePath: String(describing: file), line: Int(line), column: 1)
     }
 }

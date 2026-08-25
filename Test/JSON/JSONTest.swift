@@ -5,37 +5,37 @@
 //  Created by WOF on 2022/08/15.
 //
 
-import XCTest
+import Testing
 @testable import SabyJSON
 
-final class JSONTest: XCTestCase {
-    func test__string() {
+@Suite struct JSONTest {
+    @Test func test__string() {
         let json = JSON.string("string")
-        XCTAssertEqual(json, "string")
+        expectEqual(json, "string")
     }
     
-    func test__number() {
+    @Test func test__number() {
         let json = JSON.number(123456789012345)
-        XCTAssertEqual(json, 123456789012345)
+        expectEqual(json, 123456789012345)
     }
     
-    func test__boolean() {
+    @Test func test__boolean() {
         let json = JSON.boolean(true)
-        XCTAssertEqual(json, true)
+        expectEqual(json, true)
     }
     
-    func test__object() {
+    @Test func test__object() {
         let json = JSON.object([:])
-        XCTAssertEqual(json, [:])
+        expectEqual(json, [:])
     }
     
-    func test__array() {
+    @Test func test__array() {
         let json = JSON.array([])
-        XCTAssertEqual(json, [])
+        expectEqual(json, [])
     }
     
-    func test__null() {
+    @Test func test__null() {
         let json = JSON.null
-        XCTAssertEqual(json, .null)
+        expectEqual(json, .null)
     }
 }

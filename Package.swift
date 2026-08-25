@@ -1,13 +1,11 @@
-// swift-tools-version: 5.6
+// swift-tools-version: 6.0
 import PackageDescription
 
 var package = Package(
     name: "Saby",
     platforms: [
-        .iOS(.v12),
-        .macOS(.v10_15),
-        .tvOS(.v13),
-        .watchOS(.v6),
+        .iOS(.v15),
+        .macOS(.v14)
     ],
     products: [
         .library(
@@ -19,9 +17,6 @@ var package = Package(
         .library(
             name: "SabyESCArchitecture",
             targets: ["SabyESCArchitecture"]),
-        .library(
-            name: "SabyTestExpect",
-            targets: ["SabyTestExpect"]),
         .library(
             name: "SabyJSON",
             targets: ["SabyJSON"]),
@@ -66,10 +61,6 @@ var package = Package(
             dependencies: ["SabyConcurrency"],
             path: "Source/ESCArchitecture"),
         .target(
-            name: "SabyTestExpect",
-            dependencies: ["SabyConcurrency"],
-            path: "Source/TestExpect"),
-        .target(
             name: "SabyTestWait",
             dependencies: ["SabyConcurrency", "SabyTestMock"],
             path: "Source/TestWait"),
@@ -79,7 +70,7 @@ var package = Package(
             path: "Source/JSON"),
         .target(
             name: "SabyTestMock",
-            dependencies: ["SabyConcurrency", "SabyJSON"],
+            dependencies: ["SabyConcurrency"],
             path: "Source/TestMock"),
         .target(
             name: "SabyTestFake",
@@ -107,7 +98,7 @@ var package = Package(
             path: "Source/Time"),
         .testTarget(
             name: "SabyConcurrencyTest",
-            dependencies: ["SabyConcurrency", "SabyTestWait"],
+            dependencies: ["SabyConcurrency"],
             path: "Test/Concurrency"),
         .testTarget(
             name: "SabyEncodeTest",
@@ -119,7 +110,7 @@ var package = Package(
             path: "Test/JSON"),
         .testTarget(
             name: "SabyNetworkTest",
-            dependencies: ["SabyNetwork", "SabyTestMock", "SabyTestExpect"],
+            dependencies: ["SabyNetwork", "SabyConcurrency", "SabyJSON"],
             path: "Test/Network"),
         .testTarget(
             name: "SabyNumericTest",
@@ -209,7 +200,7 @@ package
             path: "Test/AppleCrypto"),
         .testTarget(
             name: "SabyAppleStorageTest",
-            dependencies: ["SabyAppleStorage", "SabyTestWait"],
+            dependencies: ["SabyAppleStorage"],
             path: "Test/AppleStorage"),
         .testTarget(
             name: "SabyApplePreferenceTest",

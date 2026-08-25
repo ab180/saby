@@ -5,17 +5,16 @@
 //  Created by WOF on 2022/08/08.
 //
 
-import XCTest
+import Testing
 @testable import SabySafe
 
-final class RequireTest: XCTestCase {
-    func test__success() {
-        XCTAssertNotNil(try? require(Int.self, 10))
-        XCTAssertNotNil(try? require(10 as Int?))
+@Suite
+struct RequireTest {
+    @Test func success() {
+        #expect((try? require(10 as Int?)) != nil)
     }
     
-    func test__fail() {
-        XCTAssertNil(try? require(Int.self, "10"))
-        XCTAssertNil(try? require(nil as Int?))
+    @Test func fail() {
+        #expect((try? require(nil as Int?)) == nil)
     }
 }

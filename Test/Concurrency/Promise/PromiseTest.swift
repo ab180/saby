@@ -5,157 +5,171 @@
 //  Created by WOF on 2020/04/02.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import SabyConcurrency
 
-final class PromiseTest: XCTestCase {
-    func test__init() {
+@Suite(.serialized) struct PromiseTest {
+    @Test
+    func test__init() async {
         let promise = Promise<Int, Error>()
 
-        PromiseTest.expect(promise: promise, state: .pending, timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .pending, timeout: .seconds(1))
     }
     
-    func test__init_with_resolver_resolve() {
+    @Test
+    func test__init_with_resolver_resolve() async {
         let promise = Promise<Int, Error> { resolve, reject in
             resolve(10)
         }
         
-        PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
     }
     
-    func test__init_with_resolver_reject() {
+    @Test
+    func test__init_with_resolver_reject() async {
         let promise = Promise<Int, Error> { resolve, reject in
             reject(PromiseTest.SampleError.one)
         }
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
-    func test__init_with_resolver_throw_error() {
+    @Test
+    func test__init_with_resolver_throw_error() async {
         let promise = Promise<Int, Error> { resolve, reject in
             throw PromiseTest.SampleError.one
         }
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
-    func test__init_with_resolver_cancel() {
-        let expect = XCTestExpectation()
-        expect.expectedFulfillmentCount = 1
+    @Test
+    func test__init_with_resolver_cancel() async {
+        let canceled = AsyncLatch()
         
         let promise = Promise<Int, Error> { resolve, reject, cancel, onCancel in
             onCancel {
-                expect.fulfill()
+                canceled.signal()
             }
         }
         promise.cancel()
         
-        XCTAssertEqual(XCTWaiter().wait(for: [expect], timeout: 1), .completed)
-        PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
+        #expect(await canceled.wait(timeout: .seconds(1)))
+        await PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
     }
     
-    func test__resolve() {
+    @Test
+    func test__resolve() async {
         let promise = Promise<Int, Error>()
         promise.resolve(10)
         
-        PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
     }
     
-    func test__reject() {
+    @Test
+    func test__reject() async {
         let promise = Promise<Int, Error>()
         promise.reject(PromiseTest.SampleError.one)
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
-    func test__pending() {
+    @Test
+    func test__pending() async {
         let pending = Promise<Int, Error>.pending()
         
-        PromiseTest.expect(promise: pending.promise, state: .pending, timeout: .seconds(1))
+        await PromiseTest.expect(promise: pending.promise, state: .pending, timeout: .seconds(1))
     }
     
-    func test__pending_resolve() {
+    @Test
+    func test__pending_resolve() async {
         let pending = Promise<Int, Error>.pending()
         pending.resolve(10)
         
-        PromiseTest.expect(promise: pending.promise, state: .resolved(10), timeout: .seconds(1))
+        await PromiseTest.expect(promise: pending.promise, state: .resolved(10), timeout: .seconds(1))
     }
     
-    func test__pending_reject() {
+    @Test
+    func test__pending_reject() async {
         let pending = Promise<Int, Error>.pending()
         pending.reject(PromiseTest.SampleError.one)
         
-        PromiseTest.expect(promise: pending.promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+        await PromiseTest.expect(promise: pending.promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
-    func test__pending_cancel() {
-        let expect = XCTestExpectation()
-        expect.expectedFulfillmentCount = 1
+    @Test
+    func test__pending_cancel() async {
+        let canceled = AsyncLatch()
         
         let pending = Promise<Int, Error>.pending()
         pending.onCancel {
-            expect.fulfill()
+            canceled.signal()
         }
         pending.promise.cancel()
         
-        XCTAssertEqual(XCTWaiter().wait(for: [expect], timeout: 1), .completed)
-        PromiseTest.expect(promise: pending.promise, state: .canceled, timeout: .seconds(1))
+        #expect(await canceled.wait(timeout: .seconds(1)))
+        await PromiseTest.expect(promise: pending.promise, state: .canceled, timeout: .seconds(1))
     }
     
-    func test__resolved() {
+    @Test
+    func test__resolved() async {
         let promise = Promise<Int, Error>.resolved(10)
         
-        PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
     }
     
-    func test__rejected() {
+    @Test
+    func test__rejected() async {
         let promise = Promise<Int, Error>.rejected(PromiseTest.SampleError.one)
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
-    func test__canceled() {
-        let promise = Promise<Int, Error>.canceled()
+    @Test
+    func test__canceled() async {
+        let promise: Promise<Int, Error> = PromiseTest.canceled()
         
-        PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
     }
 
-    func test__async_with_async_function() {
+    @Test
+    func test__async_with_async_function() async {
         let promise: Promise<Int, Never> = Promise.async(Self.asyncValue)
 
-        PromiseTest.expect(
+        await PromiseTest.expect(
             promise: promise,
             state: .resolved(10),
             timeout: .seconds(1)
         )
     }
 
-    func test__async_with_throwing_async_function() {
+    @Test
+    func test__async_with_throwing_async_function() async {
         let promise: Promise<Int, Error> = Promise.async(Self.throwingAsyncValue)
 
-        PromiseTest.expect(
+        await PromiseTest.expect(
             promise: promise,
             state: .rejected(SampleError.one),
             timeout: .seconds(1)
         )
     }
 
+    @Test
     func test__state_properties() async {
         let promise = Promise<Int, Error>()
 
-        let isPending = await promise.isPending
-        XCTAssertTrue(isPending)
+        #expect(promise.capture().isPending)
 
         promise.resolve(10)
 
         let isResolved = await promise.isResolved
-        let isRejected = await promise.isRejected
-        let isCanceled = await promise.isCanceled
-        XCTAssertTrue(isResolved)
-        XCTAssertFalse(isRejected)
-        XCTAssertFalse(isCanceled)
+        #expect(isResolved)
+        #expect(!promise.capture().isRejected)
+        #expect(!promise.capture().isCanceled)
     }
 
+    @Test
     func test__first_completion_wins() async {
         for _ in 0..<500 {
             let promise = Promise<Int, Error>()
@@ -165,26 +179,26 @@ final class PromiseTest: XCTestCase {
             promise.cancel()
             promise.resolve(20)
 
-            guard case .resolved(let value) = await promise.capture() else {
-                XCTFail("Promise did not preserve its first completion")
+            guard case .resolved(let value) = promise.capture() else {
+                Issue.record("Promise did not preserve its first completion")
                 return
             }
 
-            XCTAssertEqual(value, 10)
+            #expect(value == 10)
         }
     }
 
+    @Test
     func test__concurrent_completion_notifies_once() async {
         let callbackQueue = DispatchQueue(label: #function)
         let pending = Promise<Int, Error>.pending(on: callbackQueue)
-        let lock = NSLock()
-        nonisolated(unsafe) var completionCount = 0
+        let completionCount = LockedBox(0)
 
         pending.promise.subscribe(
             on: callbackQueue,
-            onResolved: { _ in lock.withLock { completionCount += 1 } },
-            onRejected: { _ in lock.withLock { completionCount += 1 } },
-            onCanceled: { lock.withLock { completionCount += 1 } }
+            onResolved: { _ in completionCount.withValue { $0 += 1 } },
+            onRejected: { _ in completionCount.withValue { $0 += 1 } },
+            onCanceled: { completionCount.withValue { $0 += 1 } }
         )
 
         DispatchQueue.concurrentPerform(iterations: 1_000) { index in
@@ -196,19 +210,19 @@ final class PromiseTest: XCTestCase {
         }
         callbackQueue.sync {}
 
-        XCTAssertEqual(lock.withLock { completionCount }, 1)
-        let isPending = await pending.promise.isPending
-        XCTAssertFalse(isPending)
+        #expect(completionCount.value == 1)
+        #expect(!pending.promise.capture().isPending)
     }
     
+    @Test
     func test__cancel_deinit() async throws {
         let promises = WeakPromisePair()
-        let result = DispatchSemaphore(value: 0)
+        let didComplete = LockedBox(false)
         
-        try Promise<Void, Never> { resolve, reject in
+        try await Promise<Void, Never> { resolve, reject in
             let promise00 = Promise<Void, Never>.resolved(())
             let promise11 = promise00.delay(.milliseconds(10)).then {
-                result.signal()
+                didComplete.withValue { $0 = true }
                 return ()
             }
 
@@ -216,14 +230,14 @@ final class PromiseTest: XCTestCase {
                 await promises.store(promise00, promise11)
                 resolve(())
             }
-        }.wait()
+        }.value()
 
         let (promise0, promise1) = await promises.values()
-        XCTAssertNil(promise0)
-        XCTAssertNotNil(promise1)
+        #expect(promise0 == nil)
+        #expect(promise1 != nil)
         
-        try promise1!.wait()
-        XCTAssertEqual(result.wait(timeout: .now() + .seconds(1)), .success)
+        try await promise1!.value()
+        #expect(didComplete.value)
     }
 
     private static func asyncValue() async -> Int {

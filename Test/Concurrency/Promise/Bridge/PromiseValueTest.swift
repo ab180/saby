@@ -3,37 +3,43 @@
 //  SabyConcurrencyTest
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import SabyConcurrency
 
-final class PromiseValueTest: XCTestCase {
+@Suite(.serialized) struct PromiseValueTest {
+    @Test
     func test__value_returns_resolved_value() async throws {
         let value = try await Promise<Int, Error>.resolved(10).value()
 
-        XCTAssertEqual(value, 10)
+        #expect(value == 10)
     }
 
+    @Test
     func test__value_throws_rejected_error() async {
         do {
             _ = try await Promise<Int, Error>.rejected(PromiseTest.SampleError.one).value()
-            XCTFail("Expected rejection")
+            Issue.record("Expected rejection")
         } catch {
-            XCTAssertEqual(
-                error.localizedDescription,
+            #expect(
+                error.localizedDescription ==
                 PromiseTest.SampleError.one.localizedDescription
             )
         }
     }
 
+    @Test
     func test__value_throws_cancellation_error() async {
         do {
-            _ = try await Promise<Int, Error>.canceled().value()
-            XCTFail("Expected cancellation")
+            let promise: Promise<Int, Error> = PromiseTest.canceled()
+            _ = try await promise.value()
+            Issue.record("Expected cancellation")
         } catch {
-            XCTAssertTrue(error is CancellationError)
+            #expect(error is CancellationError)
         }
     }
 
+    @Test
     func test__task_cancellation_cancels_promise() async {
         let pending = Promise<Int, Error>.pending()
         let task = Task { try await pending.promise.value() }
@@ -42,14 +48,14 @@ final class PromiseValueTest: XCTestCase {
 
         do {
             _ = try await task.value
-            XCTFail("Expected cancellation")
+            Issue.record("Expected cancellation")
         } catch {
-            XCTAssertTrue(error is CancellationError)
+            #expect(error is CancellationError)
         }
-        let isCanceled = await pending.promise.isCanceled
-        XCTAssertTrue(isCanceled)
+        #expect(pending.promise.capture().isCanceled)
     }
 
+    @Test
     func test__task_cancellation_can_preserve_shared_promise() async {
         let pending = Promise<Int, Error>.pending()
         let task = Task {
@@ -60,16 +66,15 @@ final class PromiseValueTest: XCTestCase {
 
         do {
             _ = try await task.value
-            XCTFail("Expected cancellation")
+            Issue.record("Expected cancellation")
         } catch {
-            XCTAssertTrue(error is CancellationError)
+            #expect(error is CancellationError)
         }
-        let isPending = await pending.promise.isPending
-        XCTAssertTrue(isPending)
+        #expect(pending.promise.capture().isPending)
 
         pending.resolve(10)
 
         let isResolved = await pending.promise.isResolved
-        XCTAssertTrue(isResolved)
+        #expect(isResolved)
     }
 }

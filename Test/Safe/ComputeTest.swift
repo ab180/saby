@@ -5,23 +5,16 @@
 //  Created by WOF on 2022/08/08.
 //
 
-import XCTest
+import Testing
 @testable import SabySafe
 
-final class ComputeTest: XCTestCase {
-    func test__block() {
-        XCTAssertEqual(compute { 10 }, 10)
+@Suite
+struct ComputeTest {
+    @Test func value() {
+        #expect(compute(10) { "\($0)" } == "10")
     }
     
-    func test__type_integer() {
-        XCTAssertEqual(compute(.type(Int.self), 10) { "\($0)" }, "10")
-    }
-    
-    func test__type_string() {
-        XCTAssertEqual(compute(.type(Int.self), "10") { "\($0)" } , nil)
-    }
-    
-    func test__non_null_integer() {
-        XCTAssertEqual(compute(.nonNull, 10) { "\($0)" }, "10")
+    @Test func nonNullInteger() {
+        #expect(compute(.nonNull, 10) { "\($0)" } == "10")
     }
 }

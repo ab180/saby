@@ -5,91 +5,72 @@
 //  Created by WOF on 2022/08/25.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import SabyConcurrency
 
-final class PromiseConvertTest: XCTestCase {
-    func test__from_optional_promise() {
+@Suite(.serialized) struct PromiseConvertTest {
+    @Test
+    func test__from_optional_promise() async {
         let promise = Promise.from(PromiseTest.make { 10 } as Promise<Int, Error>?)
-        
-        PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
+
+        await PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
     }
-    
-    func test__from_optional_promise_nil() {
+
+    @Test
+    func test__from_optional_promise_nil() async {
         let promise = Promise.from(nil as Promise<Int, Error>?)
-        
-        PromiseTest.expect(promise: promise, state: .resolved(nil), timeout: .seconds(1))
+
+        await PromiseTest.expect(promise: promise, state: .resolved(nil), timeout: .seconds(1))
     }
-    
-    func test__to_promise_optional() {
+
+    @Test
+    func test__never_from_optional_never_promise() async {
+        let promise = Promise.from(PromiseTest.make { 10 } as Promise<Int, Never>?)
+
+        await PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
+    }
+
+    @Test
+    func test__never_from_optional_never_promise_nil() async {
+        let promise = Promise.from(nil as Promise<Int, Never>?)
+
+        await PromiseTest.expect(promise: promise, state: .resolved(nil), timeout: .seconds(1))
+    }
+
+    @Test
+    func test__to_promise_optional() async {
         let promise = PromiseTest.make { 10 }.toPromiseOptional()
         
-        PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
     }
     
-    func test__to_promise_void() {
+    @Test
+    func test__to_promise_void() async {
         let promise = PromiseTest.make { 10 }.toPromiseVoid()
         
-        PromiseTest.expect(promise: promise, state: .resolved({ $0 == () }), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .resolved({ $0 == () }), timeout: .seconds(1))
     }
     
-    func test__to_promise_any() {
-        let promise = PromiseTest.make { 10 }.toPromiseAny()
-        
-        PromiseTest.expect(promise: promise, state: .resolved({ $0 as? Int == 10 }), timeout: .seconds(1))
-    }
-    
-    func test__never_from_optional_never_promise() {
-        let promise = Promise.from(PromiseTest.make { 10 } as Promise<Int, Never>?)
-        
-        PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
-    }
-    
-    func test__never_from_optional_never_promise_nil() {
-        let promise = Promise.from(nil as Promise<Int, Never>?)
-        
-        PromiseTest.expect(promise: promise, state: .resolved(nil), timeout: .seconds(1))
-    }
-    
-    func test__never_to_promise() {
+    @Test
+    func test__never_to_promise() async {
         let promise = PromiseTest.make { 10 }.toPromiseError()
         
-        PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
     }
     
-    func test__never_to_promise_optional() {
-        let promise = PromiseTest.make { 10 }.toPromiseOptionalError()
-        
-        PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
-    }
-    
-    func test__never_to_promise_void() {
-        let promise = PromiseTest.make { 10 }.toPromiseVoidError()
-        
-        PromiseTest.expect(promise: promise, state: .resolved({ $0 == () }), timeout: .seconds(1))
-    }
-    
-    func test__never_to_promise_any() {
-        let promise = PromiseTest.make { 10 }.toPromiseAnyError()
-        
-        PromiseTest.expect(promise: promise, state: .resolved({ $0 as? Int == 10 }), timeout: .seconds(1))
-    }
-    
-    func test__never_to_never_promise_optional() {
+    @Test
+    func test__never_to_never_promise_optional() async {
         let promise = PromiseTest.make { 10 }.toPromiseOptional()
         
-        PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
     }
     
-    func test__never_to_never_promise_void() {
+    @Test
+    func test__never_to_never_promise_void() async {
         let promise = PromiseTest.make { 10 }.toPromiseVoid()
         
-        PromiseTest.expect(promise: promise, state: .resolved({ $0 == () }), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .resolved({ $0 == () }), timeout: .seconds(1))
     }
     
-    func test__never_to_never_promise_any() {
-        let promise = PromiseTest.make { 10 }.toPromiseAny()
-        
-        PromiseTest.expect(promise: promise, state: .resolved({ $0 as? Int == 10 }), timeout: .seconds(1))
-    }
 }

@@ -6,7 +6,7 @@
 //
 //
 
-import XCTest
+import Testing
 import CoreData
 import SabyConcurrency
 @testable import SabyAppleStorage
@@ -15,28 +15,24 @@ struct Value: Codable, KeyIdentifiable, Sendable {
     let key: UUID
 }
 
-class CoreDataArrayStorageTest: XCTestCase {
-    var storage: CoreDataArrayStorage<Value>!
-    var encoder: JSONEncoder!
+struct CoreDataArrayStorageTest {
+    let storage: CoreDataArrayStorage<Value>
+    let encoder: JSONEncoder
     
-    override func setUpWithError() throws {
+    init() {
         storage = CoreDataArrayStorage(directoryURL: FileManager.default.temporaryDirectory, storageName: "\(UUID())")
         encoder = JSONEncoder()
     }
     
-    override func tearDownWithError() throws {
-        try storage.clear().wait()
-    }
-    
-    func test__managing_programically() throws {
+    @Test func managing_programically() async throws {
         let value = Value(key: UUID())
-        let count = try storage.get(limit: .unlimited).wait().count
-        try storage.add(value).wait()
-        try storage.save().wait()
-        XCTAssertEqual(try storage.get(limit: .unlimited).wait().count, count + 1)
+        let count = try await storage.get(limit: .unlimited).value().count
+        try await storage.add(value).value()
+        try await storage.save().value()
+        #expect(try await storage.get(limit: .unlimited).value().count == count + 1)
     }
     
-    func test__length() throws {
+    @Test func length() async throws {
         let given = [
             Value(key: UUID()),
             Value(key: UUID()),
@@ -45,14 +41,14 @@ class CoreDataArrayStorageTest: XCTestCase {
         let expect = given.count
         
         for value in given {
-            _ = try self.storage.add(value).wait()
+            _ = try await self.storage.add(value).value()
         }
-        let count = try self.storage.count().wait()
+        let count = try await self.storage.count().value()
         
-        XCTAssertEqual(count, expect)
+        #expect(count == expect)
     }
     
-    func test__size() throws {
+    @Test func size() async throws {
         let given = [
             Value(key: UUID()),
             Value(key: UUID()),
@@ -61,63 +57,61 @@ class CoreDataArrayStorageTest: XCTestCase {
         let expect = Double(given.reduce(0) { $0 + (try! encoder.encode($1).count) })
         
         for value in given {
-            _ = try self.storage.add(value).wait()
+            _ = try await self.storage.add(value).value()
         }
-        let size = try self.storage.size().wait()
+        let size = try await self.storage.size().value()
         
-        XCTAssertEqual(size.byte, expect)
+        #expect(size.byte == expect)
     }
     
-    func test__get_order_oldest() throws {
+    @Test func get_order_oldest() async throws {
         let givens = Array(repeating: 0, count: 100).map { _ in
             Value(key: UUID())
         }
         let expects = givens
         
         for value in givens {
-            _ = try storage.add(value).wait()
+            _ = try await storage.add(value).value()
         }
-        let values = try storage.get(limit: .unlimited, order: .oldest).wait()
+        let values = try await storage.get(limit: .unlimited, order: .oldest).value()
         
         for (value, expect) in zip(values, expects) {
-            XCTAssertEqual(value.key, expect.key)
+            #expect(value.key == expect.key)
         }
     }
     
-    func test__get_order_newest() throws {
+    @Test func get_order_newest() async throws {
         let givens = Array(repeating: 0, count: 100).map { _ in
             Value(key: UUID())
         }
         let expects = givens.reversed()
         
         for value in givens {
-            _ = try storage.add(value).wait()
+            _ = try await storage.add(value).value()
         }
-        let values = try storage.get(limit: .unlimited, order: .newest).wait()
+        let values = try await storage.get(limit: .unlimited, order: .newest).value()
         
         for (value, expect) in zip(values, expects) {
-            XCTAssertEqual(value.key, expect.key)
+            #expect(value.key == expect.key)
         }
     }
 
-    func test__reloads_existing_records() throws {
+    @Test func reloads_existing_records() async throws {
         let storageName = "\(UUID())"
         let first = CoreDataArrayStorage<Value>(
             directoryURL: FileManager.default.temporaryDirectory,
             storageName: storageName
         )
         let given = [Value(key: UUID()), Value(key: UUID())]
-        defer { try? first.clear().wait() }
-
-        try first.add(given).wait()
-        try first.save().wait()
+        try await first.add(given).value()
+        try await first.save().value()
 
         let reloaded = CoreDataArrayStorage<Value>(
             directoryURL: FileManager.default.temporaryDirectory,
             storageName: storageName
         )
-        let result = try reloaded.get(limit: .unlimited, order: .oldest).wait()
+        let result = try await reloaded.get(limit: .unlimited, order: .oldest).value()
 
-        XCTAssertEqual(result.map(\.key), given.map(\.key))
+        #expect(result.map(\.key) == given.map(\.key))
     }
 }

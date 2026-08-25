@@ -5,11 +5,12 @@
 //  Created by WOF on 2022/08/23.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import SabyAppleObjectiveCReflection
 
-final class NSObjectInstanceMethodTest: XCTestCase {
-    func test__init_class_method() {
+final class NSObjectInstanceMethodTest {
+    @Test func init_class_method() {
         let classNSDictionary = NSObjectClass(name: "NSDictionary")!
         let methodDictionaryWithValuesForKeys = classNSDictionary.method(name: "dictionaryWithObjects:forKeys:")!
         let instance = classNSDictionary.instance(
@@ -27,12 +28,12 @@ final class NSObjectInstanceMethodTest: XCTestCase {
             }()
         )!
         
-        XCTAssertNotNil(instance.method(name: "objectForKey:"))
-        XCTAssertNil(instance.method(name: "1234567890"))
-        XCTAssertNil(instance.method(name: ""))
+        #expect(instance.method(name: "objectForKey:") != nil)
+        #expect(instance.method(name: "1234567890") == nil)
+        #expect(instance.method(name: "") == nil)
     }
     
-    func test__call_return_reference() {
+    @Test func call_return_reference() {
         let classNSDictionary = NSObjectClass(name: "NSDictionary")!
         let methodDictionaryWithValuesForKeys = classNSDictionary.method(name: "dictionaryWithObjects:forKeys:")!
         let instance = classNSDictionary.instance(
@@ -51,7 +52,7 @@ final class NSObjectInstanceMethodTest: XCTestCase {
         )!
         let methodObjectForKey = instance.method(name: "objectForKey:")!
         
-        XCTAssertEqual({
+        #expect({
             let function = unsafeBitCast(
                 methodObjectForKey.implementation,
                 to: (@convention(c)(NSObject, Selector, String)->String).self
@@ -61,10 +62,10 @@ final class NSObjectInstanceMethodTest: XCTestCase {
                 methodObjectForKey.selector,
                 "a"
             )
-        }(), "1")
+        }() == "1")
     }
     
-    func test__call_return_value() {
+    @Test func call_return_value() {
         let classNSDictionary = NSObjectClass(name: "NSDictionary")!
         let methodDictionaryWithValuesForKeys = classNSDictionary.method(name: "dictionaryWithObjects:forKeys:")!
         let instance = classNSDictionary.instance(
@@ -83,7 +84,7 @@ final class NSObjectInstanceMethodTest: XCTestCase {
         )!
         let methodCount = instance.method(name: "count")!
         
-        XCTAssertEqual({
+        #expect({
             let function = unsafeBitCast(
                 methodCount.implementation,
                 to: (@convention(c)(NSObject, Selector)->Int).self
@@ -92,6 +93,6 @@ final class NSObjectInstanceMethodTest: XCTestCase {
                 methodCount.object,
                 methodCount.selector
             )
-        }(), 1)
+        }() == 1)
     }
 }

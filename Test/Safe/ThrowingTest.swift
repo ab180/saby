@@ -5,16 +5,17 @@
 //  Created by WOF on 2022/08/08.
 //
 
-import XCTest
+import Testing
 @testable import SabySafe
 
-final class ThrowingTest: XCTestCase {
-    func test__default_value() {
-        XCTAssertNil(try? throwing())
+@Suite
+struct ThrowingTest {
+    @Test func defaultValue() {
+        #expect((try? throwing()) == nil)
     }
     
-    func test__error() {
-        XCTAssertNil(try? throwing(TestError()))
+    @Test func error() {
+        #expect((try? throwing(TestError())) == nil)
     }
 }
 
