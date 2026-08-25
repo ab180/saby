@@ -6,6 +6,8 @@
 //
 //
 
+#if canImport(CoreData)
+
 import Testing
 import CoreData
 import SabyConcurrency
@@ -115,3 +117,5 @@ struct CoreDataArrayStorageTest {
         #expect(result.map(\.key) == given.map(\.key))
     }
 }
+
+#endif

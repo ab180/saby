@@ -5,6 +5,7 @@
 //  Created by MinJae on 9/27/22.
 //
 
+#if canImport(CoreData)
 import CoreData
 
 import SabyConcurrency
@@ -312,35 +313,19 @@ final class SabyCoreDataArrayStorageSchema {
     init() {
         let keyAttribute = NSAttributeDescription()
         keyAttribute.name = "key"
-        if #available(iOS 15.0, macOS 12.0, macCatalyst 15.0, tvOS 15.0, watchOS 8.0, *) {
-            keyAttribute.type = .uuid
-        } else {
-            keyAttribute.attributeType = .UUIDAttributeType
-        }
+        keyAttribute.type = .uuid
         
         let dataAttribute = NSAttributeDescription()
         dataAttribute.name = "data"
-        if #available(iOS 15.0, macOS 12.0, macCatalyst 15.0, tvOS 15.0, watchOS 8.0, *) {
-            dataAttribute.type = .binaryData
-        } else {
-            dataAttribute.attributeType = .binaryDataAttributeType
-        }
+        dataAttribute.type = .binaryData
         
         let dateAttribute = NSAttributeDescription()
         dateAttribute.name = "date"
-        if #available(iOS 15.0, macOS 12.0, macCatalyst 15.0, tvOS 15.0, watchOS 8.0, *) {
-            dateAttribute.type = .date
-        } else {
-            dateAttribute.attributeType = .dateAttributeType
-        }
+        dateAttribute.type = .date
         
         let byteAttribute = NSAttributeDescription()
         byteAttribute.name = "byte"
-        if #available(iOS 15.0, macOS 12.0, macCatalyst 15.0, tvOS 15.0, watchOS 8.0, *) {
-            byteAttribute.type = .integer64
-        } else {
-            byteAttribute.attributeType = .integer64AttributeType
-        }
+        byteAttribute.type = .integer64
         
         let itemEntity = NSEntityDescription()
         itemEntity.name = SabyCoreDataArrayStorageItemVersion1.entityName
@@ -367,3 +352,4 @@ private extension Limit {
         return count
     }
 }
+#endif

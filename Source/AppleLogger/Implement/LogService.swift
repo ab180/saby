@@ -5,6 +5,7 @@
 //  Created by 이영빈 on 2022/09/30.
 //
 
+#if canImport(os)
 import os
 
 public protocol LogService {
@@ -57,3 +58,4 @@ public struct OSLogService: LogService {
         }
     }
 }
+#endif

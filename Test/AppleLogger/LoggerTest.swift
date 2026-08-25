@@ -5,6 +5,8 @@
 //  Created by WOF on 2022/08/24.
 //
 
+#if canImport(os)
+
 import Testing
 import os
 @testable import SabyAppleLogger
@@ -141,3 +143,5 @@ extension MockLogger {
         self.debug("TEST: DEFAULT LOG")
     }
 }
+
+#endif

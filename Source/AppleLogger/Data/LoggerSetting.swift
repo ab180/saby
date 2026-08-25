@@ -5,6 +5,7 @@
 //  Created by 이영빈 on 2022/09/30.
 //
 
+#if canImport(os)
 import os
 
 public struct LoggerSetting {
@@ -39,3 +40,4 @@ public struct LoggerSetting {
         self.osLog = OSLog(subsystem: subsystem, category: category)
     }
 }
+#endif

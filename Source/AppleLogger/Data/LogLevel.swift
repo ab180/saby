@@ -5,6 +5,7 @@
 //  Created by 이영빈 on 2022/10/04.
 //
 
+#if canImport(os)
 import os
 
 /// The various log levels that the `SabyApplerLogger` provides
@@ -49,3 +50,4 @@ public enum LogLevel: Comparable {
         return self >= level
     }
 }
+#endif

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+#if canImport(os)
 import os
 
 public final class OSLogger: LoggerType {
@@ -51,3 +52,4 @@ extension OSLogger: Logger {
         self.log(level: .fault, message)
     }
 }
+#endif

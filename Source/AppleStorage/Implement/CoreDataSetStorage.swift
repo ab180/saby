@@ -3,6 +3,7 @@
 //  SabyAppleStorage
 //
 
+#if canImport(CoreData)
 import CoreData
 
 import SabyConcurrency
@@ -408,19 +409,11 @@ final class SabyCoreDataSetStorageSchema {
     init() {
         let dataAttribute = NSAttributeDescription()
         dataAttribute.name = "data"
-        if #available(iOS 15.0, macOS 12.0, macCatalyst 15.0, tvOS 15.0, watchOS 8.0, *) {
-            dataAttribute.type = .binaryData
-        } else {
-            dataAttribute.attributeType = .binaryDataAttributeType
-        }
+        dataAttribute.type = .binaryData
 
         let byteAttribute = NSAttributeDescription()
         byteAttribute.name = "byte"
-        if #available(iOS 15.0, macOS 12.0, macCatalyst 15.0, tvOS 15.0, watchOS 8.0, *) {
-            byteAttribute.type = .integer64
-        } else {
-            byteAttribute.attributeType = .integer64AttributeType
-        }
+        byteAttribute.type = .integer64
 
         let itemEntity = NSEntityDescription()
         itemEntity.name = SabyCoreDataSetStorageItemVersion1.entityName
@@ -447,3 +440,4 @@ final class SabyCoreDataSetStorageSchema {
         self.model = model
     }
 }
+#endif

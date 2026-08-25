@@ -5,7 +5,7 @@
 //  Created by WOF on 2023/02/17.
 //
 
-#if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
+#if (os(iOS) || os(macOS) || os(tvOS) || os(watchOS) || os(visionOS)) && canImport(Foundation) && canImport(CommonCrypto)
 
 import Foundation
 import CommonCrypto

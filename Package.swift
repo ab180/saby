@@ -5,7 +5,10 @@ var package = Package(
     name: "Saby",
     platforms: [
         .iOS(.v15),
-        .macOS(.v14)
+        .macOS(.v14),
+        .tvOS(.v15),
+        .watchOS(.v8),
+        .visionOS(.v1)
     ],
     products: [
         .library(
@@ -131,7 +134,7 @@ var package = Package(
     ]
 )
 
-#if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
+#if os(iOS) || os(macOS) || os(tvOS) || os(watchOS) || os(visionOS)
 package
     .products.append(contentsOf: [
         .library(

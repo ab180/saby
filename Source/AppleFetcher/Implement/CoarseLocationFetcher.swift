@@ -5,7 +5,7 @@
 //  Created by WOF on 2022/08/23.
 //
 
-#if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
+#if os(iOS) || os(macOS) || os(tvOS) || os(watchOS) || os(visionOS)
 
 import Foundation
 
@@ -65,7 +65,8 @@ extension CoarseLocationFetcher {
     }
     
     private func fetchRegion() -> String? {
-        Locale.autoupdatingCurrent.regionCode
+        (Locale.autoupdatingCurrent as NSLocale)
+            .object(forKey: .countryCode) as? String
     }
 }
 

@@ -3,6 +3,8 @@
 //  SabyAppleStorageTest
 //
 
+#if canImport(CoreData)
+
 import CoreData
 import Testing
 @testable import SabyAppleStorage
@@ -192,3 +194,5 @@ private final class LegacyCoreDataSetStorageSchema {
         self.model = model
     }
 }
+
+#endif

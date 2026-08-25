@@ -6,6 +6,7 @@
 //
 
 import Foundation
+#if canImport(os)
 import os
 
 public protocol Logger {
@@ -16,3 +17,4 @@ public protocol Logger {
     func error(_ message: String)
     func fault(_ message: String)
 }
+#endif

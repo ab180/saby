@@ -5,7 +5,7 @@
 //  Created by WOF on 2022/08/24.
 //
 
-#if os(iOS) || os(macOS) || os(tvOS)
+#if (os(iOS) || os(macOS) || os(tvOS)) && canImport(SystemConfiguration)
 
 import Foundation
 import SystemConfiguration
@@ -95,7 +95,11 @@ extension NetworkFetcher {
                 
                 guard result == 0 else { return nil }
                 
-                return String(cString: buffer)
+                let bytes = buffer
+                    .prefix { $0 != 0 }
+                    .map { UInt8(bitPattern: $0) }
+
+                return String(decoding: bytes, as: UTF8.self)
             }()
             
             guard let ip else { continue }
