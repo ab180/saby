@@ -16,3 +16,15 @@ extension Contract {
         }
     }
 }
+
+extension Contract where Failure == Never {
+    public var stream: AsyncStream<Value> {
+        AsyncStream { continuation in
+            subscribe(
+                onResolved: { continuation.yield($0) },
+                onRejected: { _ in },
+                onCanceled: { continuation.finish() }
+            )
+        }
+    }
+}

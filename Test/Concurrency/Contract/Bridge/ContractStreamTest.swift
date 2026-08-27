@@ -39,6 +39,23 @@ import Testing
 
         #expect(await iterator.next() == nil)
     }
+
+    @Test
+    func test__never_stream_yields_values_and_finishes_on_cancel() async {
+        let contract = Contract<Int, Never>()
+        let stream: AsyncStream<Int> = contract.stream
+
+        contract.resolve(1)
+        contract.resolve(2)
+        contract.cancel()
+
+        var values: [Int] = []
+        for await value in stream {
+            values.append(value)
+        }
+
+        #expect(values == [1, 2])
+    }
 }
 
 private extension ContractStreamTest {
