@@ -40,7 +40,7 @@ import Testing
     }
 
     @Test
-    func test__task_cancellation_cancels_promise() async {
+    func test__task_cancellation_preserves_promise_by_default() async {
         let pending = Promise<Int, Error>.pending()
         let task = Task { try await pending.promise.value() }
 
@@ -52,14 +52,14 @@ import Testing
         } catch {
             #expect(error is CancellationError)
         }
-        #expect(pending.promise.capture().isCanceled)
+        #expect(pending.promise.capture().isPending)
     }
 
     @Test
-    func test__task_cancellation_can_preserve_shared_promise() async {
+    func test__task_cancellation_can_cancel_promise() async {
         let pending = Promise<Int, Error>.pending()
         let task = Task {
-            try await pending.promise.value(cancelOnTaskCancellation: false)
+            try await pending.promise.value(cancelOnTaskCancellation: true)
         }
 
         task.cancel()
@@ -70,11 +70,6 @@ import Testing
         } catch {
             #expect(error is CancellationError)
         }
-        #expect(pending.promise.capture().isPending)
-
-        pending.resolve(10)
-
-        let isResolved = await pending.promise.isResolved
-        #expect(isResolved)
+        #expect(pending.promise.capture().isCanceled)
     }
 }

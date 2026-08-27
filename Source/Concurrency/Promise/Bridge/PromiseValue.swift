@@ -7,7 +7,7 @@ import Foundation
 
 extension Promise {
     public func value(
-        cancelOnTaskCancellation: Bool = true
+        cancelOnTaskCancellation: Bool = false
     ) async throws -> Value {
         let waiter = PromiseValueWaiter<Value>()
 
