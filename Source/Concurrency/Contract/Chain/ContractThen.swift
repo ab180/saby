@@ -97,6 +97,32 @@ extension Contract where Failure == Never {
     @discardableResult
     public func then<Result: Sendable>(
         on queue: DispatchQueue? = nil,
+        schedule: ContractSchedule = .async,
+        _ operation: @escaping @Sendable (Value) async -> Result
+    ) -> Contract<Result, Never> {
+        let queue = queue ?? self.queue
+
+        let contract = Contract<Result, Never>(queue: self.queue)
+
+        subscribe(
+            queue: queue,
+            onResolved: schedule { value, finish in
+                Task {
+                    defer { finish() }
+                    let result = await operation(value)
+                    contract.resolve(result)
+                }
+            },
+            onRejected: { _ in },
+            onCanceled: { [weak contract] in contract?.cancel() }
+        )
+
+        return contract
+    }
+
+    @discardableResult
+    public func then<Result: Sendable>(
+        on queue: DispatchQueue? = nil,
         _ block: @escaping @Sendable (Value) -> Result
     ) -> Contract<Result, Never> {
         let queue = queue ?? self.queue

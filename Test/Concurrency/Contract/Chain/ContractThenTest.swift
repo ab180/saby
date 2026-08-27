@@ -283,6 +283,60 @@ import Testing
             contract0.resolve(20)
         }
     }
+
+    @Test
+    func test__never_then_async_return_value() async {
+        let contract0 = Contract<Int, Never>()
+
+        let contract = contract0.then { value async -> Int in
+            await Task.yield()
+            return value + 1
+        }
+
+        await ContractTest.expect(
+            contract: contract,
+            state: .resolved(11),
+            timeout: .seconds(1)
+        ) {
+            contract0.resolve(10)
+        }
+    }
+
+    @Test
+    func test__never_then_async_schedule_sync() async {
+        let contract0 = Contract<Int, Never>()
+        let completed = AsyncLatch()
+        let activeCount = LockedBox(0)
+        let maxActiveCount = LockedBox(0)
+        let actual = LockedBox<[Int]>([])
+
+        let contract = contract0.then(schedule: .sync) { value async -> Int in
+            let active = activeCount.withValue {
+                $0 += 1
+                return $0
+            }
+            maxActiveCount.withValue { $0 = max($0, active) }
+
+            await Task.yield()
+
+            activeCount.withValue { $0 -= 1 }
+            actual.withValue { $0.append(value) }
+            return value
+        }
+        contract.subscribe(
+            onResolved: { value in
+                if value == 100 { completed.signal() }
+            },
+            onRejected: { _ in },
+            onCanceled: {}
+        )
+
+        (0...100).forEach { contract0.resolve($0) }
+
+        #expect(await completed.wait(timeout: .seconds(1)))
+        #expect(maxActiveCount.value == 1)
+        #expect(actual.value == Array(0...100))
+    }
     
     @Test
     func test__never_then_throw_error_return_value() async {
