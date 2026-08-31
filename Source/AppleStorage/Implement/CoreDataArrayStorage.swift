@@ -14,7 +14,7 @@ import SabyJSON
 
 private let STORAGE_VERSION = "Version1"
 
-public final class CoreDataArrayStorage<Value: Codable & KeyIdentifiable & Sendable>: ArrayStorage {
+public final class CoreDataArrayStorage<Value: Codable & KeyIdentifiable & Sendable>: ArrayStorage, Sendable {
     typealias Context = NSManagedObjectContext
     typealias Item = SabyCoreDataArrayStorageItemVersion1
 

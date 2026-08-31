@@ -11,7 +11,7 @@ import SabyJSON
 
 private let STORAGE_VERSION = "Version1"
 
-public final class FileValueStorage<Value: Codable & Sendable>: ValueStorage {
+public final class FileValueStorage<Value: Codable & Sendable>: ValueStorage, Sendable {
     typealias Context = FileValueStorageContext
     
     let contextPromise: Promise<Context<Value>, Error>

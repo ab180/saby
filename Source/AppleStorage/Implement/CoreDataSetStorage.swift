@@ -14,7 +14,7 @@ private let STORAGE_VERSION = "Version1"
 private let STORAGE_ENCODING_VERSION_KEY = "SabyCoreDataSetStorageEncodingVersion"
 private let STORAGE_ENCODING_VERSION = 1
 
-public final class CoreDataSetStorage<Value: Codable & Hashable & Sendable>: SetStorage {
+public final class CoreDataSetStorage<Value: Codable & Hashable & Sendable>: SetStorage, Sendable {
     typealias Context = NSManagedObjectContext
 
     let contextPromise: Promise<Context, Error>

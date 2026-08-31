@@ -14,7 +14,7 @@ private let STORAGE_VERSION = "Version1"
 public final class FileDictionaryStorage<
     Key: Hashable & Codable & Sendable,
     Value: Codable & Sendable
->: DictionaryStorage {
+>: DictionaryStorage, Sendable {
     typealias Context = FileDictionaryStorageContext
     
     let contextPromise: Promise<Context<Key, Value>, Error>
