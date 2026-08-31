@@ -61,7 +61,7 @@ extension Client {
     }
 }
 
-public enum ClientMethod: String {
+public enum ClientMethod: String, Sendable {
     case get = "GET"
     case post = "POST"
 }
