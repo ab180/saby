@@ -9,9 +9,9 @@ import Foundation
 #if canImport(os)
 import os
 
-public final class OSLogger: LoggerType {
-    var loggerSetting: LoggerSetting
-    var logService: OSLogService
+public final class OSLogger: LoggerType, Sendable {
+    let loggerSetting: LoggerSetting
+    let logService: OSLogService
     
     public init(_ subsystem: String, category: String) {
         let setting = LoggerSetting(subsystem: subsystem, category: category)

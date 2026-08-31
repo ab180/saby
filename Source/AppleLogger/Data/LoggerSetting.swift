@@ -8,7 +8,7 @@
 #if canImport(os)
 import os
 
-public struct LoggerSetting {
+public struct LoggerSetting: Sendable {
     /// A variable indicating logger's logging level. Set  to `.none` to not show logs.
     public var logLevel: LogLevel? = .debug
     

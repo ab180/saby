@@ -12,7 +12,7 @@ import os
 ///
 /// It basically follows Apple's unified logging system.
 /// `default` is the lowest level while `fault` is the highest.
-public enum LogLevel: Comparable {
+public enum LogLevel: Comparable, Sendable {
     case debug
     case info
     case warning

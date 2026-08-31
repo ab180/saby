@@ -8,7 +8,7 @@
 #if canImport(os)
 import os
 
-public protocol LogService {
+public protocol LogService: Sendable {
     var setting: LoggerSetting { get }
     func log(level: LogLevel, _ message: String)
 }
@@ -49,7 +49,7 @@ extension LogService {
     }
 }
 
-public struct OSLogService: LogService {
+public struct OSLogService: LogService, Sendable {
     public let setting: LoggerSetting
     
     public func log(level: LogLevel, _ message: String) {

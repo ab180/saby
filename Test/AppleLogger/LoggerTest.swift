@@ -13,10 +13,11 @@ import os
 
 @Suite struct LoggerTest {
     @Test func setLogLevel() {
-        let logger = mockLogger()
-        #expect(logger.setting.logLevel != LogLevel.fault)
-        
-        logger.setLogLevel(to: .fault)
+        var setting = defaultSetting
+        #expect(setting.logLevel != LogLevel.fault)
+
+        setting.logLevel = .fault
+        let logger = mockLogger(setting: setting)
         #expect(logger.setting.logLevel == LogLevel.fault)
     }
     
@@ -76,7 +77,7 @@ fileprivate var defaultSetting: LoggerSetting {
 }
 
 // MARK: - Mocks for test
-fileprivate class MockLogService: LogService {
+fileprivate final class MockLogService: LogService {
     let setting = defaultSetting
     
     let counter: LogCounter?
@@ -90,9 +91,9 @@ fileprivate class MockLogService: LogService {
     }
 }
 
-fileprivate class MockLogger: SabyAppleLogger.LoggerType {
-    var loggerSetting: SabyAppleLogger.LoggerSetting
-    var logService: MockLogService
+fileprivate final class MockLogger: SabyAppleLogger.LoggerType {
+    let loggerSetting: SabyAppleLogger.LoggerSetting
+    let logService: MockLogService
         
     init(counter: LogCounter?, setting: LoggerSetting) {
         self.loggerSetting = setting
@@ -105,10 +106,6 @@ fileprivate final class LogCounter: @unchecked Sendable {
 }
 
 extension MockLogger: SabyAppleLogger.Logger {
-    public func setLogLevel(to level: LogLevel) {
-        loggerSetting.logLevel = level
-    }
-    
     public func debug(_ message: String) {
         self.log(level: .debug, message)
     }
