@@ -32,7 +32,7 @@ extension NSObjectClass {
 ///     )
 /// }()
 /// ```
-public final class NSObjectClassMethod {
+public final class NSObjectClassMethod: @unchecked Sendable {
     public let anyClass: AnyClass
     public let selector: Selector
     public let implementation: IMP

@@ -9,7 +9,7 @@
 
 import Foundation
 
-public final class NSObjectClass {
+public final class NSObjectClass: Sendable {
     let anyClass: AnyClass
     
     public init?(name: String) {

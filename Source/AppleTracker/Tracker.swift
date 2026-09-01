@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol Tracker<Value> {
+public protocol Tracker<Value>: Sendable {
     associatedtype Value
     
     func track() -> Value

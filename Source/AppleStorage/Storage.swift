@@ -8,7 +8,7 @@
 import Foundation
 import SabyConcurrency
 
-public protocol Storage {
+public protocol Storage: Sendable {
     /// ``init(directoryURL:storageName:migration:)``
     /// execute migration and then create or load preference from
     /// `{Directory url}/{Storage name}_{Version name}` path.

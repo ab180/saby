@@ -10,7 +10,7 @@ import Foundation
 import SabyTime
 import SabyConcurrency
 
-public protocol Client<Request, Response> {
+public protocol Client<Request, Response>: Sendable {
     associatedtype Request
     associatedtype Response
     
