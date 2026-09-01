@@ -15,7 +15,7 @@ extension NSObjectClass {
     }
 }
 
-public final class NSObjectInstance {
+public final class NSObjectInstance: @unchecked Sendable {
     let object: NSObject
     
     fileprivate init?(anyClass: AnyClass, object: Any?) {
