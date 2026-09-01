@@ -7,7 +7,7 @@
 
 import SabyConcurrency
 
-public protocol Signaler<Value, Failure> {
+public protocol Signaler<Value, Failure>: Sendable {
     associatedtype Value: Sendable
     associatedtype Failure: Error & Sendable
     
