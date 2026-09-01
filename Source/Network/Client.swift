@@ -20,7 +20,7 @@ public protocol Client<Request, Response>: Sendable {
         header: ClientHeader,
         body: Request,
         timeout: Interval?,
-        optionBlock: @escaping (inout URLRequest) -> Void
+        optionBlock: @escaping @Sendable (inout URLRequest) -> Void
     ) -> Promise<ClientResult<Response>, Error>
 }
 
@@ -30,7 +30,7 @@ extension Client {
         method: ClientMethod = .get,
         header: ClientHeader = [:],
         timeout: Interval? = nil,
-        optionBlock: @escaping (inout URLRequest) -> Void = { _ in }
+        optionBlock: @escaping @Sendable (inout URLRequest) -> Void = { _ in }
     ) -> Promise<ClientResult<Response>, Error> where RequestValue? == Request {
         request(
             url: url,
@@ -48,7 +48,7 @@ extension Client {
         header: ClientHeader = [:],
         body: Request,
         timeout: Interval? = nil,
-        optionBlock: @escaping (inout URLRequest) -> Void = { _ in }
+        optionBlock: @escaping @Sendable (inout URLRequest) -> Void = { _ in }
     ) -> Promise<ClientResult<Response>, Error> {
         request(
             url: url,

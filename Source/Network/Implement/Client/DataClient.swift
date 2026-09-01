@@ -31,7 +31,7 @@ public final class DataClient: Client, Sendable {
 extension DataClient {
     public convenience init(
         cancelWhen: PromisePendingCancelWhen,
-        optionBlock: (inout URLSessionConfiguration) -> Void = { _ in }
+        optionBlock: @Sendable (inout URLSessionConfiguration) -> Void = { _ in }
     ) {
         var configuration = URLSessionConfiguration.default
         optionBlock(&configuration)
@@ -51,7 +51,7 @@ extension DataClient {
         header: ClientHeader = [:],
         body: Data? = nil,
         timeout: Interval? = nil,
-        optionBlock: @escaping (inout URLRequest) -> Void = { _ in }
+        optionBlock: @escaping @Sendable (inout URLRequest) -> Void = { _ in }
     ) -> Promise<ClientResult<Data?>, Error> {
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue

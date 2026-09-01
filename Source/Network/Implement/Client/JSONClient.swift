@@ -27,7 +27,7 @@ public final class JSONClient: Client, Sendable {
 extension JSONClient {
     public convenience init(
         cancelWhen: PromisePendingCancelWhen,
-        optionBlock: (inout URLSessionConfiguration) -> Void = { _ in }
+        optionBlock: @Sendable (inout URLSessionConfiguration) -> Void = { _ in }
     ) {
         let client = DataClient(cancelWhen: cancelWhen, optionBlock: optionBlock)
         self.init(client: client, cancelWhen: cancelWhen)
@@ -41,7 +41,7 @@ extension JSONClient {
         header: ClientHeader = [:],
         body: JSON? = nil,
         timeout: Interval? = nil,
-        optionBlock: @escaping (inout URLRequest) -> Void = { _ in }
+        optionBlock: @escaping @Sendable (inout URLRequest) -> Void = { _ in }
     ) -> Promise<ClientResult<JSON>, Error> {
         let header = header.merging([
             "Content-Type": "application/json"
