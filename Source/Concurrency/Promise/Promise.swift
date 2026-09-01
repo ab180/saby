@@ -271,7 +271,7 @@ extension Promise {
 }
 
 extension Promise {
-    public var isResolved: Bool { get async { capture().isResolved } }
+    public var isResolved: Bool { capture().isResolved }
 }
 
 extension Promise {
