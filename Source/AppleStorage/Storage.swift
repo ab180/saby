@@ -8,11 +8,15 @@
 import Foundation
 import SabyConcurrency
 
-public protocol Storage {
+public protocol Storage: Sendable {
     /// ``init(directoryURL:storageName:migration:)``
     /// execute migration and then create or load preference from
     /// `{Directory url}/{Storage name}_{Version name}` path.
-    init(directoryURL: URL, storageName: String, migration: @escaping () -> Promise<Void, Error>)
+    init(
+        directoryURL: URL,
+        storageName: String,
+        migration: @escaping @Sendable () -> Promise<Void, Error>
+    )
 }
 
 extension Storage {
@@ -23,6 +27,6 @@ extension Storage {
     }
 }
 
-public enum StorageError: Error {
+enum StorageError: Error {
     case directoryURLIsNotFileURL
 }

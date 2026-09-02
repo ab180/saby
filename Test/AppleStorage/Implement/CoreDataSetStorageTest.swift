@@ -3,89 +3,88 @@
 //  SabyAppleStorageTest
 //
 
+#if canImport(CoreData)
+
 import CoreData
-import XCTest
+import Testing
 @testable import SabyAppleStorage
 
-private struct SetValue: Codable, Hashable {
+private struct SetValue: Codable, Hashable, Sendable {
     let id: Int
 }
 
-private struct LegacySetValue: Codable, Hashable {
+private struct LegacySetValue: Codable, Hashable, Sendable {
     let first: Int
     let second: Int
 }
 
-final class CoreDataSetStorageTest: XCTestCase {
-    private var storage: CoreDataSetStorage<SetValue>!
+struct CoreDataSetStorageTest {
+    private let storage: CoreDataSetStorage<SetValue>
 
-    override func setUpWithError() throws {
+    init() {
         storage = CoreDataSetStorage(
             directoryURL: FileManager.default.temporaryDirectory,
             storageName: "\(UUID())"
         )
     }
 
-    override func tearDownWithError() throws {
-        try storage.clear().wait()
-    }
-
-    func test__set_replaces_existing_values() throws {
-        try storage.set([SetValue(id: 0), SetValue(id: 1)]).wait()
+    @Test func set_replaces_existing_values() async throws {
+        try await storage.set([SetValue(id: 0), SetValue(id: 1)]).value()
 
         let expected: Set<SetValue> = [SetValue(id: 2), SetValue(id: 3)]
-        try storage.set(expected).wait()
+        try await storage.set(expected).value()
 
-        XCTAssertEqual(try storage.get().wait(), expected)
-        XCTAssertEqual(try storage.count().wait(), expected.count)
+        #expect(try await storage.get().value() == expected)
+        #expect(try await storage.count().value() == expected.count)
     }
 
-    func test__set_empty_clears_existing_values() throws {
-        try storage.set([SetValue(id: 0)]).wait()
+    @Test func set_empty_clears_existing_values() async throws {
+        try await storage.set([SetValue(id: 0)]).value()
 
-        try storage.set([]).wait()
+        try await storage.set([]).value()
 
-        XCTAssertEqual(try storage.get().wait(), [])
-        XCTAssertEqual(try storage.count().wait(), 0)
-        XCTAssertEqual(try storage.size().wait().byte, 0)
+        #expect(try await storage.get().value() == [])
+        #expect(try await storage.count().value() == 0)
+        #expect(try await storage.size().value().byte == 0)
     }
 
-    func test__add() throws {
+    @Test func add() async throws {
         let existingValue = SetValue(id: 0)
         let newValue = SetValue(id: 1)
-        try storage.set([existingValue]).wait()
+        try await storage.set([existingValue]).value()
 
-        try storage.add(existingValue).wait()
-        try storage.add(newValue).wait()
+        try await storage.add(existingValue).value()
+        try await storage.add(newValue).value()
 
-        XCTAssertEqual(try storage.get().wait(), [existingValue, newValue])
-        XCTAssertEqual(try storage.count().wait(), 2)
+        #expect(try await storage.get().value() == [existingValue, newValue])
+        #expect(try await storage.count().value() == 2)
     }
 
-    func test__delete() throws {
+    @Test func delete() async throws {
         let deletedValue = SetValue(id: 0)
         let remainingValue = SetValue(id: 1)
-        try storage.set([deletedValue, remainingValue]).wait()
+        try await storage.set([deletedValue, remainingValue]).value()
 
-        try storage.delete(deletedValue).wait()
-        try storage.delete(SetValue(id: 2)).wait()
+        try await storage.delete(deletedValue).value()
+        try await storage.delete(SetValue(id: 2)).value()
 
-        XCTAssertEqual(try storage.get().wait(), [remainingValue])
-        XCTAssertEqual(try storage.count().wait(), 1)
+        #expect(try await storage.get().value() == [remainingValue])
+        #expect(try await storage.count().value() == 1)
     }
 
-    func test__contains() throws {
+    @Test func contains() async throws {
         let existingValue = SetValue(id: 0)
-        try storage.set([existingValue]).wait()
+        try await storage.set([existingValue]).value()
 
-        XCTAssertTrue(try storage.contains(existingValue).wait())
-        XCTAssertFalse(try storage.contains(SetValue(id: 1)).wait())
+        #expect(try await storage.contains(existingValue).value())
+        let containsMissingValue = try await storage.contains(SetValue(id: 1)).value()
+        #expect(!containsMissingValue)
     }
 
-    func test__contains_value_from_legacy_local_database() throws {
+    @Test func contains_value_from_legacy_local_database() async throws {
         let storageName = "\(UUID())"
         let legacyData = Data(#"{"second":2,"first":1}"#.utf8)
-        try createLegacyStorage(storageName: storageName, data: legacyData)
+        try await createLegacyStorage(storageName: storageName, data: legacyData)
 
         let storage = CoreDataSetStorage<LegacySetValue>(
             directoryURL: FileManager.default.temporaryDirectory,
@@ -93,42 +92,41 @@ final class CoreDataSetStorageTest: XCTestCase {
         )
         let existingValue = LegacySetValue(first: 1, second: 2)
 
-        XCTAssertEqual(try storage.get().wait(), [existingValue])
-        XCTAssertTrue(try storage.contains(existingValue).wait())
-        XCTAssertFalse(
-            try storage.contains(LegacySetValue(first: 1, second: 3)).wait()
-        )
+        #expect(try await storage.get().value() == [existingValue])
+        #expect(try await storage.contains(existingValue).value())
+        #expect(!(try await storage.contains(LegacySetValue(first: 1, second: 3)).value()))
 
         let newValue = LegacySetValue(first: 3, second: 4)
-        try storage.add(existingValue).wait()
-        try storage.add(newValue).wait()
-        XCTAssertEqual(try storage.get().wait(), [existingValue, newValue])
+        try await storage.add(existingValue).value()
+        try await storage.add(newValue).value()
+        #expect(try await storage.get().value() == [existingValue, newValue])
 
-        try storage.delete(existingValue).wait()
-        XCTAssertEqual(try storage.get().wait(), [newValue])
-        try storage.delete(newValue).wait()
-        XCTAssertEqual(try storage.get().wait(), [])
+        try await storage.delete(existingValue).value()
+        #expect(try await storage.get().value() == [newValue])
+        try await storage.delete(newValue).value()
+        #expect(try await storage.get().value() == [])
 
-        try storage.set([existingValue]).wait()
-        XCTAssertTrue(try storage.contains(existingValue).wait())
-        try storage.clear().wait()
+        try await storage.set([existingValue]).value()
+        #expect(try await storage.contains(existingValue).value())
+        try await storage.clear().value()
     }
 
-    func test__set_and_get_100_000_values() throws {
+    @Test func set_and_get_100_000_values() async throws {
         let expected = Set((0 ..< 100_000).map(SetValue.init(id:)))
 
-        try storage.set(expected).wait()
-        let actual = try storage.get().wait()
+        try await storage.set(expected).value()
+        let actual = try await storage.get().value()
 
-        XCTAssertEqual(actual, expected)
-        XCTAssertEqual(try storage.count().wait(), expected.count)
-        XCTAssertTrue(try storage.contains(SetValue(id: 99_999)).wait())
-        XCTAssertFalse(try storage.contains(SetValue(id: 100_000)).wait())
+        #expect(actual == expected)
+        #expect(try await storage.count().value() == expected.count)
+        #expect(try await storage.contains(SetValue(id: 99_999)).value())
+        let containsOutOfRangeValue = try await storage.contains(SetValue(id: 100_000)).value()
+        #expect(!containsOutOfRangeValue)
     }
 }
 
 private extension CoreDataSetStorageTest {
-    func createLegacyStorage(storageName: String, data: Data) throws {
+    func createLegacyStorage(storageName: String, data: Data) async throws {
         let schema = LegacyCoreDataSetStorageSchema()
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("\(storageName)_Version1")
@@ -140,21 +138,24 @@ private extension CoreDataSetStorageTest {
             NSPersistentStoreDescription(url: url)
         ]
 
-        let loadExpectation = expectation(description: "load legacy persistent store")
-        var loadError: Error?
-        container.loadPersistentStores { _, error in
-            loadError = error
-            loadExpectation.fulfill()
-        }
-        wait(for: [loadExpectation], timeout: 5)
-        if let loadError {
-            throw loadError
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            container.loadPersistentStores { _, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume()
+                }
+            }
         }
 
         let context = container.newBackgroundContext()
         try context.performAndWait {
+            let entity = NSEntityDescription.entity(
+                forEntityName: "SabyCoreDataSetStorageItemVersion1",
+                in: context
+            )!
             let item = SabyCoreDataSetStorageItemVersion1(
-                entity: schema.entity,
+                entity: entity,
                 insertInto: context
             )
             item.data = data
@@ -193,3 +194,5 @@ private final class LegacyCoreDataSetStorageSchema {
         self.model = model
     }
 }
+
+#endif

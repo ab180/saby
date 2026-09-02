@@ -10,7 +10,7 @@ import Foundation
 extension Contract {
     public func filter(
         on queue: DispatchQueue? = nil,
-        _ block: @escaping (Value) -> Bool
+        _ block: @escaping @Sendable (Value) -> Bool
     ) -> Contract<Value, Failure> {
         let queue = queue ?? self.queue
         
@@ -28,9 +28,9 @@ extension Contract {
         return contract
     }
     
-    public func filter<Result>(
+    public func filter<Result: Sendable>(
         on queue: DispatchQueue? = nil,
-        _ block: @escaping (Value) -> Result?
+        _ block: @escaping @Sendable (Value) -> Result?
     ) -> Contract<Result, Failure> {
         let queue = queue ?? self.queue
         
@@ -49,17 +49,17 @@ extension Contract {
         return contract
     }
     
-    public func filter<Result>(
+    public func filter<Result: Sendable>(
         on queue: DispatchQueue? = nil,
-        _ block: @escaping (Value) -> Promise<Result?, Never>
+        _ block: @escaping @Sendable (Value) -> Promise<Result?, Never>
     ) -> Contract<Result, Failure> {
         filter(on: queue, schedule: .async, block)
     }
     
-    public func filter<Result>(
+    public func filter<Result: Sendable>(
         on queue: DispatchQueue? = nil,
         schedule: ContractSchedule = .async,
-        _ block: @escaping (Value) -> Promise<Result?, Never>
+        _ block: @escaping @Sendable (Value) -> Promise<Result?, Never>
     ) -> Contract<Result, Failure> {
         let queue = queue ?? self.queue
         
@@ -70,7 +70,7 @@ extension Contract {
             onResolved: schedule { value, finish in
                 let promise = block(value)
                 promise.subscribe(
-                    queue: queue,
+                    on: queue,
                     onResolved: { result in
                         defer { finish() }
                         guard let result else { return }
@@ -90,17 +90,17 @@ extension Contract {
         return contract
     }
     
-    public func filter<Result>(
+    public func filter<Result: Sendable>(
         on queue: DispatchQueue? = nil,
-        _ block: @escaping (Value) -> Promise<Result, Never>?
+        _ block: @escaping @Sendable (Value) -> Promise<Result, Never>?
     ) -> Contract<Result, Failure> {
         filter(on: queue, schedule: .async, block)
     }
     
-    public func filter<Result>(
+    public func filter<Result: Sendable>(
         on queue: DispatchQueue? = nil,
         schedule: ContractSchedule = .async,
-        _ block: @escaping (Value) -> Promise<Result, Never>?
+        _ block: @escaping @Sendable (Value) -> Promise<Result, Never>?
     ) -> Contract<Result, Failure> {
         let queue = queue ?? self.queue
         
@@ -109,9 +109,12 @@ extension Contract {
         subscribe(
             queue: queue,
             onResolved: schedule { value, finish in
-                guard let promise = block(value) else { return }
+                guard let promise = block(value) else {
+                    finish()
+                    return
+                }
                 promise.subscribe(
-                    queue: queue,
+                    on: queue,
                     onResolved: {
                         defer { finish() }
                         contract.resolve($0)

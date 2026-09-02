@@ -5,34 +5,33 @@
 //  Created by WOF on 2022/08/10.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import SabyNetwork
 
-import SabyTestMock
-import SabyTestExpect
 import SabyConcurrency
 
-final class DataClientTest: XCTestCase {
-    func test__init() {
+@Suite(.serialized) struct DataClientTest {
+    @Test func test__init() {
         let client = DataClient(cancelWhen: .deinit)
         let configuration = URLSessionConfiguration.default
         
-        XCTAssertEqual(client.session.configuration, configuration)
+        #expect(client.session.configuration == configuration)
     }
     
-    func test__init_option_block() {
+    @Test func test__init_option_block() {
         let client = DataClient(cancelWhen: .deinit) {
             $0.timeoutIntervalForRequest = 3000
         }
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = 3000
         
-        XCTAssertEqual(client.session.configuration, configuration)
+        #expect(client.session.configuration == configuration)
     }
     
-    func test__request() {
+    @Test func test__request() async {
         final class MockURLResultStorage: URLResultStorage {
-            static var results: [URLResult] = [
+            static let results: [URLResult] = [
                 URLResult(
                     url: URL(string: "https://mock.api.ab180.co/request")!,
                     code: 200,
@@ -47,18 +46,33 @@ final class DataClientTest: XCTestCase {
         
         let response = client.request(URL(string: "https://mock.api.ab180.co/request")!)
         
-        Expect.promise(
-            response,
-            state: .resolved({
-                $0 == (200, ["X-Response-ID": "success"], Data())
-            }),
-            timeout: .seconds(2)
-        )
+        await expectResolved(response) {
+            $0 == (200, ["X-Response-ID": "success"], Data())
+        }
+    }
+
+    @Test func test__request_without_data_returns_empty_data() async {
+        final class MockURLResultStorage: URLResultStorage {
+            static let results: [URLResult] = [
+                URLResult(
+                    url: URL(string: "https://mock.api.ab180.co/request")!,
+                    code: 204,
+                    data: nil
+                )
+            ]
+        }
+        let client = DataClient(cancelWhen: .deinit) {
+            $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
+        }
+
+        let response = client.request(URL(string: "https://mock.api.ab180.co/request")!)
+
+        await expectResolved(response) { $0 == (204, [:], Data()) }
     }
     
-    func test__request_reponse_code_not_2XX() {
+    @Test func test__request_reponse_code_not_2XX() async {
         final class MockURLResultStorage: URLResultStorage {
-            static var results: [URLResult] = [
+            static let results: [URLResult] = [
                 URLResult(
                     url: URL(string: "https://mock.api.ab180.co/request")!,
                     code: 500,
@@ -72,19 +86,18 @@ final class DataClientTest: XCTestCase {
         
         let response = client.request(URL(string: "https://mock.api.ab180.co/request")!)
         
-        Expect.promise(
+        await expectRejected(
             response,
-            state: .rejected(DataClientError.statusCodeNot2XX(codeNot2XX: 200, body: Data())),
-            timeout: .seconds(2)
+            error: DataClientError.statusCodeNot2XX(codeNot2XX: 200, body: Data())
         )
     }
     
-    func test__request_error() {
+    @Test func test__request_error() async {
         final class MockURLResultStorage: URLResultStorage {
-            static var results: [URLResult] = [
+            static let results: [URLResult] = [
                 URLResult(
                     url: URL(string: "https://mock.api.ab180.co/request")!,
-                    error: Expect.SampleError.one
+                    error: NetworkTestError.sample
                 )
             ]
         }
@@ -94,12 +107,12 @@ final class DataClientTest: XCTestCase {
         
         let response = client.request(URL(string: "https://mock.api.ab180.co/request")!)
         
-        Expect.promise(response, state: .rejected(Expect.SampleError.one), timeout: .seconds(2))
+        await expectRejected(response, error: NetworkTestError.sample)
     }
     
-    func test__request_timeout() {
+    @Test func test__request_timeout() async {
         final class MockURLResultStorage: URLResultStorage {
-            static var results: [URLResult] = [
+            static let results: [URLResult] = [
                 URLResult(
                     url: URL(string: "https://mock.api.ab180.co/request")!,
                     code: 200,
@@ -116,13 +129,61 @@ final class DataClientTest: XCTestCase {
             timeout: .millisecond(50)
         )
         
-        response.then { data in
-            print(data)
+        await expectRejected(response, error: DataClientError.timeout)
+    }
+
+    @Test func test__concurrent_request() async {
+        final class MockURLResultStorage: URLResultStorage {
+            static let results: [URLResult] = [
+                URLResult(
+                    url: URL(string: "https://mock.api.ab180.co/request")!,
+                    code: 200,
+                    data: Data()
+                )
+            ]
         }
-        .catch { error in
-            print(error)
+        let client = DataClient(cancelWhen: .deinit) {
+            $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
-        
-        Expect.promise(response, state: .rejected(DataClientError.timeout), timeout: .seconds(2))
+        let requests = (0..<100).map { _ in
+            client.request(URL(string: "https://mock.api.ab180.co/request")!)
+        }
+        await withTaskGroup(of: Bool.self) { group in
+            for request in requests {
+                group.addTask {
+                    do {
+                        _ = try await request.value()
+                        return true
+                    } catch {
+                        return false
+                    }
+                }
+            }
+            for await completed in group {
+                #expect(completed)
+            }
+        }
+    }
+
+    @Test func test__client_deinit_cancels_request() async {
+        final class MockURLResultStorage: URLResultStorage {
+            static let results: [URLResult] = [
+                URLResult(
+                    url: URL(string: "https://mock.api.ab180.co/request")!,
+                    code: 200,
+                    data: Promise.delay(.seconds(2)).then { Data() }
+                )
+            ]
+        }
+        var client: DataClient? = DataClient(cancelWhen: .deinit) {
+            $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
+        }
+        weak let tasks = client?.tasks
+        let response = client!.request(URL(string: "https://mock.api.ab180.co/request")!)
+
+        client = nil
+
+        await expectCanceled(response)
+        #expect(await eventually { tasks == nil })
     }
 }

@@ -30,7 +30,7 @@ public final class MockFunction<Argument, Result> {
     public var callback: (Argument, Result) -> Void
     
     var mode: Mode
-    let lock: Lock
+    let lock: NSLock
     
     init(
         implementation: @escaping (Argument) -> Result
@@ -39,7 +39,7 @@ public final class MockFunction<Argument, Result> {
         self.calls = []
         self.callback = { _, _ in }
         self.mode = .implementation
-        self.lock = Lock()
+        self.lock = NSLock()
         
         self.implementation = implementation
     }
@@ -52,7 +52,7 @@ public final class MockFunction<Argument, Result> {
         self.calls = []
         self.callback = { _, _ in }
         self.mode = .expect
-        self.lock = Lock()
+        self.lock = NSLock()
         
         self.implementation = { argument in
             return self.expect

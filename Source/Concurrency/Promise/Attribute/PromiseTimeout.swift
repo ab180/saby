@@ -7,24 +7,6 @@
 
 import Foundation
 
-extension Promise where
-    Value == Never,
-    Failure == Never
-{
-    public static func timeout(
-        on queue: DispatchQueue = .global(),
-        _ interval: DispatchTimeInterval
-    ) -> Promise<Void, Error> {
-        let promise = Promise<Void, Error>(queue: queue)
-        
-        queue.asyncAfter(deadline: .now() + interval) {
-            promise.reject(PromiseError.timeout)
-        }
-        
-        return promise
-    }
-}
-
 extension Promise {
     @discardableResult
     public func timeout(
@@ -36,7 +18,7 @@ extension Promise {
         let promiseReturn = Promise<Value, Error>(queue: self.queue)
         
         subscribe(
-            queue: queue,
+            on: queue,
             onResolved: { promiseReturn.resolve($0) },
             onRejected: { promiseReturn.reject($0) },
             onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }

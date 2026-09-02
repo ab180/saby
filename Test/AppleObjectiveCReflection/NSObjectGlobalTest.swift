@@ -5,20 +5,20 @@
 //  Created by WOF on 2023/04/27.
 //
 
-import XCTest
+import Testing
 @testable import SabyAppleObjectiveCReflection
 
 import Foundation
 
-final class NSObjectGlobalTest: XCTestCase {
-    func test__variable() {
-        XCTAssertNotNil(NSObjectGlobal.variable(
+@Suite struct NSObjectGlobalTest {
+    @Test func variable() {
+        #expect(NSObjectGlobal.variable(
             type: NSString.self,
             name: "kCFLocaleCurrentLocaleDidChangeNotification"
-        ))
-        XCTAssertNil(NSObjectGlobal.variable(
+        ) != nil)
+        #expect(NSObjectGlobal.variable(
             type: NSString.self,
             name: ""
-        ))
+        ) == nil)
     }
 }

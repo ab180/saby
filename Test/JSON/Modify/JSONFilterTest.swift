@@ -5,11 +5,11 @@
 //  Created by WOF on 2022/08/15.
 //
 
-import XCTest
+import Testing
 @testable import SabyJSON
 
-final class JSONFilterTest: XCTestCase {
-    func test__deep_filter() {
+@Suite struct JSONFilterTest {
+    @Test func test__deep_filter() {
         let json = JSON.from([
             "a": nil,
             "b": 1,
@@ -36,7 +36,7 @@ final class JSONFilterTest: XCTestCase {
             .deepFilter { $0 != [:] }!
             .deepFilter { $0 != [] }!
         
-        XCTAssertEqual(filtered, [
+        expectEqual(filtered, [
             "b": 1,
             "c": [
                 "a": "a",

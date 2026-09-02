@@ -5,53 +5,42 @@
 //  Created by WOF on 2020/04/09.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import SabyConcurrency
 
-final class PromiseCatchTest: XCTestCase {
-    func test__catch() {
-        let promise =
-        Promise.async {
-            10
-        }
-        
-        promise.finally {
-            XCTAssertTrue(promise.isResolved)
-        }
-        
-        PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
-    }
-    
-    func test__catch_from_reject() {
-        let end = DispatchSemaphore(value: 0)
+@Suite(.serialized) struct PromiseCatchTest {
+    @Test
+    func test__catch_from_reject() async {
+        let end = AsyncLatch()
         
         let promise =
-        Promise.async { () -> Int in
+        PromiseTest.make { () -> Int in
             throw PromiseTest.SampleError.one
         }
         .catch { error in
-            XCTAssertEqual(error as? PromiseTest.SampleError, PromiseTest.SampleError.one)
+            #expect(error as? PromiseTest.SampleError == PromiseTest.SampleError.one)
             end.signal()
         }
         
-        PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+        #expect(await end.wait(timeout: .seconds(1)))
+        await PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
-    func test__catch_cancel() {
-        let end = DispatchSemaphore(value: 0)
-        var promiseCancel: (() -> Void)?
-        
-        let promise0 = Promise<Int, Error> { resolve, reject, cancel, _ in
-            promiseCancel = cancel
-            throw PromiseTest.SampleError.one
-        }
+    @Test
+    func test__catch_cancel() async {
+        let end = AsyncLatch()
+        let pending = Promise<Int, Error>.pending()
+
+        let promise0 = pending.promise
         let promise1 = promise0.catch { error in
-            promiseCancel?()
+            pending.cancel()
             end.signal()
         }
+
+        pending.reject(PromiseTest.SampleError.one)
         
-        PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: promise1, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+        #expect(await end.wait(timeout: .seconds(1)))
+        await PromiseTest.expect(promise: promise1, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
 }

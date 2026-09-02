@@ -24,7 +24,7 @@ extension JSON {
         return string
     }
     
-    public func datafy(format: JSONEncoder.OutputFormatting = []) throws -> Data {
+    package func datafy(format: JSONEncoder.OutputFormatting = []) throws -> Data {
         let encoder = JSONEncoder()
         encoder.outputFormatting = format
         let data = try encoder.encode(self.deepFilterNonConfirmingFloat())
@@ -40,7 +40,7 @@ extension JSON {
         let value = try decoder.decode(JSON.self, from: data)
         return value
     }
-    
+
     public func decode<Value: Decodable>(_ type: Value.Type) throws -> Value {
         let encoder = JSONEncoder.acceptingNonConfirmingFloat()
         let decoder = JSONDecoder.acceptingNonConfirmingFloat()

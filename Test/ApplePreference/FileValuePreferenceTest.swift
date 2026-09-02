@@ -5,19 +5,19 @@
 //  Created by WOF on 2023/10/19.
 //
 
-import XCTest
-import SabyConcurrency
+import Foundation
+import Testing
 @testable import SabyApplePreference
 
-private struct DummyItem: Codable, Equatable {
+private struct DummyItem: Codable, Equatable, Sendable {
     var key: UUID
 }
 
-final class FileValuePreferenceTest: XCTestCase {
-    fileprivate let testCount = 500
-    fileprivate var preference: FileValuePreference<DummyItem>!
-    fileprivate let directoryURL = FileManager.default.temporaryDirectory
-    fileprivate var storageName: String!
+struct FileValuePreferenceTest {
+    private let testCount = 500
+    private let preference: FileValuePreference<DummyItem>
+    private let directoryURL = FileManager.default.temporaryDirectory
+    private let storageName: String
     
     fileprivate var testObjects: [DummyItem] {
         var result: [DummyItem] = []
@@ -28,64 +28,74 @@ final class FileValuePreferenceTest: XCTestCase {
         return result
     }
     
-    override func setUpWithError() throws {
-        storageName = UUID().uuidString
+    init() {
+        let storageName = UUID().uuidString
+        self.storageName = storageName
         preference = FileValuePreference<DummyItem>(
             directoryURL: directoryURL,
             storageName: storageName
         )
     }
     
-    override func tearDownWithError() throws {
-        let fileURL = directoryURL
-        
-        if FileManager.default.fileExists(atPath: fileURL.absoluteString) {
-            try FileManager.default.removeItem(at: fileURL)
-        }
-    }
-    
-    func test__set() throws {
-        try testObjects.forEach {
-            try preference.set($0)
+    @Test func set() async throws {
+        for object in testObjects {
+            try await preference.set(object)
         }
         
-        try preference.save()
+        try await preference.save()
         
-        let value = try preference.get()
-        XCTAssertNotEqual(value, nil)
+        let value = try await preference.get()
+        #expect(value != nil)
     }
     
-    func test__delete() throws {
+    @Test func delete() async throws {
         let testObjects = testObjects
-        try testObjects.forEach {
-            try preference.set($0)
+        for object in testObjects {
+            try await preference.set(object)
         }
 
-        try preference.save()
-        try preference.clear()
-        try preference.save()
-        XCTAssertEqual(try preference.get(), nil)
+        try await preference.save()
+        try await preference.clear()
+        try await preference.save()
+        let value = try await preference.get()
+        #expect(value == nil)
     }
     
-    func test__get() throws {
+    @Test func get() async throws {
         let testCount = testCount
         let testObjects = testObjects
         let randomIndex = (0 ..< testCount).randomElement()!
-        try testObjects.forEach {
-            try preference.set($0)
+        for object in testObjects {
+            try await preference.set(object)
         }
         
-        try preference.set(testObjects[randomIndex])
+        try await preference.set(testObjects[randomIndex])
         
-        try preference.save()
-        XCTAssertEqual(try preference.get(), testObjects[randomIndex])
+        try await preference.save()
+        let value = try await preference.get()
+        #expect(value == testObjects[randomIndex])
     }
     
-    func test__save() throws {
+    @Test func save() async throws {
         let value = DummyItem(key: UUID())
         
-        try preference.set(value)
-        try preference.save()
-        XCTAssertEqual(try preference.get(), value)
+        try await preference.set(value)
+        try await preference.save()
+        let storedValue = try await preference.get()
+        #expect(storedValue == value)
+    }
+
+    @Test func reload() async throws {
+        let value = DummyItem(key: UUID())
+
+        try await preference.set(value)
+        try await preference.save()
+
+        let reloaded = FileValuePreference<DummyItem>(
+            directoryURL: directoryURL,
+            storageName: storageName
+        )
+        let storedValue = try await reloaded.get()
+        #expect(storedValue == value)
     }
 }

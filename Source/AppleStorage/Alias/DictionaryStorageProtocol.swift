@@ -8,6 +8,5 @@
 import SabyConcurrency
 
 extension DictionaryStorage {
-    public typealias SelfProtocol = DictionaryStorage<Self.Key, Self.Value>
     public typealias AnyProtocol = any DictionaryStorage<Self.Key, Self.Value>
 }

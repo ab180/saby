@@ -11,19 +11,25 @@ extension Promise {
     @discardableResult
     public func finally(
         on queue: DispatchQueue? = nil,
-        _ block: @escaping () -> Void
+        _ block: @escaping @Sendable () -> Void
     ) -> Promise<Value, Failure> {
         let queue = queue ?? self.queue
-        
+
         let promiseReturn = Promise<Value, Failure>(queue: self.queue)
-        
+
         subscribe(
-            queue: queue,
-            onResolved: { block(); promiseReturn.resolve($0) },
-            onRejected: { block(); promiseReturn.reject($0) },
+            on: queue,
+            onResolved: {
+                block()
+                promiseReturn.resolve($0)
+            },
+            onRejected: {
+                block()
+                promiseReturn.reject($0)
+            },
             onCanceled: { [weak promiseReturn] in promiseReturn?.cancel() }
         )
-        
+
         return promiseReturn
     }
 }

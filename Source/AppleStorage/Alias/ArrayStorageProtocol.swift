@@ -8,6 +8,5 @@
 import SabyConcurrency
 
 extension ArrayStorage {
-    public typealias SelfProtocol = ArrayStorage<Self.Value>
     public typealias AnyProtocol = any ArrayStorage<Self.Value>
 }

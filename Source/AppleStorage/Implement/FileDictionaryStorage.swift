@@ -12,131 +12,114 @@ import SabyJSON
 private let STORAGE_VERSION = "Version1"
 
 public final class FileDictionaryStorage<
-    Key: Hashable & Codable,
-    Value: Codable
->: DictionaryStorage {
+    Key: Hashable & Codable & Sendable,
+    Value: Codable & Sendable
+>: DictionaryStorage, Sendable {
     typealias Context = FileDictionaryStorageContext
-
-    let fileLock = Lock()
     
-    let contextLoad: () -> Promise<Context<Key, Value>, Error>
-    let contextPromise: Atomic<Promise<Context<Key, Value>, Error>>
-    
-    let encoder = JSONEncoder.acceptingNonConfirmingFloat()
+    let contextPromise: Promise<Context<Key, Value>, Error>
+    let tasks = PromiseTaskScope()
 
-    public init(directoryURL: URL, storageName: String, migration: @escaping () -> Promise<Void, Error>) {
-        self.contextLoad = {
-            Context.load(
-                directoryURL: directoryURL,
-                storageName: storageName,
-                migration: migration
-            )
-        }
-        self.contextPromise = Atomic(contextLoad())
+    public init(
+        directoryURL: URL,
+        storageName: String,
+        migration: @escaping @Sendable () -> Promise<Void, Error>
+    ) {
+        self.contextPromise = Context.load(
+            directoryURL: directoryURL,
+            storageName: storageName,
+            migration: migration
+        )
     }
 }
 
 extension FileDictionaryStorage {
     public func set(key: Key, value: Value) -> Promise<Void, Error> {
-        execute { context in
-            context.values.mutate { values in
-                var values = values
-                values[key] = value
-                return values
-            }
-        }
+        execute { await $0.set(key: key, value: value) }
     }
     
     public func delete(key: Key) -> Promise<Void, Error> {
-        execute { context in
-            context.values.mutate { values in
-                var values = values
-                values[key] = nil
-                return values
-            }
-        }
+        execute { await $0.delete(key: key) }
     }
     
     public func clear() -> Promise<Void, Error> {
-        execute { context in
-            context.values.mutate { _ in
-                [:]
-            }
-        }
+        execute { await $0.clear() }
     }
 
     public func get(key: Key) -> Promise<Value?, Error> {
-        execute { context in
-            context.values.capture { values in
-                values[key]
-            }
-        }
+        execute { await $0.value(forKey: key) }
     }
     
     public func get(limit: Limit) -> Promise<[Value], Error> {
-        execute { context in
-            context.values.capture { values in
-                let array = Array(values.values)
-                switch limit {
-                case .unlimited:
-                    return array
-                case .count(let limit):
-                    return Array(array.prefix(limit))
-                }
-            }
-        }
+        let limit = limit.count
+        return execute { await $0.values(limit: limit) }
     }
 
-
     public func save() -> Promise<Void, Error> {
-        execute { context in
-            let values = context.values.capture { $0 }
-            let data = try self.encoder.encode(values)
-            
-            self.fileLock.lock()
-            try data.write(to: context.url)
-            self.fileLock.unlock()
-        }
+        execute { try await $0.save() }
     }
 }
 
 extension FileDictionaryStorage {
-    fileprivate func execute<Result>(
-        block: @escaping (Context<Key, Value>) throws -> Result
+    fileprivate func execute<Result: Sendable>(
+        block: @escaping @Sendable (Context<Key, Value>) async throws -> Result
     ) -> Promise<Result, Error> {
-        let loadPromiseCapture = self.contextPromise.mutate {
-            let capture = !$0.isRejected ? $0 : contextLoad()
-            return capture
-        }
-        
-        return loadPromiseCapture.then { context in
-            Promise<Result, Error> { resolve, reject in
-                do {
-                    resolve(try block(context))
-                }
-                catch {
-                    reject(error)
-                }
-            }
+        let contextPromise = self.contextPromise
+
+        return tasks.promise {
+            let context = try await contextPromise.value(
+                cancelOnTaskCancellation: false
+            )
+            return try await block(context)
         }
     }
 }
 
-struct FileDictionaryStorageContext<Key: Hashable & Codable, Value: Codable> {
+actor FileDictionaryStorageContext<
+    Key: Hashable & Codable & Sendable,
+    Value: Codable & Sendable
+> {
     let url: URL
-    let values: Atomic<FileDictionaryStorageItemVersion1<Key, Value>>
-    
-    private init(url: URL, values: Atomic<FileDictionaryStorageItemVersion1<Key, Value>>) {
+    var values: FileDictionaryStorageItemVersion1<Key, Value>
+
+    private init(url: URL, values: FileDictionaryStorageItemVersion1<Key, Value>) {
         self.url = url
         self.values = values
     }
-    
+
+    func set(key: Key, value: Value) {
+        values[key] = value
+    }
+
+    func delete(key: Key) {
+        values[key] = nil
+    }
+
+    func clear() {
+        values.removeAll()
+    }
+
+    func value(forKey key: Key) -> Value? {
+        values[key]
+    }
+
+    func values(limit: Int?) -> [Value] {
+        let values = Array(values.values)
+        guard let limit else { return values }
+        return Array(values.prefix(limit))
+    }
+
+    func save() throws {
+        let data = try JSONEncoder.acceptingNonConfirmingFloat().encode(values)
+        try data.write(to: url)
+    }
+
     static func load(
         directoryURL: URL,
         storageName: String,
-        migration: @escaping () -> Promise<Void, Error>
+        migration: @Sendable () -> Promise<Void, Error>
     ) -> Promise<FileDictionaryStorageContext, Error> {
-        migration().then {
+        return migration().then {
             let decoder = JSONDecoder.acceptingNonConfirmingFloat()
             let fileManager = FileManager.default
             
@@ -155,7 +138,7 @@ struct FileDictionaryStorageContext<Key: Hashable & Codable, Value: Codable> {
             if !fileManager.fileExists(atPath: url.path) {
                 return FileDictionaryStorageContext(
                     url: url,
-                    values: Atomic([:])
+                    values: [:]
                 )
             }
             
@@ -168,18 +151,24 @@ struct FileDictionaryStorageContext<Key: Hashable & Codable, Value: Codable> {
             else {
                 return FileDictionaryStorageContext(
                     url: url,
-                    values: Atomic([:])
+                    values: [:]
                 )
             }
             
             return FileDictionaryStorageContext(
                 url: url,
-                values: Atomic(values)
+                values: values
             )
         }
     }
 }
 
-// Must not be modified. Write new ItemVersion and write migration logic instead.
-typealias FileDictionaryStorageItemVersion1<Key: Hashable & Codable, Value: Codable> = [Key: Value]
+private extension Limit {
+    var count: Int? {
+        guard case .count(let count) = self else { return nil }
+        return count
+    }
+}
 
+// Must not be modified. Write new ItemVersion and write migration logic instead.
+typealias FileDictionaryStorageItemVersion1<Key: Hashable & Codable & Sendable, Value: Codable & Sendable> = [Key: Value]

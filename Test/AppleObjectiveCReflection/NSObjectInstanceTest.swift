@@ -5,11 +5,12 @@
 //  Created by WOF on 2022/08/23.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import SabyAppleObjectiveCReflection
 
-final class NSObjectInstanceTest: XCTestCase {
-    func test__init_instance() {
+final class NSObjectInstanceTest {
+    @Test func init_instance() {
         let classNSDictionary = NSObjectClass(name: "NSDictionary")!
         let dictionaryWithValuesForKeys = classNSDictionary.method(name: "dictionaryWithObjects:forKeys:")!
         let instance = classNSDictionary.instance(
@@ -27,6 +28,6 @@ final class NSObjectInstanceTest: XCTestCase {
             }()
         )!
         
-        XCTAssertTrue(instance.object.isKind(of: classNSDictionary.anyClass))
+        #expect(instance.object.isKind(of: classNSDictionary.anyClass))
     }
 }

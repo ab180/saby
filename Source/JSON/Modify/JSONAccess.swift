@@ -92,40 +92,6 @@ extension JSON {
 }
 
 extension JSON {
-    public mutating func delete(_ key: AccessKey) -> Void {
-        switch key {
-        case .string(let key): delete(ifObject: key)
-        case .int(let key): delete(ifArray: key)
-        }
-    }
-    
-    public mutating func delete(ifObject key: String) -> Void {
-        guard case .object(var object) = self else { return }
-        object.removeValue(forKey: key)
-        self = .object(object)
-    }
-    
-    public mutating func delete(ifArray index: Int) -> Void {
-        guard case .array(var array) = self else { return }
-        guard 0 <= index, index < array.endIndex else { return }
-        array.remove(at: index)
-        self = .array(array)
-    }
-    
-    public mutating func push(_ value: JSON) -> Void {
-        guard case .array(var array) = self else { return }
-        array.append(value)
-        self = .array(array)
-    }
-    
-    public mutating func push(ifArray value: JSON) -> Void {
-        guard case .array(var array) = self else { return }
-        array.append(value)
-        self = .array(array)
-    }
-}
-
-extension JSON {
     public enum AccessKey {
         case int(Int)
         case string(String)

@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct Timestamp: Codable, Comparable, Equatable {
+public struct Timestamp: Codable, Comparable, Equatable, Sendable {
     let timestamp: TimeInterval
     
     public init(secondFrom1970 second: TimeInterval) {
@@ -50,17 +50,6 @@ extension Timestamp {
         timestamp
     }
     
-    public var minuteFrom1970: Double {
-        timestamp / 60
-    }
-    
-    public var hourFrom1970: Double {
-        timestamp / 60 / 60
-    }
-    
-    public var dayFrom1970: Double {
-        timestamp / 24 / 60 / 60
-    }
 }
 
 extension Timestamp {

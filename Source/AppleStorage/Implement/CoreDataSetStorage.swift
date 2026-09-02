@@ -3,6 +3,7 @@
 //  SabyAppleStorage
 //
 
+#if canImport(CoreData)
 import CoreData
 
 import SabyConcurrency
@@ -13,55 +14,37 @@ private let STORAGE_VERSION = "Version1"
 private let STORAGE_ENCODING_VERSION_KEY = "SabyCoreDataSetStorageEncodingVersion"
 private let STORAGE_ENCODING_VERSION = 1
 
-public final class CoreDataSetStorage<Value: Codable & Hashable>: SetStorage {
+public final class CoreDataSetStorage<Value: Codable & Hashable & Sendable>: SetStorage, Sendable {
     typealias Context = NSManagedObjectContext
 
-    let entity: NSEntityDescription
-
-    let contextLoad: () -> Promise<Context, Error>
-    let contextPromise: Atomic<Promise<Context, Error>>
-
-    let encoder: JSONEncoder = {
-        let encoder = JSONEncoder.acceptingNonConfirmingFloat()
-        encoder.outputFormatting = [.sortedKeys]
-        return encoder
-    }()
-    let decoder = JSONDecoder.acceptingNonConfirmingFloat()
+    let contextPromise: Promise<Context, Error>
+    let tasks = PromiseTaskScope()
 
     public init(
         directoryURL: URL,
         storageName: String,
-        migration: @escaping () -> Promise<Void, Error>
+        migration: @escaping @Sendable () -> Promise<Void, Error>
     ) {
-        let schema = SabyCoreDataSetStorageSchema()
-
-        self.entity = schema.entity
-        self.contextLoad = {
-            Context.loadSetStorage(
-                directoryURL: directoryURL,
-                storageName: storageName,
-                migration: migration,
-                model: schema.model
-            )
-        }
-        self.contextPromise = Atomic(contextLoad())
+        self.contextPromise = Context.loadSetStorage(
+            directoryURL: directoryURL,
+            storageName: storageName,
+            migration: migration
+        )
     }
 }
 
 extension CoreDataSetStorage {
     public func set(_ values: Set<Value>) -> Promise<Void, Error> {
         execute { context in
+            let encoder = Self.makeEncoder()
             let encodedValues = try values.map { value -> Data in
-                try self.encoder.encode(value)
+                try encoder.encode(value)
             }
 
-            try context.executeSetStorageDelete(self.createAnyRequest())
+            try context.executeSetStorageDelete(Self.createAnyRequest())
 
             if !encodedValues.isEmpty {
-                try context.insertSetStorageItems(
-                    encodedValues: encodedValues,
-                    entity: self.entity
-                )
+                try context.insertSetStorageItems(encodedValues: encodedValues)
             }
 
             try context.markSetStorageEncodingCurrent()
@@ -70,8 +53,8 @@ extension CoreDataSetStorage {
 
     public func add(_ value: Value) -> Promise<Void, Error> {
         execute { context in
-            let data = try self.encoder.encode(value)
-            let request = self.createContainsRequest(data: data)
+            let data = try Self.makeEncoder().encode(value)
+            let request = Self.createContainsRequest(data: data)
 
             if try context.fetch(request).isEmpty == false {
                 return
@@ -81,7 +64,8 @@ extension CoreDataSetStorage {
             var storedValueCount = 0
 
             if !isEncodingCurrent {
-                let dictionaries = try context.fetch(self.createDataRequest())
+                let decoder = JSONDecoder.acceptingNonConfirmingFloat()
+                let dictionaries = try context.fetch(Self.createDataRequest())
                 storedValueCount = dictionaries.count
 
                 for dictionary in dictionaries {
@@ -89,16 +73,13 @@ extension CoreDataSetStorage {
                         throw CoreDataSetStorageError.requestResultNotFound
                     }
 
-                    if try self.decoder.decode(Value.self, from: storedData) == value {
+                    if try decoder.decode(Value.self, from: storedData) == value {
                         return
                     }
                 }
             }
 
-            try context.insertSetStorageItems(
-                encodedValues: [data],
-                entity: self.entity
-            )
+            try context.insertSetStorageItems(encodedValues: [data])
 
             if !isEncodingCurrent && storedValueCount == 0 {
                 try context.markSetStorageEncodingCurrent()
@@ -108,20 +89,21 @@ extension CoreDataSetStorage {
 
     public func delete(_ value: Value) -> Promise<Void, Error> {
         execute { context in
-            let data = try self.encoder.encode(value)
+            let data = try Self.makeEncoder().encode(value)
             try context.executeSetStorageDelete(
-                self.createAnyRequest(data: data)
+                Self.createAnyRequest(data: data)
             )
 
             guard try context.isSetStorageEncodingCurrent() == false else {
                 return
             }
 
-            let items = try context.fetch(self.createItemRequest())
+            let items = try context.fetch(Self.createItemRequest())
+            let decoder = JSONDecoder.acceptingNonConfirmingFloat()
             var hasChanges = false
 
             for item in items {
-                if try self.decoder.decode(Value.self, from: item.data) == value {
+                if try decoder.decode(Value.self, from: item.data) == value {
                     context.delete(item)
                     hasChanges = true
                 }
@@ -135,14 +117,15 @@ extension CoreDataSetStorage {
 
     public func get() -> Promise<Set<Value>, Error> {
         execute { context in
-            let dictionaries = try context.fetch(self.createDataRequest())
+            let dictionaries = try context.fetch(Self.createDataRequest())
+            let decoder = JSONDecoder.acceptingNonConfirmingFloat()
             var values = Set<Value>(minimumCapacity: dictionaries.count)
 
             for dictionary in dictionaries {
                 guard let data = dictionary["data"] as? Data else {
                     throw CoreDataSetStorageError.requestResultNotFound
                 }
-                values.insert(try self.decoder.decode(Value.self, from: data))
+                values.insert(try decoder.decode(Value.self, from: data))
             }
 
             return values
@@ -151,8 +134,8 @@ extension CoreDataSetStorage {
 
     public func contains(_ value: Value) -> Promise<Bool, Error> {
         execute { context in
-            let data = try self.encoder.encode(value)
-            let request = self.createContainsRequest(data: data)
+            let data = try Self.makeEncoder().encode(value)
+            let request = Self.createContainsRequest(data: data)
 
             if try context.fetch(request).isEmpty == false {
                 return true
@@ -162,13 +145,14 @@ extension CoreDataSetStorage {
                 return false
             }
 
-            let dictionaries = try context.fetch(self.createDataRequest())
+            let decoder = JSONDecoder.acceptingNonConfirmingFloat()
+            let dictionaries = try context.fetch(Self.createDataRequest())
             for dictionary in dictionaries {
                 guard let legacyData = dictionary["data"] as? Data else {
                     throw CoreDataSetStorageError.requestResultNotFound
                 }
 
-                if try self.decoder.decode(Value.self, from: legacyData) == value {
+                if try decoder.decode(Value.self, from: legacyData) == value {
                     return true
                 }
             }
@@ -179,7 +163,7 @@ extension CoreDataSetStorage {
 
     public func clear() -> Promise<Void, Error> {
         execute { context in
-            try context.executeSetStorageDelete(self.createAnyRequest())
+            try context.executeSetStorageDelete(Self.createAnyRequest())
             try context.markSetStorageEncodingCurrent()
         }
     }
@@ -188,13 +172,13 @@ extension CoreDataSetStorage {
 extension CoreDataSetStorage {
     public func count() -> Promise<Int, Error> {
         execute { context in
-            try context.count(for: self.createAnyRequest())
+            try context.count(for: Self.createAnyRequest())
         }
     }
 
     public func size() -> Promise<Volume, Error> {
         execute { context in
-            let result = try context.fetch(self.createSizeRequest())
+            let result = try context.fetch(Self.createSizeRequest())
             let byte = result.first?["result"] as? NSNumber ?? 0
 
             return Volume.byte(byte.doubleValue)
@@ -203,14 +187,21 @@ extension CoreDataSetStorage {
 }
 
 extension CoreDataSetStorage {
-    fileprivate func createAnyRequest() -> NSFetchRequest<any NSFetchRequestResult> {
-        let request = NSFetchRequest<any NSFetchRequestResult>()
-        request.entity = entity
+    fileprivate static func makeEncoder() -> JSONEncoder {
+        let encoder = JSONEncoder.acceptingNonConfirmingFloat()
+        encoder.outputFormatting = [.sortedKeys]
+        return encoder
+    }
+
+    fileprivate static func createAnyRequest() -> NSFetchRequest<any NSFetchRequestResult> {
+        let request = NSFetchRequest<any NSFetchRequestResult>(
+            entityName: SabyCoreDataSetStorageItemVersion1.entityName
+        )
 
         return request
     }
 
-    fileprivate func createAnyRequest(
+    fileprivate static func createAnyRequest(
         data: Data
     ) -> NSFetchRequest<any NSFetchRequestResult> {
         let request = createAnyRequest()
@@ -219,25 +210,28 @@ extension CoreDataSetStorage {
         return request
     }
 
-    fileprivate func createItemRequest() -> NSFetchRequest<SabyCoreDataSetStorageItemVersion1> {
-        let request = NSFetchRequest<SabyCoreDataSetStorageItemVersion1>()
-        request.entity = entity
+    fileprivate static func createItemRequest() -> NSFetchRequest<SabyCoreDataSetStorageItemVersion1> {
+        let request = NSFetchRequest<SabyCoreDataSetStorageItemVersion1>(
+            entityName: SabyCoreDataSetStorageItemVersion1.entityName
+        )
 
         return request
     }
 
-    fileprivate func createDataRequest() -> NSFetchRequest<NSDictionary> {
-        let request = NSFetchRequest<NSDictionary>()
-        request.entity = entity
+    fileprivate static func createDataRequest() -> NSFetchRequest<NSDictionary> {
+        let request = NSFetchRequest<NSDictionary>(
+            entityName: SabyCoreDataSetStorageItemVersion1.entityName
+        )
         request.propertiesToFetch = ["data"]
         request.resultType = .dictionaryResultType
 
         return request
     }
 
-    fileprivate func createContainsRequest(data: Data) -> NSFetchRequest<NSManagedObjectID> {
-        let request = NSFetchRequest<NSManagedObjectID>()
-        request.entity = entity
+    fileprivate static func createContainsRequest(data: Data) -> NSFetchRequest<NSManagedObjectID> {
+        let request = NSFetchRequest<NSManagedObjectID>(
+            entityName: SabyCoreDataSetStorageItemVersion1.entityName
+        )
         request.predicate = NSPredicate(format: "data == %@", data as NSData)
         request.fetchLimit = 1
         request.resultType = .managedObjectIDResultType
@@ -245,7 +239,7 @@ extension CoreDataSetStorage {
         return request
     }
 
-    fileprivate func createSizeRequest() -> NSFetchRequest<NSDictionary> {
+    fileprivate static func createSizeRequest() -> NSFetchRequest<NSDictionary> {
         let byteExpression = NSExpression(forKeyPath: \SabyCoreDataSetStorageItemVersion1.byte)
         let sumExpression = NSExpression(forFunction: "sum:", arguments: [byteExpression])
         let sumDescription = NSExpressionDescription()
@@ -253,8 +247,9 @@ extension CoreDataSetStorage {
         sumDescription.name = "result"
         sumDescription.expressionResultType = .integer64AttributeType
 
-        let request = NSFetchRequest<NSDictionary>()
-        request.entity = entity
+        let request = NSFetchRequest<NSDictionary>(
+            entityName: SabyCoreDataSetStorageItemVersion1.entityName
+        )
         request.propertiesToFetch = [sumDescription]
         request.resultType = .dictionaryResultType
 
@@ -263,23 +258,17 @@ extension CoreDataSetStorage {
 }
 
 extension CoreDataSetStorage {
-    fileprivate func execute<Result>(
-        block: @escaping (Context) throws -> Result
+    fileprivate func execute<Result: Sendable>(
+        block: @escaping @Sendable (Context) throws -> Result
     ) -> Promise<Result, Error> {
-        let loadPromiseCapture = contextPromise.mutate {
-            let capture = !$0.isRejected ? $0 : contextLoad()
-            return capture
-        }
+        let contextPromise = self.contextPromise
 
-        return loadPromiseCapture.then { context in
-            Promise<Result, Error> { resolve, reject in
-                context.perform {
-                    do {
-                        resolve(try block(context))
-                    } catch {
-                        reject(error)
-                    }
-                }
+        return tasks.promise {
+            let context = try await contextPromise.value(
+                cancelOnTaskCancellation: false
+            )
+            return try await context.perform {
+                try block(context)
             }
         }
     }
@@ -287,9 +276,15 @@ extension CoreDataSetStorage {
 
 private extension NSManagedObjectContext {
     func insertSetStorageItems(
-        encodedValues: [Data],
-        entity: NSEntityDescription
+        encodedValues: [Data]
     ) throws {
+        guard let entity = NSEntityDescription.entity(
+            forEntityName: SabyCoreDataSetStorageItemVersion1.entityName,
+            in: self
+        ) else {
+            throw CoreDataSetStorageError.requestResultNotFound
+        }
+
         for data in encodedValues {
             let item = SabyCoreDataSetStorageItemVersion1(
                 entity: entity,
@@ -356,10 +351,9 @@ private extension NSManagedObjectContext {
     static func loadSetStorage(
         directoryURL: URL,
         storageName: String,
-        migration: @escaping () -> Promise<Void, Error>,
-        model: NSManagedObjectModel
+        migration: @Sendable () -> Promise<Void, Error>
     ) -> Promise<NSManagedObjectContext, Error> {
-        migration().then {
+        return migration().then {
             let fileManager = FileManager.default
 
             guard directoryURL.isFileURL else {
@@ -374,6 +368,7 @@ private extension NSManagedObjectContext {
             }
 
             let url = directoryURL.appendingPathComponent("\(storageName)_\(STORAGE_VERSION)")
+            let model = SabyCoreDataSetStorageSchema().model
             let container = NSPersistentContainer(
                 name: storageName,
                 managedObjectModel: model
@@ -394,7 +389,7 @@ private extension NSManagedObjectContext {
     }
 }
 
-public enum CoreDataSetStorageError: Error {
+enum CoreDataSetStorageError: Error {
     case batchDeleteFailed
     case persistentStoreNotFound
     case requestResultNotFound
@@ -402,34 +397,27 @@ public enum CoreDataSetStorageError: Error {
 
 @objc(SabyCoreDataSetStorageItemVersion1)
 final class SabyCoreDataSetStorageItemVersion1: NSManagedObject {
+    static let entityName = String(describing: SabyCoreDataSetStorageItemVersion1.self)
+
     @NSManaged var data: Data
     @NSManaged var byte: Int
 }
 
 final class SabyCoreDataSetStorageSchema {
-    let entity: NSEntityDescription
     let model: NSManagedObjectModel
 
     init() {
         let dataAttribute = NSAttributeDescription()
         dataAttribute.name = "data"
-        if #available(iOS 15.0, macOS 12.0, macCatalyst 15.0, tvOS 15.0, watchOS 8.0, *) {
-            dataAttribute.type = .binaryData
-        } else {
-            dataAttribute.attributeType = .binaryDataAttributeType
-        }
+        dataAttribute.type = .binaryData
 
         let byteAttribute = NSAttributeDescription()
         byteAttribute.name = "byte"
-        if #available(iOS 15.0, macOS 12.0, macCatalyst 15.0, tvOS 15.0, watchOS 8.0, *) {
-            byteAttribute.type = .integer64
-        } else {
-            byteAttribute.attributeType = .integer64AttributeType
-        }
+        byteAttribute.type = .integer64
 
         let itemEntity = NSEntityDescription()
-        itemEntity.name = String(describing: SabyCoreDataSetStorageItemVersion1.self)
-        itemEntity.managedObjectClassName = String(describing: SabyCoreDataSetStorageItemVersion1.self)
+        itemEntity.name = SabyCoreDataSetStorageItemVersion1.entityName
+        itemEntity.managedObjectClassName = SabyCoreDataSetStorageItemVersion1.entityName
         itemEntity.properties = [
             dataAttribute,
             byteAttribute
@@ -449,7 +437,7 @@ final class SabyCoreDataSetStorageSchema {
         let model = NSManagedObjectModel()
         model.entities = [itemEntity]
 
-        self.entity = itemEntity
         self.model = model
     }
 }
+#endif

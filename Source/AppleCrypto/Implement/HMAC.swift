@@ -5,12 +5,12 @@
 //  Created by WOF on 2023/06/13.
 //
 
-#if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
+#if (os(iOS) || os(macOS) || os(tvOS) || os(watchOS) || os(visionOS)) && canImport(Foundation) && canImport(CommonCrypto)
 
 import Foundation
 import CommonCrypto
 
-public enum HMAC: MessageAuthenticationCode {
+public enum HMAC {
     public static func code(message: String, key: String, hash: Hash) -> String {
         var result = Array<UInt8>(repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
         

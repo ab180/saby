@@ -5,37 +5,35 @@
 //  Created by WOF on 2022/08/24.
 //
 
-#if os(iOS) || os(tvOS)
+#if (os(iOS) || os(tvOS) || os(visionOS)) && canImport(UIKit)
 
 import Foundation
 import UIKit
 
+import SabyConcurrency
+
 public final class OSFetcher: Fetcher {
-    public typealias Value = OS
+    public typealias Value = Promise<OS, Never>
     
     public init() {}
 
-    public func fetch() -> OS {
-        OS(
-            name: fetchName(),
-            version: fetchVersion()
-        )
+    public func fetch() -> Promise<OS, Never> {
+        Promise.async {
+            await MainActor.run {
+                let device = UIDevice.current
+
+                return OS(
+                    name: device.systemName,
+                    version: device.systemVersion
+                )
+            }
+        }
     }
 }
 
-public struct OS {
+public struct OS: Sendable {
     public let name: String
     public let version: String
-}
-
-extension OSFetcher {
-    private func fetchName() -> String {
-        UIDevice.current.systemName
-    }
-
-    private func fetchVersion() -> String {
-        UIDevice.current.systemVersion
-    }
 }
 
 #endif

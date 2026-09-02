@@ -5,44 +5,45 @@
 //  Created by WOF on 2022/08/23.
 //
 
-#if os(iOS) || os(tvOS)
+#if (os(iOS) || os(tvOS) || os(visionOS)) && canImport(UIKit)
 
 import Foundation
 import UIKit
 
+import SabyConcurrency
+
 public final class ModelFetcher: Fetcher {
-    public typealias Value = Model
+    public typealias Value = Promise<Model, Never>
     
     public init() {}
 
-    public func fetch() -> Model {
-        let name = fetchName()
-        let identifier = fetchIdentifier()
+    public func fetch() -> Promise<Model, Never> {
+        Promise.async {
+            let name = await MainActor.run {
+                UIDevice.current.localizedModel
+            }
 
-        return Model(
-            name: name,
-            identifier: identifier
-        )
+            return Model(
+                name: name,
+                identifier: Self.fetchIdentifier()
+            )
+        }
     }
 }
 
-public struct Model {
+public struct Model: Sendable {
     public let name: String
     public let identifier: String?
 }
 
 extension ModelFetcher {
-    private func fetchName() -> String {
-        UIDevice.current.localizedModel
-    }
-
-    private func fetchIdentifier() -> String? {
+    private static func fetchIdentifier() -> String? {
         var system = utsname()
         uname(&system)
         
         return withUnsafeMutablePointer(to: &system.machine) {
             $0.withMemoryRebound(to: CChar.self, capacity: 1) {
-                String.init(validatingUTF8: $0)
+                String(validatingCString: $0)
             }
         }
     }

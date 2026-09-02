@@ -7,9 +7,9 @@
 
 import SabyConcurrency
 
-public protocol Signaler<Value, Failure> {
-    associatedtype Value
-    associatedtype Failure: Error
+public protocol Signaler<Value, Failure>: Sendable {
+    associatedtype Value: Sendable
+    associatedtype Failure: Error & Sendable
     
     var promise: Promise<Value, Failure> { get }
 }

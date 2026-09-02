@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol Fetcher<Value> {
+public protocol Fetcher<Value>: Sendable {
     associatedtype Value
     
     func fetch() -> Value

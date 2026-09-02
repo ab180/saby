@@ -62,19 +62,4 @@ extension JSON {
         guard case .string(_) = self else { return false }
         return true
     }
-    
-    public var isObject: Bool {
-        guard case .object(_) = self else { return false }
-        return true
-    }
-    
-    public var isArray: Bool {
-        guard case .array(_) = self else { return false }
-        return true
-    }
-    
-    public var isNull: Bool {
-        guard case .null = self else { return false }
-        return true
-    }
 }

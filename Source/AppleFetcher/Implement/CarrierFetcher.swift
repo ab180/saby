@@ -5,7 +5,7 @@
 //  Created by WOF on 2022/08/24.
 //
 
-#if os(iOS)
+#if os(iOS) && canImport(CoreTelephony)
 
 import Foundation
 import CoreTelephony
@@ -35,14 +35,11 @@ public struct Carrier {
 extension CarrierFetcher {
     private func fetchCTCarrier() -> CTCarrier? {
         let information = CTTelephonyNetworkInfo()
-        if #available(iOS 12.0, *) {
-            return information
-                .serviceSubscriberCellularProviders?
-                .values
-                .first { $0.carrierName != nil }
-        } else {
-            return information.subscriberCellularProvider
-        }
+
+        return information
+            .serviceSubscriberCellularProviders?
+            .values
+            .first { $0.carrierName != nil }
     }
 }
    

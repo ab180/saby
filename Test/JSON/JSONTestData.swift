@@ -6,6 +6,11 @@
 //
 
 import Foundation
+import Testing
+
+func expectEqual<Value: Equatable>(_ actual: Value, _ expected: Value) {
+    #expect(actual == expected)
+}
 
 struct Codable0: Codable, Equatable {
     let a: String
@@ -21,7 +26,7 @@ struct Null: Codable, Equatable, ExpressibleByNilLiteral {
         let _ = container.decodeNil()
     }
     
-    func encode(to encoder: Encoder) throws {
+     func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
         try container.encodeNil()
     }

@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct Volume: Codable, Comparable, Equatable {
+public struct Volume: Codable, Comparable, Equatable, Sendable {
     public let byte: Double
     
     public init(byte: Double) {
@@ -18,10 +18,6 @@ public struct Volume: Codable, Comparable, Equatable {
 extension Volume {
     public static func byte(_ byte: Double) -> Volume {
         Volume(byte: byte)
-    }
-    
-    public static func kibibyte(_ kibibyte: Double) -> Volume {
-        Volume(byte: kibibyte * 1024)
     }
     
     public static func mebibyte(_ mebibyte: Double) -> Volume {
@@ -52,19 +48,8 @@ extension Volume {
 }
 
 extension Volume {
-    public var kibibyte: Double {
-        byte / 1024
-    }
-    
-    public var mebibyte: Double {
-        byte / 1024 / 1024
-    }
-    
     public var gibibyte: Double {
         byte / 1024 / 1024 / 1024
     }
     
-    public var tebibyte: Double {
-        byte / 1024 / 1024 / 1024 / 1024
-    }
 }

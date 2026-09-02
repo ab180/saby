@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct Interval: Codable, Comparable, Equatable {
+public struct Interval: Codable, Comparable, Equatable, Sendable {
     let interval: TimeInterval
     
     public init(second: TimeInterval) {
@@ -68,14 +68,6 @@ extension Interval {
     
     public var second: Double {
         interval
-    }
-    
-    public var minute: Double {
-        interval / 60
-    }
-    
-    public var hour: Double {
-        interval / 60 / 60
     }
     
     public var day: Double {

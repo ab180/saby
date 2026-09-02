@@ -8,6 +8,5 @@
 import Foundation
 
 extension Logger {
-    public typealias SelfProtocol = Logger
     public typealias AnyProtocol = any Logger
 }

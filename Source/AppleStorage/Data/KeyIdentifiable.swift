@@ -7,6 +7,6 @@
 
 import Foundation
 
-public protocol KeyIdentifiable {
+public protocol KeyIdentifiable: Sendable {
     var key: UUID { get }
 }

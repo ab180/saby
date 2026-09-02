@@ -5,88 +5,127 @@
 //  Created by WOF on 2022/08/19.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import SabyConcurrency
 
-final class PromiseDelayTest: XCTestCase {
-    func test__delay_create_short() {
-        let promise = Promise.race([
-            Promise.delay(.milliseconds(10)).then { 10 },
-            Promise { resolve, reject in
-                DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(100)) {
-                    resolve(20)
-                }
+@Suite(.serialized) struct PromiseDelayTest {
+    @Test
+    func test__delay_create_short() async {
+        let delayed = Promise.delay(.milliseconds(10)).then { 10 }
+        let later = Promise<Int, Never> { resolve, _ in
+            DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(100)) {
+                resolve(20)
             }
-        ])
+        }
         
-        PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
+        await expectResolutionOrder(delayed, later, equals: [10, 20])
     }
     
-    func test__delay_create_long() {
-        let promise = Promise.race([
-            Promise.delay(.milliseconds(100)).then { 10 },
-            Promise { resolve, reject in
-                DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(10)) {
-                    resolve(20)
-                }
+    @Test
+    func test__delay_create_long() async {
+        let delayed = Promise.delay(.milliseconds(100)).then { 10 }
+        let earlier = Promise<Int, Never> { resolve, _ in
+            DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(10)) {
+                resolve(20)
             }
-        ])
+        }
         
-        PromiseTest.expect(promise: promise, state: .resolved(20), timeout: .seconds(1))
+        await expectResolutionOrder(delayed, earlier, equals: [20, 10])
     }
     
-    func test__delay_short() {
-        let promise = Promise.race([
-            Promise.delay(.milliseconds(100)).then { 10 },
-            Promise.async {
-                20
-            }.delay(.milliseconds(10))
-        ])
+    @Test
+    func test__delay_short() async {
+        let delayed = Promise.delay(.milliseconds(100)).then { 10 }
+        let earlier = PromiseTest.make { 20 }.delay(.milliseconds(10))
         
-        PromiseTest.expect(promise: promise, state: .resolved(20), timeout: .seconds(1))
+        await expectResolutionOrder(delayed, earlier, equals: [20, 10])
     }
 
-    func test__delay_long() {
-        let promise = Promise.race([
-            Promise.delay(.milliseconds(10)).then { 10 },
-            Promise.async {
-                20
-            }.delay(.milliseconds(100))
-        ])
+    @Test
+    func test__delay_long() async {
+        let delayed = Promise.delay(.milliseconds(10)).then { 10 }
+        let later = PromiseTest.make { 20 }.delay(.milliseconds(100))
         
-        PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
+        await expectResolutionOrder(delayed, later, equals: [10, 20])
     }
     
-    func test__delay_cancel() {
-        let end = DispatchSemaphore(value: 0)
-        var promiseCancel: (() -> Void)?
-        
-        let promise0 = Promise<Int, Error> { resolve, reject, cancel, _ in
-            promiseCancel = cancel
-            resolve(20)
-        }
+    @Test
+    func test__delay_cancel() async {
+        let end = AsyncLatch()
+        let pending = Promise<Int, Error>.pending()
+
+        let promise0 = pending.promise
         let promise1 = promise0.delay(.milliseconds(100))
         let promise2 = promise1.then { _ in
-            promiseCancel?()
+            pending.cancel()
             end.signal()
         }
+
+        pending.resolve(20)
         
-        PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: promise2, state: .resolved({ $0 == () }), timeout: .seconds(1))
+        #expect(await end.wait(timeout: .seconds(1)))
+        await PromiseTest.expect(promise: promise2, state: .resolved({ $0 == () }), timeout: .seconds(1))
     }
     
-    func test__never_delay_create() {
+    @Test
+    func test__never_delay_create() async {
         let promise = Promise.delay(.milliseconds(0))
         
-        PromiseTest.expect(promise: promise, state: .resolved({ $0 == () }), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .resolved({ $0 == () }), timeout: .seconds(1))
     }
     
-    func test__safe_delay() {
-        let promise = Promise.async {
+    @Test
+    func test__safe_delay() async {
+        let promise = PromiseTest.make {
             10
         }
         .delay(.milliseconds(0))
         
-        PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
+    }
+
+    private func expectResolutionOrder<FirstFailure, SecondFailure>(
+        _ first: Promise<Int, FirstFailure>,
+        _ second: Promise<Int, SecondFailure>,
+        equals expected: [Int]
+    ) async where
+        FirstFailure: Error & Sendable,
+        SecondFailure: Error & Sendable
+    {
+        let values = LockedBox<[Int]>([])
+        let end = AsyncLatch()
+
+        first.subscribe(
+            onResolved: { value in
+                values.withValue { $0.append(value) }
+                end.signal()
+            },
+            onRejected: { _ in
+                Issue.record("Expected resolution")
+                end.signal()
+            },
+            onCanceled: {
+                Issue.record("Expected resolution")
+                end.signal()
+            }
+        )
+        second.subscribe(
+            onResolved: { value in
+                values.withValue { $0.append(value) }
+                end.signal()
+            },
+            onRejected: { _ in
+                Issue.record("Expected resolution")
+                end.signal()
+            },
+            onCanceled: {
+                Issue.record("Expected resolution")
+                end.signal()
+            }
+        )
+
+        #expect(await end.wait(count: 2, timeout: .seconds(1)))
+        #expect(values.value == expected)
     }
 }

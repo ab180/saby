@@ -10,7 +10,7 @@ import Foundation
 struct LoggerConstant {
     static let paginateSize = 900
     
-    static let paginatedLog = { (message: String) in
+    static let paginatedLog = { @Sendable (message: String) in
         stride(from: 0, to: message.count, by: paginateSize).map { point in
             let start = message.index(
                 message.startIndex,

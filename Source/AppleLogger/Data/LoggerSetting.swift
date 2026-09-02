@@ -5,9 +5,10 @@
 //  Created by 이영빈 on 2022/09/30.
 //
 
+#if canImport(os)
 import os
 
-public struct LoggerSetting {
+public struct LoggerSetting: Sendable {
     /// A variable indicating logger's logging level. Set  to `.none` to not show logs.
     public var logLevel: LogLevel? = .debug
     
@@ -39,3 +40,4 @@ public struct LoggerSetting {
         self.osLog = OSLog(subsystem: subsystem, category: category)
     }
 }
+#endif

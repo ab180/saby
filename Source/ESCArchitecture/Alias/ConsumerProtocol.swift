@@ -6,6 +6,5 @@
 //
 
 extension Consumer {
-    public typealias SelfProtocol = Consumer
     public typealias AnyProtocol = any Consumer
 }

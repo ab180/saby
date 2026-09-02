@@ -6,9 +6,10 @@
 //
 
 import Foundation
+#if canImport(os)
 import os
 
-public protocol Logger {
+public protocol Logger: Sendable {
     /// You can use each method to show logs
     func debug(_ message: String)
     func info(_ message: String)
@@ -16,3 +17,4 @@ public protocol Logger {
     func error(_ message: String)
     func fault(_ message: String)
 }
+#endif

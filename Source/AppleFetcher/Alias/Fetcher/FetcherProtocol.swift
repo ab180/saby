@@ -8,6 +8,5 @@
 import Foundation
 
 extension Fetcher {
-    public typealias SelfProtocol = Fetcher<Self.Value>
     public typealias AnyProtocol = any Fetcher<Self.Value>
 }

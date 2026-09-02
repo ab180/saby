@@ -5,12 +5,12 @@
 //  Created by WOF on 2023/02/17.
 //
 
-#if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
+#if (os(iOS) || os(macOS) || os(tvOS) || os(watchOS) || os(visionOS)) && canImport(Foundation) && canImport(CommonCrypto)
 
 import Foundation
 import CommonCrypto
 
-public enum SHA256: Hash {
+public enum SHA256 {
     public static func hash(message: String) -> String {
         var result = Array<UInt8>(repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
         

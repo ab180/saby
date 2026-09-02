@@ -5,19 +5,20 @@
 //  Created by mjgu on 2023/01/19.
 //
 
-import XCTest
+import Foundation
+import Testing
 import SabyConcurrency
 @testable import SabyAppleStorage
 
-fileprivate struct DummyItem: Codable, Equatable {
+fileprivate struct DummyItem: Codable, Equatable, Sendable {
     var key: UUID
 }
 
-final class FileDictionaryStorageTest: XCTestCase {
-    fileprivate let testCount = 500
-    fileprivate var storage: FileDictionaryStorage<String, DummyItem>!
-    fileprivate let directoryURL = FileManager.default.temporaryDirectory
-    fileprivate var storageName: String!
+struct FileDictionaryStorageTest {
+    private let testCount = 500
+    private let storage: FileDictionaryStorage<String, DummyItem>
+    private let directoryURL = FileManager.default.temporaryDirectory
+    private let storageName: String
     
     fileprivate var testObjects: [(String, DummyItem)] {
         var result: [(String, DummyItem)] = []
@@ -28,91 +29,53 @@ final class FileDictionaryStorageTest: XCTestCase {
         return result
     }
     
-    override func setUpWithError() throws {
-        storageName = UUID().uuidString
+    init() {
+        let storageName = UUID().uuidString
+        self.storageName = storageName
         storage = FileDictionaryStorage<String, DummyItem>(
             directoryURL: directoryURL,
             storageName: storageName
         )
     }
     
-    override func tearDownWithError() throws {
-        let fileURL = directoryURL
-        
-        if FileManager.default.fileExists(atPath: fileURL.absoluteString) {
-            try FileManager.default.removeItem(at: fileURL)
-        }
-    }
-    
-    func test__insert() throws {
-        let expectation = expectation(description: "testInsert")
-        expectation.expectedFulfillmentCount = 1
-        
+    @Test func insert() async throws {
         let testObjects = testObjects
         
-        try testObjects.forEach {
-            try storage.set(key: $0.0, value: $0.1).wait()
+        for entry in testObjects {
+            try await storage.set(key: entry.0, value: entry.1).value()
         }
         
-        storage.save()
-            .then {
-                self.storage.contextPromise.capture { $0 }.then { $0.values.capture { print($0) } }
-                try testObjects.forEach {
-                    XCTAssertEqual(
-                        try self.storage.get(key: $0.0).wait(),
-                        $0.1
-                    )
-                }
-            }
-            .then { expectation.fulfill() }
-        
-        wait(for: [expectation], timeout: 5)
+        try await storage.save().value()
+        for entry in testObjects {
+            #expect(try await storage.get(key: entry.0).value() == entry.1)
+        }
     }
     
-    func test__delete() throws {
-        let expectation = expectation(description: "testRemove")
-        expectation.expectedFulfillmentCount = 1
-        
+    @Test func delete() async throws {
         let testCount = testCount
         var testObjects = testObjects
-        try testObjects.forEach {
-            try storage.set(key: $0.0, value: $0.1).wait()
+        for entry in testObjects {
+            try await storage.set(key: entry.0, value: entry.1).value()
         }
         
         let removeCount = Int.random(in: 0 ..< (testCount / 2))
         let removeItems = testObjects[0 ..< removeCount]
         
-        storage.save()
-            .then {
-                try testObjects.forEach {
-                    XCTAssertEqual(
-                        try self.storage.get(key: $0.0).wait(),
-                        $0.1
-                    )
-                }
-            }
-            .then {
-                try removeItems.forEach { try self.storage.delete(key: $0.0).wait() }
-                removeItems.forEach { key, value in testObjects.removeAll { key == $0.0 } }
-            }
-            .then { self.storage.save() }
-            .then {
-                try testObjects.forEach {
-                    XCTAssertEqual(
-                        try self.storage.get(key: $0.0).wait(),
-                        $0.1
-                    )
-                }
-            }
-            .then { expectation.fulfill() }
-        
-        wait(for: [expectation], timeout: 5)
+        try await storage.save().value()
+        for entry in testObjects {
+            #expect(try await storage.get(key: entry.0).value() == entry.1)
+        }
+        for entry in removeItems {
+            try await storage.delete(key: entry.0).value()
+        }
+        removeItems.forEach { key, _ in testObjects.removeAll { key == $0.0 } }
+        try await storage.save().value()
+        for entry in testObjects {
+            #expect(try await storage.get(key: entry.0).value() == entry.1)
+        }
     }
     
-    func test__get() throws {
-        let expectation = expectation(description: "testGet")
-        expectation.expectedFulfillmentCount = 1
-        
+    @Test func get() async throws {
         let testCount = 50
         let randomIndex = (0 ..< testCount).randomElement()
         var targetKey: String = ""
@@ -120,52 +83,52 @@ final class FileDictionaryStorageTest: XCTestCase {
         for index in 0 ..< testCount {
             let key = UUID().uuidString
             let value = DummyItem(key: UUID())
-            try storage.set(key: key, value: value).wait()
+            try await storage.set(key: key, value: value).value()
             if randomIndex == index { targetKey = key; targetValue = value }
         }
         
-        storage.save()
-            .then { self.storage.get(key: targetKey) }
-            .then { XCTAssertEqual($0?.key, targetValue?.key) }
-            .then { expectation.fulfill() }
-        
-        wait(for: [expectation], timeout: 5)
+        try await storage.save().value()
+        #expect(try await storage.get(key: targetKey).value()?.key == targetValue?.key)
     }
     
-    func test__save() throws {
-        let expectation = expectation(description: "testSave")
-        expectation.expectedFulfillmentCount = 1
-        
+    @Test func save() async throws {
         var entries = [(String, DummyItem)]()
-        
-        let setPromise: () -> Promise<Void, Error> = {
-            Promise.async {
-                let key = UUID().uuidString
-                let value = DummyItem(key: UUID())
-                entries.append((key, value))
-                return self.storage.set(key: key, value: value)
-            }
+
+        try await storage.save().value()
+        for _ in 0 ..< 4 {
+            let key = UUID().uuidString
+            let value = DummyItem(key: UUID())
+            entries.append((key, value))
+            try await storage.set(key: key, value: value).value()
+            try await storage.save().value()
         }
-        
-        Promise
-            .async { self.storage.save() }
-            .then { setPromise() }
-            .then { self.storage.save() }
-            .then { setPromise() }
-            .then { self.storage.save() }
-            .then { setPromise() }
-            .then { self.storage.save() }
-            .then { setPromise() }
-            .then {
-                try entries.forEach {
-                    XCTAssertEqual(
-                        try self.storage.get(key: $0.0).wait(),
-                        $0.1
-                    )
-                }
-            }
-            .then { expectation.fulfill() }
-        
-        wait(for: [expectation], timeout: 5)
+        for entry in entries {
+            #expect(try await storage.get(key: entry.0).value() == entry.1)
+        }
+    }
+
+    @Test func concurrent_set() async throws {
+        let entries = testObjects
+        let promises = entries.map { storage.set(key: $0.0, value: $0.1) }
+
+        for promise in promises {
+            try await promise.value()
+        }
+
+        #expect(try await storage.get(limit: .unlimited).value().count == entries.count)
+    }
+
+    @Test func reload() async throws {
+        let key = UUID().uuidString
+        let value = DummyItem(key: UUID())
+        try await storage.set(key: key, value: value).value()
+        try await storage.save().value()
+
+        let reloaded = FileDictionaryStorage<String, DummyItem>(
+            directoryURL: directoryURL,
+            storageName: storageName
+        )
+
+        #expect(try await reloaded.get(key: key).value() == value)
     }
 }

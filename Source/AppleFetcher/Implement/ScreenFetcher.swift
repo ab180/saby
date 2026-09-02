@@ -5,7 +5,7 @@
 //  Created by WOF on 2022/08/23.
 //
 
-#if os(iOS) || os(tvOS)
+#if (os(iOS) || os(tvOS)) && canImport(UIKit)
 
 import Foundation
 import UIKit
@@ -18,54 +18,36 @@ public final class ScreenFetcher: Fetcher {
     public init() {}
     
     public func fetch() -> Promise<Screen, Error> {
-        return Promise.tryAll(
-            Promise<CGSize, Error>.resolved(fetchSize()),
-            Promise<CGFloat, Error>.resolved(fetchScale()),
-            fetchOrientation()
-        )
-        .then { size, scale, orientation in
-            let screen = Screen(
-                width: size.width,
-                height: size.height,
-                scale: scale,
-                orientation: orientation.isLandscape ? "landscape": "portrait"
-            )
-            
-            return screen
+        Promise.async { () async throws -> Screen in
+            await MainActor.run {
+                let screen = UIScreen.main
+
+                #if os(iOS)
+                let orientation = UIApplication.shared.connectedScenes
+                    .compactMap { $0 as? UIWindowScene }
+                    .first { $0.activationState == .foregroundActive }?
+                    .interfaceOrientation ?? .portrait
+                let orientationName = orientation.isLandscape ? "landscape" : "portrait"
+                #else
+                let orientationName = "landscape"
+                #endif
+
+                return Screen(
+                    width: screen.bounds.width,
+                    height: screen.bounds.height,
+                    scale: screen.scale,
+                    orientation: orientationName
+                )
+            }
         }
     }
 }
 
-public struct Screen {
+public struct Screen: Sendable {
     public let width: Double
     public let height: Double
     public let scale: Double
     public let orientation: String
-}
-
-extension ScreenFetcher {
-    private func fetchSize() -> CGSize {
-        return UIScreen.main.bounds.size
-    }
-
-    private func fetchScale() -> CGFloat {
-        UIScreen.main.scale
-    }
-    
-    private func fetchOrientation() -> Promise<UIInterfaceOrientation, Error> {
-        Promise.async(on: .main) { () -> UIInterfaceOrientation in
-            if #available(iOS 13.0, macCatalyst 13.0, tvOS 13.0, *) {
-                return UIApplication.shared.connectedScenes
-                    .filter { $0.activationState == .foregroundActive }
-                    .first { $0 is UIWindowScene }
-                    .flatMap { $0 as? UIWindowScene }?
-                    .interfaceOrientation ?? .portrait
-            }
-            else {
-                return UIApplication.shared.statusBarOrientation
-            }
-        }
-    }
 }
 
 #endif

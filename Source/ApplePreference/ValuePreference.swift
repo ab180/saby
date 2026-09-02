@@ -7,11 +7,11 @@
 
 import Foundation
 
-public protocol ValuePreference<Value>: Preference {
-    associatedtype Value
+public protocol ValuePreference<Value>: Preference, Sendable {
+    associatedtype Value: Sendable
     
-    func set(_ value: Value) throws -> Void
-    func clear() throws -> Void
-    func get() throws -> Value?
-    func save() throws -> Void
+    func set(_ value: Value) async throws -> Void
+    func clear() async throws -> Void
+    func get() async throws -> Value?
+    func save() async throws -> Void
 }

@@ -5,7 +5,7 @@
 //  Created by WOF on 2022/10/05.
 //
 
-public protocol Repository<Query, Result> {
+public protocol Repository<Query, Result>: Sendable {
     associatedtype Query
     associatedtype Result
     

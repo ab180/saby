@@ -5,9 +5,10 @@
 //  Created by 이영빈 on 2022/09/30.
 //
 
+#if canImport(os)
 import os
 
-public protocol LogService {
+public protocol LogService: Sendable {
     var setting: LoggerSetting { get }
     func log(level: LogLevel, _ message: String)
 }
@@ -48,7 +49,7 @@ extension LogService {
     }
 }
 
-public struct OSLogService: LogService {
+public struct OSLogService: LogService, Sendable {
     public let setting: LoggerSetting
     
     public func log(level: LogLevel, _ message: String) {
@@ -57,14 +58,4 @@ public struct OSLogService: LogService {
         }
     }
 }
-
-public struct PrintLogService: LogService {
-    public let setting: LoggerSetting
-    
-    public func log(level: LogLevel, _ message: String) {
-        let message = "[\(setting.subsystem)/\(setting.category)/\(level.name)] \(message)"
-        log(level: level, message) {
-            print($0)
-        }
-    }
-}
+#endif

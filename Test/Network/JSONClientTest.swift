@@ -5,35 +5,34 @@
 //  Created by WOF on 2022/08/16.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import SabyNetwork
 
 import SabyJSON
-import SabyTestMock
-import SabyTestExpect
 import SabyConcurrency
 
-final class JSONClientTest: XCTestCase {
-    func test__init() {
+@Suite(.serialized) struct JSONClientTest {
+    @Test func test__init() {
         let client = JSONClient(cancelWhen: .deinit)
         let configuration = URLSessionConfiguration.default
         
-        XCTAssertEqual(client.client.session.configuration, configuration)
+        #expect(client.client.session.configuration == configuration)
     }
     
-    func test__init_option_block() {
+    @Test func test__init_option_block() {
         let client = JSONClient(cancelWhen: .deinit) {
             $0.timeoutIntervalForRequest = 3000
         }
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = 3000
         
-        XCTAssertEqual(client.client.session.configuration, configuration)
+        #expect(client.client.session.configuration == configuration)
     }
     
-    func test__request() {
+    @Test func test__request() async {
         final class MockURLResultStorage: URLResultStorage {
-            static var results: [URLResult] = [
+            static let results: [URLResult] = [
                 URLResult(
                     url: URL(string: "https://mock.api.ab180.co/request")!,
                     code: 200,
@@ -51,18 +50,14 @@ final class JSONClientTest: XCTestCase {
             body: nil
         )
         
-        Expect.promise(
-            response,
-            state: .resolved({
-                $0 == (200, ["X-Response-ID": "success"], [:])
-            }),
-            timeout: .seconds(2)
-        )
+        await expectResolved(response) {
+            $0 == (200, ["X-Response-ID": "success"], [:])
+        }
     }
     
-    func test__request_reponse_code_not_decodable() {
+    @Test func test__request_reponse_code_not_decodable() async {
         final class MockURLResultStorage: URLResultStorage {
-            static var results: [URLResult] = [
+            static let results: [URLResult] = [
                 URLResult(
                     url: URL(string: "https://mock.api.ab180.co/request")!,
                     code: 200,
@@ -79,16 +74,15 @@ final class JSONClientTest: XCTestCase {
             body: nil
         )
         
-        Expect.promise(
+        await expectRejected(
             response,
-            state: .rejected(JSONClientError.responseDataIsNotDecodable(code: 200, body: Data())),
-            timeout: .seconds(2)
+            error: JSONClientError.responseDataIsNotDecodable(code: 200, body: Data())
         )
     }
     
-    func test__request_reponse_code_not_2XX() {
+    @Test func test__request_reponse_code_not_2XX() async {
         final class MockURLResultStorage: URLResultStorage {
-            static var results: [URLResult] = [
+            static let results: [URLResult] = [
                 URLResult(
                     url: URL(string: "https://mock.api.ab180.co/request")!,
                     code: 500,
@@ -105,19 +99,18 @@ final class JSONClientTest: XCTestCase {
             body: nil
         )
         
-        Expect.promise(
+        await expectRejected(
             response,
-            state: .rejected(JSONClientError.statusCodeNot2XX(codeNot2XX: 500, body: [])),
-            timeout: .seconds(2)
+            error: JSONClientError.statusCodeNot2XX(codeNot2XX: 500, body: [])
         )
     }
     
-    func test__request_error() {
+    @Test func test__request_error() async {
         final class MockURLResultStorage: URLResultStorage {
-            static var results: [URLResult] = [
+            static let results: [URLResult] = [
                 URLResult(
                     url: URL(string: "https://mock.api.ab180.co/request")!,
-                    error: Expect.SampleError.one
+                    error: NetworkTestError.sample
                 )
             ]
         }
@@ -130,16 +123,12 @@ final class JSONClientTest: XCTestCase {
             body: nil
         )
         
-        Expect.promise(
-            response,
-            state: .rejected(Expect.SampleError.one),
-            timeout: .seconds(2)
-        )
+        await expectRejected(response, error: NetworkTestError.sample)
     }
     
-    func test__request_response_nil() {
+    @Test func test__request_response_nil() async {
         final class MockURLResultStorage: URLResultStorage {
-            static var results: [URLResult] = [
+            static let results: [URLResult] = [
                 URLResult(
                     url: URL(string: "https://mock.api.ab180.co/request")!,
                     code: 200,
@@ -155,16 +144,15 @@ final class JSONClientTest: XCTestCase {
             URL(string: "https://mock.api.ab180.co/request")!
         )
         
-        Expect.promise(
+        await expectRejected(
             response,
-            state: .rejected(JSONClientError.responseDataIsNotDecodable(code: 200, body: nil)),
-            timeout: .seconds(2)
+            error: JSONClientError.responseDataIsNotDecodable(code: 200, body: nil)
         )
     }
     
-    func test__request_response_empty() {
+    @Test func test__request_response_empty() async {
         final class MockURLResultStorage: URLResultStorage {
-            static var results: [URLResult] = [
+            static let results: [URLResult] = [
                 URLResult(
                     url: URL(string: "https://mock.api.ab180.co/request")!,
                     code: 200,
@@ -180,16 +168,15 @@ final class JSONClientTest: XCTestCase {
             URL(string: "https://mock.api.ab180.co/request")!
         )
         
-        Expect.promise(
+        await expectRejected(
             response,
-            state: .rejected(JSONClientError.responseDataIsNotDecodable(code: 200, body: Data())),
-            timeout: .seconds(2)
+            error: JSONClientError.responseDataIsNotDecodable(code: 200, body: Data())
         )
     }
     
-    func test__request_timeout() {
+    @Test func test__request_timeout() async {
         final class MockURLResultStorage: URLResultStorage {
-            static var results: [URLResult] = [
+            static let results: [URLResult] = [
                 URLResult(
                     url: URL(string: "https://mock.api.ab180.co/request")!,
                     code: 200,
@@ -206,13 +193,28 @@ final class JSONClientTest: XCTestCase {
             timeout: .millisecond(50)
         )
         
-        response.then { data in
-            print(data)
+        await expectRejected(response, error: JSONClientError.timeout)
+    }
+
+    @Test func test__client_deinit_cancels_request() async {
+        final class MockURLResultStorage: URLResultStorage {
+            static let results: [URLResult] = [
+                URLResult(
+                    url: URL(string: "https://mock.api.ab180.co/request")!,
+                    code: 200,
+                    data: Promise.delay(.seconds(2)).then { try! JSON.from([:]).datafy() }
+                )
+            ]
         }
-        .catch { error in
-            print(error)
+        var client: JSONClient? = JSONClient(cancelWhen: .deinit) {
+            $0.protocolClasses = [MockURLProtocol<MockURLResultStorage>.self]
         }
-        
-        Expect.promise(response, state: .rejected(JSONClientError.timeout), timeout: .seconds(2))
+        weak let tasks = client?.tasks
+        let response = client!.request(URL(string: "https://mock.api.ab180.co/request")!)
+
+        client = nil
+
+        await expectCanceled(response)
+        #expect(await eventually { tasks == nil })
     }
 }

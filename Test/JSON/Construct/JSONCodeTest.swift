@@ -5,11 +5,12 @@
 //  Created by WOF on 2022/08/15.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import SabyJSON
 
-final class JSONCodeTest: XCTestCase {
-    func test__encode() {
+@Suite struct JSONCodeTest {
+    @Test func test__encode() {
         let json = JSON.from([
             "a": "a",
             "b": 1,
@@ -29,10 +30,10 @@ final class JSONCodeTest: XCTestCase {
         let encoded = try! JSONEncoder().encode(json)
         let decoded = try! JSONDecoder().decode(JSON.self, from: encoded)
         
-        XCTAssertEqual(json, decoded)
+        expectEqual(json, decoded)
     }
     
-    func test__decode() {
+    @Test func test__decode() {
         let json = JSON.from([
             "a": "a",
             "b": 1,
@@ -69,6 +70,6 @@ final class JSONCodeTest: XCTestCase {
         let data = string.data(using: .utf8)!
         let decoded = try! JSONDecoder().decode(JSON.self, from: data)
         
-        XCTAssertEqual(json, decoded)
+        expectEqual(json, decoded)
     }
 }

@@ -8,8 +8,8 @@
 import SabyConcurrency
 
 public protocol DictionaryStorage<Key, Value>: Storage {
-    associatedtype Key: Hashable
-    associatedtype Value
+    associatedtype Key: Hashable & Sendable
+    associatedtype Value: Sendable
     
     func set(key: Key, value: Value) -> Promise<Void, Error>
     func delete(key: Key) -> Promise<Void, Error>

@@ -5,360 +5,393 @@
 //  Created by WOF on 2020/04/09.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import SabyConcurrency
 
-final class PromiseAllTest: XCTestCase {
-    func test__all_same_2() {
+@Suite(.serialized) struct PromiseAllTest {
+    @Test
+    func test__all_same_2() async {
         let promise =
         Promise.all([
-            Promise.async {
+            PromiseTest.make {
                 10
             },
-            Promise.async {
+            PromiseTest.make {
                 20
             }
         ])
         
-        PromiseTest.expect(promise: promise, state: .resolved({$0 == [10, 20]}), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .resolved({$0 == [10, 20]}), timeout: .seconds(1))
+    }
+
+    @Test
+    func test__all_same_optional_nil() async {
+        let promise = Promise.all([
+            Promise<Int?, Never>.resolved(nil),
+            Promise<Int?, Never>.resolved(10)
+        ])
+
+        await PromiseTest.expect(
+            promise: promise,
+            state: .resolved({ $0.count == 2 && $0[0] == nil && $0[1] == 10 }),
+            timeout: .seconds(1)
+        )
     }
     
-    func test__all_2() {
+    @Test
+    func test__all_2() async {
         let promise =
         Promise.all(
-            Promise.async {
+            PromiseTest.make {
                 10
             },
-            Promise.async {
+            PromiseTest.make {
                 true
             }
         )
         
-        PromiseTest.expect(promise: promise, state: .resolved({$0 == (10, true)}), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .resolved({$0 == (10, true)}), timeout: .seconds(1))
     }
     
-    func test__all_2_reject_1() {
+    @Test
+    func test__all_2_reject_1() async {
         let promise =
         Promise.tryAll(
-            Promise.async { () -> Int in
+            PromiseTest.make { () -> Int in
                 throw PromiseTest.SampleError.one
             },
-            Promise.async {
+            PromiseTest.make {
                 true
             }
         )
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
-    func test__all_2_cancel_1() {
+    @Test
+    func test__all_2_cancel_1() async {
         let promise =
         Promise.tryAll(
-            Promise<Int, Error>.canceled(),
-            Promise.async {
+            PromiseTest.canceled() as Promise<Int, Error>,
+            PromiseTest.make {
                 true
             }
         )
         
-        PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
     }
     
-    func test__all_3() {
+    @Test
+    func test__all_3() async {
         let promise =
         Promise.all(
-            Promise.async {
+            PromiseTest.make {
                 10
             },
-            Promise.async {
+            PromiseTest.make {
                 true
             },
-            Promise.async {
+            PromiseTest.make {
                 "10"
             }
         )
         
-        PromiseTest.expect(promise: promise, state: .resolved({$0 == (10, true, "10")}), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .resolved({$0 == (10, true, "10")}), timeout: .seconds(1))
     }
     
-    func test__all_3_reject_1() {
+    @Test
+    func test__all_3_reject_1() async {
         let promise =
         Promise.tryAll(
-            Promise.async { () -> Int in
+            PromiseTest.make { () -> Int in
                 throw PromiseTest.SampleError.one
             },
-            Promise.async {
+            PromiseTest.make {
                 true
             },
-            Promise.async {
+            PromiseTest.make {
                 "10"
             }
         )
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
-    func test__all_3_cancel_1() {
+    @Test
+    func test__all_3_cancel_1() async {
         let promise =
         Promise.tryAll(
-            Promise<Int, Error>.canceled(),
-            Promise.async {
+            PromiseTest.canceled() as Promise<Int, Error>,
+            PromiseTest.make {
                 true
             },
-            Promise.async {
+            PromiseTest.make {
                 "10"
             }
         )
         
-        PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
     }
     
-    func test__all_4() {
+    @Test
+    func test__all_4() async {
         let promise =
         Promise.all(
-            Promise.async {
+            PromiseTest.make {
                 10
             },
-            Promise.async {
+            PromiseTest.make {
                 true
             },
-            Promise.async {
+            PromiseTest.make {
                 "10"
             },
-            Promise.async {
+            PromiseTest.make {
                 10
             }
         )
         
-        PromiseTest.expect(promise: promise, state: .resolved({$0 == (10, true, "10", 10)}), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .resolved({$0 == (10, true, "10", 10)}), timeout: .seconds(1))
     }
     
-    func test__all_4_reject_1() {
+    @Test
+    func test__all_4_reject_1() async {
         let promise =
         Promise.tryAll(
-            Promise.async { () -> Int in
+            PromiseTest.make { () -> Int in
                 throw PromiseTest.SampleError.one
             },
-            Promise.async {
+            PromiseTest.make {
                 true
             },
-            Promise.async {
+            PromiseTest.make {
                 "10"
             },
-            Promise.async {
+            PromiseTest.make {
                 10
             }
         )
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
-    func test__all_4_cancel_1() {
+    @Test
+    func test__all_4_cancel_1() async {
         let promise =
         Promise.tryAll(
-            Promise<Int, Error>.canceled(),
-            Promise.async {
+            PromiseTest.canceled() as Promise<Int, Error>,
+            PromiseTest.make {
                 true
             },
-            Promise.async {
+            PromiseTest.make {
                 "10"
             },
-            Promise.async {
+            PromiseTest.make {
                 10
             }
         )
         
-        PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
     }
     
-    func test__all_5() {
+    @Test
+    func test__all_5() async {
         let promise =
         Promise.all(
-            Promise.async {
+            PromiseTest.make {
                 10
             },
-            Promise.async {
+            PromiseTest.make {
                 true
             },
-            Promise.async {
+            PromiseTest.make {
                 "10"
             },
-            Promise.async {
+            PromiseTest.make {
                 10
             },
-            Promise.async {
+            PromiseTest.make {
                 true
             }
         )
         
-        PromiseTest.expect(promise: promise, state: .resolved({$0 == (10, true, "10", 10, true)}), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .resolved({$0 == (10, true, "10", 10, true)}), timeout: .seconds(1))
     }
     
-    func test__all_5_reject_1() {
+    @Test
+    func test__all_5_reject_1() async {
         let promise =
         Promise.tryAll(
-            Promise.async { () -> Int in
+            PromiseTest.make { () -> Int in
                 throw PromiseTest.SampleError.one
             },
-            Promise.async {
+            PromiseTest.make {
                 true
             },
-            Promise.async {
+            PromiseTest.make {
                 "10"
             },
-            Promise.async {
+            PromiseTest.make {
                 10
             },
-            Promise.async {
+            PromiseTest.make {
                 true
             }
         )
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
-    func test__all_5_cancel_1() {
+    @Test
+    func test__all_5_cancel_1() async {
         let promise =
         Promise.tryAll(
-            Promise<Int, Error>.canceled(),
-            Promise.async {
+            PromiseTest.canceled() as Promise<Int, Error>,
+            PromiseTest.make {
                 true
             },
-            Promise.async {
+            PromiseTest.make {
                 "10"
             },
-            Promise.async {
+            PromiseTest.make {
                 10
             },
-            Promise.async {
+            PromiseTest.make {
                 true
             }
         )
         
-        PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
     }
     
-    func test__all_same_5_reject_1() {
+    @Test
+    func test__all_same_5_reject_1() async {
         let promise =
         Promise.all([
-            Promise.async { () -> Int in
+            PromiseTest.make { () -> Int in
                 throw PromiseTest.SampleError.one
             },
-            Promise.async {
+            PromiseTest.make {
                 20
             },
-            Promise.async {
+            PromiseTest.make {
                 30
             },
-            Promise.async {
+            PromiseTest.make {
                 40
             },
-            Promise.async {
+            PromiseTest.make {
                 50
             }
         ])
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
-    func test__all_6() {
+    @Test
+    func test__all_6() async {
         let promise =
         Promise.all(
-            Promise.async {
+            PromiseTest.make {
                 10
             },
-            Promise.async {
+            PromiseTest.make {
                 true
             },
-            Promise.async {
+            PromiseTest.make {
                 "10"
             },
-            Promise.async {
+            PromiseTest.make {
                 10
             },
-            Promise.async {
+            PromiseTest.make {
                 true
             },
-            Promise.async {
+            PromiseTest.make {
                 "10"
             }
         )
         
-        PromiseTest.expect(promise: promise, state: .resolved({$0 == (10, true, "10", 10, true, "10")}), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .resolved({$0 == (10, true, "10", 10, true, "10")}), timeout: .seconds(1))
     }
     
-    func test__all_6_reject_1() {
+    @Test
+    func test__all_6_reject_1() async {
         let promise =
         Promise.tryAll(
-            Promise.async { () -> Int in
+            PromiseTest.make { () -> Int in
                 throw PromiseTest.SampleError.one
             },
-            Promise.async {
+            PromiseTest.make {
                 true
             },
-            Promise.async {
+            PromiseTest.make {
                 "10"
             },
-            Promise.async {
+            PromiseTest.make {
                 10
             },
-            Promise.async {
+            PromiseTest.make {
                 true
             },
-            Promise.async {
+            PromiseTest.make {
                 "10"
             }
         )
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
-    func test__all_6_cancel_1() {
+    @Test
+    func test__all_6_cancel_1() async {
         let promise =
         Promise.tryAll(
-            Promise<Int, Error>.canceled(),
-            Promise.async {
+            PromiseTest.canceled() as Promise<Int, Error>,
+            PromiseTest.make {
                 true
             },
-            Promise.async {
+            PromiseTest.make {
                 "10"
             },
-            Promise.async {
+            PromiseTest.make {
                 10
             },
-            Promise.async {
+            PromiseTest.make {
                 true
             },
-            Promise.async {
+            PromiseTest.make {
                 "10"
             }
         )
         
-        PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
     }
     
-    func test__all_same_6_reject_1() {
+    @Test
+    func test__all_same_6_reject_1() async {
         let promise =
         Promise.all([
-            Promise.async { () -> Int in
+            PromiseTest.make { () -> Int in
                 throw PromiseTest.SampleError.one
             },
-            Promise.async {
+            PromiseTest.make {
                 20
             },
-            Promise.async {
+            PromiseTest.make {
                 30
             },
-            Promise.async {
+            PromiseTest.make {
                 40
             },
-            Promise.async {
+            PromiseTest.make {
                 50
             },
-            Promise.async {
+            PromiseTest.make {
                 60
             }
         ])
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
 }

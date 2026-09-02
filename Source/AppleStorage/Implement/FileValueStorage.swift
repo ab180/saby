@@ -11,100 +11,90 @@ import SabyJSON
 
 private let STORAGE_VERSION = "Version1"
 
-public final class FileValueStorage<Value: Codable>: ValueStorage {
+public final class FileValueStorage<Value: Codable & Sendable>: ValueStorage, Sendable {
     typealias Context = FileValueStorageContext
     
-    let fileLock = Lock()
-    
-    let contextLoad: () -> Promise<Context<Value>, Error>
-    let contextPromise: Atomic<Promise<Context<Value>, Error>>
-    
-    let encoder = JSONEncoder.acceptingNonConfirmingFloat()
+    let contextPromise: Promise<Context<Value>, Error>
+    let tasks = PromiseTaskScope()
 
-    public init(directoryURL: URL, storageName: String, migration: @escaping () -> Promise<Void, Error>) {
-        self.contextLoad = {
-            Context.load(
-                directoryURL: directoryURL,
-                storageName: storageName,
-                migration: migration
-            )
-        }
-        self.contextPromise = Atomic(contextLoad())
+    public init(
+        directoryURL: URL,
+        storageName: String,
+        migration: @escaping @Sendable () -> Promise<Void, Error>
+    ) {
+        self.contextPromise = Context.load(
+            directoryURL: directoryURL,
+            storageName: storageName,
+            migration: migration
+        )
     }
 }
 
 extension FileValueStorage {
     public func set(_ value: Value) -> Promise<Void, Error> {
-        execute { context in
-            context.value.mutate { _ in
-                value
-            }
-        }
+        execute { await $0.set(value) }
     }
     
     public func clear() -> Promise<Void, Error> {
-        execute { context in
-            context.value.mutate { _ in
-                nil
-            }
-        }
+        execute { await $0.clear() }
     }
 
     public func get() -> Promise<Value?, Error> {
-        execute { context in
-            context.value.capture { $0 }
-        }
+        execute { await $0.get() }
     }
 
     public func save() -> Promise<Void, Error> {
-        execute { context in
-            let values = context.value.capture { $0 }
-            let data = try self.encoder.encode(values)
-            
-            self.fileLock.lock()
-            try data.write(to: context.url)
-            self.fileLock.unlock()
-        }
+        execute { try await $0.save() }
     }
 }
 
 extension FileValueStorage {
-    fileprivate func execute<Result>(
-        block: @escaping (Context<Value>) throws -> Result
+    fileprivate func execute<Result: Sendable>(
+        block: @escaping @Sendable (Context<Value>) async throws -> Result
     ) -> Promise<Result, Error> {
-        let loadPromiseCapture = self.contextPromise.mutate {
-            let capture = !$0.isRejected ? $0 : contextLoad()
-            return capture
-        }
-        
-        return loadPromiseCapture.then { context in
-            Promise<Result, Error> { resolve, reject in
-                do {
-                    resolve(try block(context))
-                }
-                catch {
-                    reject(error)
-                }
-            }
+        let contextPromise = self.contextPromise
+
+        return tasks.promise {
+            let context = try await contextPromise.value(
+                cancelOnTaskCancellation: false
+            )
+            return try await block(context)
         }
     }
 }
 
-struct FileValueStorageContext<Value: Codable> {
+actor FileValueStorageContext<Value: Codable & Sendable> {
     let url: URL
-    let value: Atomic<FileValueStorageItemVersion1<Value>?>
+    var value: FileValueStorageItemVersion1<Value>?
     
-    private init(url: URL, value: Atomic<FileValueStorageItemVersion1<Value>?>) {
+    private init(url: URL, value: FileValueStorageItemVersion1<Value>?) {
         self.url = url
         self.value = value
+    }
+
+    func set(_ value: Value) {
+        self.value = value
+    }
+
+    func clear() {
+        value = nil
+    }
+
+    func get() -> Value? {
+        value
+    }
+
+    func save() throws {
+        let data = try JSONEncoder.acceptingNonConfirmingFloat().encode(value)
+        try data.write(to: url)
     }
     
     static func load(
         directoryURL: URL,
         storageName: String,
-        migration: @escaping () -> Promise<Void, Error>
+        migration: @Sendable () -> Promise<Void, Error>
     ) -> Promise<FileValueStorageContext, Error> {
-        migration().then {
+        return migration().then {
             let decoder = JSONDecoder.acceptingNonConfirmingFloat()
             let fileManager = FileManager.default
             
@@ -123,7 +113,7 @@ struct FileValueStorageContext<Value: Codable> {
             if !fileManager.fileExists(atPath: url.path) {
                 return FileValueStorageContext(
                     url: url,
-                    value: Atomic(nil)
+                    value: nil
                 )
             }
             
@@ -136,17 +126,17 @@ struct FileValueStorageContext<Value: Codable> {
             else {
                 return FileValueStorageContext(
                     url: url,
-                    value: Atomic(nil)
+                    value: nil
                 )
             }
             
             return FileValueStorageContext(
                 url: url,
-                value: Atomic(value)
+                value: value
             )
         }
     }
 }
 
 // Must not be modified. Write new ItemVersion and write migration logic instead.
-typealias FileValueStorageItemVersion1<Value: Codable> = Value
+typealias FileValueStorageItemVersion1<Value: Codable & Sendable> = Value

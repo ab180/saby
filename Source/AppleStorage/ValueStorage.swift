@@ -8,7 +8,7 @@
 import SabyConcurrency
 
 public protocol ValueStorage<Value>: Storage {
-    associatedtype Value
+    associatedtype Value: Sendable
     
     func set(_ value: Value) -> Promise<Void, Error>
     func clear() -> Promise<Void, Error>

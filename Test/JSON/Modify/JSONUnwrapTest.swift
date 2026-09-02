@@ -5,36 +5,36 @@
 //  Created by WOF on 2022/08/15.
 //
 
-import XCTest
+import Testing
 @testable import SabyJSON
 
-final class JSONUnwrapTest: XCTestCase {
-    func test__raw_string() {
+@Suite struct JSONUnwrapTest {
+    @Test func test__raw_string() {
         let json = JSON.from("string")
-        XCTAssertEqual(json.rawString!, "string")
+        expectEqual(json.rawString!, "string")
     }
     
-    func test__raw_number() {
+    @Test func test__raw_number() {
         let json = JSON.from(123)
-        XCTAssertEqual(json.rawNumber!, 123)
+        expectEqual(json.rawNumber!, 123)
     }
     
-    func test__raw_boolean() {
+    @Test func test__raw_boolean() {
         let json = JSON.from(true)
-        XCTAssertEqual(json.rawBoolean!, true)
+        expectEqual(json.rawBoolean!, true)
     }
     
-    func test__raw_object() {
+    @Test func test__raw_object() {
         let json = JSON.from([:])
-        XCTAssertEqual(json.rawObject!, [:])
+        expectEqual(json.rawObject!, [:])
     }
     
-    func test__raw_array() {
+    @Test func test__raw_array() {
         let json = JSON.from([])
-        XCTAssertEqual(json.rawArray, [])
+        expectEqual(json.rawArray, [])
     }
     
-    func test__raw() {
+    @Test func test__raw() throws {
         let json = JSON.from([
             "a": "a",
             "b": 1,
@@ -50,36 +50,21 @@ final class JSONUnwrapTest: XCTestCase {
             ],
             "e": nil
         ])
-        XCTAssertEqual(try JSON.from(unsafe: json.raw), json)
+        expectEqual(try JSON.from(unsafe: json.raw), json)
     }
     
-    func test__is_string() {
+    @Test func test__is_string() {
         let json = JSON.from("string")
-        XCTAssertTrue(json.isString)
+        #expect(json.isString)
     }
     
-    func test__is_number() {
+    @Test func test__is_number() {
         let json = JSON.from(123)
-        XCTAssertTrue(json.isNumber)
+        #expect(json.isNumber)
     }
     
-    func test__is_boolean() {
+    @Test func test__is_boolean() {
         let json = JSON.from(true)
-        XCTAssertTrue(json.isBoolean)
-    }
-    
-    func test__is_object() {
-        let json = JSON.from([:])
-        XCTAssertTrue(json.isObject)
-    }
-    
-    func test__is_array() {
-        let json = JSON.from([])
-        XCTAssertTrue(json.isArray)
-    }
-    
-    func test__is_null() {
-        let json = JSON.from(nil)
-        XCTAssertTrue(json.isNull)
+        #expect(json.isBoolean)
     }
 }

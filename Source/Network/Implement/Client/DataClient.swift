@@ -11,29 +11,27 @@ import SabyConcurrency
 import SabyJSON
 import SabyTime
 
-public final class DataClient: Client {
+public final class DataClient: Client, Sendable {
     public typealias Request = Data?
     public typealias Response = Data?
-    
-    let lock = Lock()
-    var storage = [ObjectIdentifier: PromisePending<ClientResult<Data?>, Error>]()
+
+    let tasks: PromiseTaskScope
     
     let session: URLSession
-    let cancelWhen: PromisePendingCancelWhen
     
     init(
         session: URLSession,
         cancelWhen: PromisePendingCancelWhen
     ) {
         self.session = session
-        self.cancelWhen = cancelWhen
+        self.tasks = PromiseTaskScope(cancelWhen: cancelWhen)
     }
 }
 
 extension DataClient {
     public convenience init(
         cancelWhen: PromisePendingCancelWhen,
-        optionBlock: (inout URLSessionConfiguration) -> Void = { _ in }
+        optionBlock: @Sendable (inout URLSessionConfiguration) -> Void = { _ in }
     ) {
         var configuration = URLSessionConfiguration.default
         optionBlock(&configuration)
@@ -53,10 +51,8 @@ extension DataClient {
         header: ClientHeader = [:],
         body: Data? = nil,
         timeout: Interval? = nil,
-        optionBlock: @escaping (inout URLRequest) -> Void = { _ in }
+        optionBlock: @escaping @Sendable (inout URLRequest) -> Void = { _ in }
     ) -> Promise<ClientResult<Data?>, Error> {
-        let pending = Promise<ClientResult<Data?>, Error>.pending(cancelWhen: cancelWhen)
-        
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
         header.forEach { (key, value) in
@@ -64,70 +60,74 @@ extension DataClient {
         }
         request.httpBody = body
         optionBlock(&request)
-        
-        let task = session.dataTask(with: request) { [weak pending] data, response, error in
-            guard let pending else { return }
-            
-            if let error = error {
-                pending.reject(error)
-                return
-            }
-            
-            guard let response = response as? HTTPURLResponse else {
-                pending.reject(DataClientError.statusCodeNotFound)
-                return
-            }
-            
-            let code = response.statusCode
-            guard code / 100 == 2 else {
-                pending.reject(DataClientError.statusCodeNot2XX(codeNot2XX: code, body: data))
-                return
+
+        let requestSnapshot = request
+        let session = self.session
+
+        return tasks.promise {
+            try await session.result(
+                for: requestSnapshot,
+                timeout: timeout
+            )
+        }
+    }
+}
+
+struct DataClientResponse: Sendable {
+    let code: Int
+    let headers: ClientHeader
+    let body: Data
+
+    var result: ClientResult<Data?> { (code, headers, body) }
+}
+
+extension URLSession {
+    func result(
+        for request: URLRequest,
+        timeout: Interval?
+    ) async throws -> ClientResult<Data?> {
+        guard let timeout else {
+            return try await response(for: request).result
+        }
+
+        return try await withThrowingTaskGroup(of: DataClientResponse.self) { group in
+            group.addTask { try await self.response(for: request) }
+            group.addTask {
+                try await Task.sleep(nanoseconds: timeout.nanoseconds)
+                throw DataClientError.timeout
             }
 
-            pending.resolve((
-                code2XX: code,
-                headers: response.headers,
-                body: data
-            ))
-        }
-        pending.onCancel {
-            task.cancel()
-        }
-        if let timeout {
-            let item = DispatchWorkItem { [weak task, weak pending] in
-                task?.cancel()
-                pending?.reject(DataClientError.timeout)
+            defer { group.cancelAll() }
+            guard let response = try await group.next() else {
+                throw CancellationError()
             }
-            DispatchQueue.global().asyncAfter(
-                deadline: .now() + timeout.dispatchTime,
-                execute: item
-            )
-            pending.promise.finally {
-                item.cancel()
-            }
-            pending.onCancel {
-                item.cancel()
-            }
+            return response.result
         }
-        
-        task.resume()
-        
-        lock.lock()
-        storage[ObjectIdentifier(pending)] = pending
-        lock.unlock()
-        let remove = { [weak self, weak pending] in
-            guard let self, let pending else { return }
-            self.lock.lock()
-            self.storage.removeValue(forKey: ObjectIdentifier(pending))
-            self.lock.unlock()
+    }
+
+    func response(for request: URLRequest) async throws -> DataClientResponse {
+        let (data, response) = try await data(for: request)
+
+        guard let response = response as? HTTPURLResponse else {
+            throw DataClientError.statusCodeNotFound
         }
-        pending.promise.subscribe(
-            onResolved: { _ in remove() },
-            onRejected: { _ in remove() },
-            onCanceled: { remove() }
+
+        let code = response.statusCode
+        guard code / 100 == 2 else {
+            throw DataClientError.statusCodeNot2XX(codeNot2XX: code, body: data)
+        }
+
+        return DataClientResponse(
+            code: code,
+            headers: response.headers,
+            body: data
         )
-        
-        return pending.promise
+    }
+}
+
+extension Interval {
+    var nanoseconds: UInt64 {
+        UInt64(max(0, second * 1_000_000_000))
     }
 }
 

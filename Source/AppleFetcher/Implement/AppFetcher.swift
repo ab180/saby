@@ -5,7 +5,7 @@
 //  Created by WOF on 2022/08/24.
 //
 
-#if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
+#if os(iOS) || os(macOS) || os(tvOS) || os(watchOS) || os(visionOS)
 
 import Foundation
 

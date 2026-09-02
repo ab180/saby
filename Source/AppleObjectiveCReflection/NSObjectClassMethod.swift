@@ -5,7 +5,7 @@
 //  Created by WOF on 2022/08/23.
 //
 
-#if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
+#if (os(iOS) || os(macOS) || os(tvOS) || os(watchOS) || os(visionOS)) && canImport(Foundation)
 
 import Foundation
 
@@ -32,7 +32,7 @@ extension NSObjectClass {
 ///     )
 /// }()
 /// ```
-public final class NSObjectClassMethod {
+public final class NSObjectClassMethod: @unchecked Sendable {
     public let anyClass: AnyClass
     public let selector: Selector
     public let implementation: IMP

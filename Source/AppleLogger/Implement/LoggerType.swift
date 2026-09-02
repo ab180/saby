@@ -13,8 +13,8 @@ protocol LoggerType {
     /// Implement the way you'd like to show logs according to the protocol `LogService`
     ///
     /// For example, you can use `print` or `osLog`
-    var logService: T { get set }
-    var loggerSetting: LoggerSetting { get set }
+    var logService: T { get }
+    var loggerSetting: LoggerSetting { get }
     
     
     func log(level: LogLevel, _ message: String)

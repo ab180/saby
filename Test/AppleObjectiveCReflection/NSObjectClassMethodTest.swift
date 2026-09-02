@@ -5,19 +5,20 @@
 //  Created by WOF on 2022/08/23.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import SabyAppleObjectiveCReflection
 
-final class NSObjectClassMethodTest: XCTestCase {
-    func test__init_class_method() {
+final class NSObjectClassMethodTest {
+    @Test func init_class_method() {
         let classNSDictionary = NSObjectClass(name: "NSDictionary")!
         
-        XCTAssertNotNil(classNSDictionary.method(name: "dictionaryWithObjects:forKeys:"))
-        XCTAssertNil(classNSDictionary.method(name: "1234567890"))
-        XCTAssertNil(classNSDictionary.method(name: ""))
+        #expect(classNSDictionary.method(name: "dictionaryWithObjects:forKeys:") != nil)
+        #expect(classNSDictionary.method(name: "1234567890") == nil)
+        #expect(classNSDictionary.method(name: "") == nil)
     }
     
-    func test__call_return_reference() {
+    @Test func call_return_reference() {
         let classNSDictionary = NSObjectClass(name: "NSDictionary")!
         let methodDictionaryWithValuesForKeys = classNSDictionary.method(name: "dictionaryWithObjects:forKeys:")!
         
@@ -34,10 +35,10 @@ final class NSObjectClassMethodTest: XCTestCase {
             )
         }()
         
-        XCTAssertEqual(dictionary, ["a":"1","b":"2","c":"3"])
+        #expect(dictionary == ["a":"1","b":"2","c":"3"])
     }
     
-    func test__call_return_value() {
+    @Test func call_return_value() {
         let classNSDictionary = NSObjectClass(name: "NSDictionary")!
         let methodIsProxy = classNSDictionary.method(name: "isProxy")!
         
@@ -52,6 +53,6 @@ final class NSObjectClassMethodTest: XCTestCase {
             )
         }()
         
-        XCTAssertEqual(isProxy, false)
+        #expect(isProxy == false)
     }
 }

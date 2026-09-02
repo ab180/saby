@@ -5,7 +5,7 @@
 //  Created by WOF on 2022/08/23.
 //
 
-#if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
+#if (os(iOS) || os(macOS) || os(tvOS) || os(watchOS) || os(visionOS)) && canImport(Foundation)
 
 import Foundation
 
@@ -15,7 +15,7 @@ extension NSObjectClass {
     }
 }
 
-public final class NSObjectInstance {
+public final class NSObjectInstance: @unchecked Sendable {
     let object: NSObject
     
     fileprivate init?(anyClass: AnyClass, object: Any?) {

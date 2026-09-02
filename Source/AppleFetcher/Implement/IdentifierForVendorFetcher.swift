@@ -5,31 +5,31 @@
 //  Created by WOF on 2022/08/25.
 //
 
-#if os(iOS) || os(tvOS)
+#if (os(iOS) || os(tvOS) || os(visionOS)) && canImport(UIKit)
 
 import Foundation
 import UIKit
 
+import SabyConcurrency
+
 public final class IdentifierForVendorFetcher: Fetcher {
-    public typealias Value = IdentifierForVendor
+    public typealias Value = Promise<IdentifierForVendor, Never>
     
     public init() {}
 
-    public func fetch() -> IdentifierForVendor {
-        IdentifierForVendor(
-            identifier: fetchIdentifier()
-        )
+    public func fetch() -> Promise<IdentifierForVendor, Never> {
+        Promise.async {
+            await MainActor.run {
+                IdentifierForVendor(
+                    identifier: UIDevice.current.identifierForVendor?.uuidString
+                )
+            }
+        }
     }
 }
 
-public struct IdentifierForVendor {
+public struct IdentifierForVendor: Sendable {
     public let identifier: String?
-}
-
-extension IdentifierForVendorFetcher {
-    private func fetchIdentifier() -> String? {
-        UIDevice.current.identifierForVendor?.uuidString
-    }
 }
 
 #endif

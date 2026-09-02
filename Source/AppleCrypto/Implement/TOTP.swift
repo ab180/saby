@@ -5,13 +5,13 @@
 //  Created by WOF on 2023/06/13.
 //
 
-#if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
+#if (os(iOS) || os(macOS) || os(tvOS) || os(watchOS) || os(visionOS)) && canImport(Foundation) && canImport(CommonCrypto)
 
 import Foundation
 import CommonCrypto
 import SabyTime
 
-public enum TOTP: OneTimePassword {
+public enum TOTP {
     public static func password(
         timestamp: Timestamp,
         key: String,
@@ -77,31 +77,13 @@ extension TOTP {
 
 extension TOTP {
     public enum Digit: Int {
-        case digit0 = 0
-        case digit1
-        case digit2
-        case digit3
-        case digit4
-        case digit5
-        case digit6
-        case digit7
-        case digit8
+        case digit8 = 8
     }
 }
 
 extension TOTP.Digit {
     var mask: UInt32 {
-        switch self {
-        case .digit0: return 1
-        case .digit1: return 10
-        case .digit2: return 100
-        case .digit3: return 1000
-        case .digit4: return 10000
-        case .digit5: return 100000
-        case .digit6: return 1000000
-        case .digit7: return 10000000
-        case .digit8: return 100000000
-        }
+        100000000
     }
 }
 

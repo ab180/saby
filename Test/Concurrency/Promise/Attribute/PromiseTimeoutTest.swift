@@ -6,12 +6,12 @@
 //
 
 import Foundation
-
-import XCTest
+import Testing
 @testable import SabyConcurrency
 
-final class PromiseTimeoutTest: XCTestCase {
-    func test__timeout() {
+@Suite(.serialized) struct PromiseTimeoutTest {
+    @Test
+    func test__timeout() async {
         let promise =
         Promise { resolve, reject in
             DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(10)) {
@@ -19,10 +19,11 @@ final class PromiseTimeoutTest: XCTestCase {
             }
         }.timeout(.milliseconds(200))
         
-        PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
     }
     
-    func test__timeout_reject() {
+    @Test
+    func test__timeout_reject() async {
         let promise =
         Promise<Int, Error> { resolve, reject in
             DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(200)) {
@@ -30,16 +31,11 @@ final class PromiseTimeoutTest: XCTestCase {
             }
         }.timeout(.milliseconds(10))
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseError.timeout), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .rejected(PromiseError.timeout), timeout: .seconds(1))
     }
     
-    func test__timeout_create() {
-        let promise = Promise.timeout(.milliseconds(0))
-        
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseError.timeout), timeout: .seconds(1))
-    }
-    
-    func test__never_timeout() {
+    @Test
+    func test__never_timeout() async {
         let promise =
         Promise<Int, Never> { resolve, reject in
             DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(10)) {
@@ -48,10 +44,11 @@ final class PromiseTimeoutTest: XCTestCase {
         }
         .timeout(.milliseconds(200))
         
-        PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .resolved(10), timeout: .seconds(1))
     }
     
-    func test__never_timeout_reject() {
+    @Test
+    func test__never_timeout_reject() async {
         let promise =
         Promise<Int, Never> { resolve, reject in
             DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(200)) {
@@ -60,6 +57,6 @@ final class PromiseTimeoutTest: XCTestCase {
         }
         .timeout(.milliseconds(10))
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseError.timeout), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .rejected(PromiseError.timeout), timeout: .seconds(1))
     }
 }

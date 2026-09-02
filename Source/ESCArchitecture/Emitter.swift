@@ -7,9 +7,9 @@
 
 import SabyConcurrency
 
-public protocol Emitter<Value, Failure> {
-    associatedtype Value
-    associatedtype Failure: Error
-    
+public protocol Emitter<Value, Failure>: Sendable {
+    associatedtype Value: Sendable
+    associatedtype Failure: Error & Sendable
+
     var contract: Contract<Value, Failure> { get }
 }

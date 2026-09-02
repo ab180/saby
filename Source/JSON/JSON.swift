@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum JSON: Equatable {
+public enum JSON: Equatable, Sendable {
     case number(Double)
     case boolean(Bool)
     case string(String)

@@ -10,7 +10,7 @@ import Foundation
 import SabyTime
 import SabyConcurrency
 
-public protocol Client<Request, Response> {
+public protocol Client<Request, Response>: Sendable {
     associatedtype Request
     associatedtype Response
     
@@ -20,7 +20,7 @@ public protocol Client<Request, Response> {
         header: ClientHeader,
         body: Request,
         timeout: Interval?,
-        optionBlock: @escaping (inout URLRequest) -> Void
+        optionBlock: @escaping @Sendable (inout URLRequest) -> Void
     ) -> Promise<ClientResult<Response>, Error>
 }
 
@@ -30,7 +30,7 @@ extension Client {
         method: ClientMethod = .get,
         header: ClientHeader = [:],
         timeout: Interval? = nil,
-        optionBlock: @escaping (inout URLRequest) -> Void = { _ in }
+        optionBlock: @escaping @Sendable (inout URLRequest) -> Void = { _ in }
     ) -> Promise<ClientResult<Response>, Error> where RequestValue? == Request {
         request(
             url: url,
@@ -48,7 +48,7 @@ extension Client {
         header: ClientHeader = [:],
         body: Request,
         timeout: Interval? = nil,
-        optionBlock: @escaping (inout URLRequest) -> Void = { _ in }
+        optionBlock: @escaping @Sendable (inout URLRequest) -> Void = { _ in }
     ) -> Promise<ClientResult<Response>, Error> {
         request(
             url: url,
@@ -61,7 +61,7 @@ extension Client {
     }
 }
 
-public enum ClientMethod: String {
+public enum ClientMethod: String, Sendable {
     case get = "GET"
     case post = "POST"
 }

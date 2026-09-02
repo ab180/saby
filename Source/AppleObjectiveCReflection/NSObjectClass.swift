@@ -5,11 +5,11 @@
 //  Created by WOF on 2022/08/22.
 //
 
-#if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
+#if (os(iOS) || os(macOS) || os(tvOS) || os(watchOS) || os(visionOS)) && canImport(Foundation)
 
 import Foundation
 
-public final class NSObjectClass {
+public final class NSObjectClass: Sendable {
     let anyClass: AnyClass
     
     public init?(name: String) {

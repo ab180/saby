@@ -5,144 +5,154 @@
 //  Created by WOF on 2020/04/02.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import SabyConcurrency
 
-final class PromiseThenTest: XCTestCase {
-    func test__then_return_void() {
-        let end = DispatchSemaphore(value: 0)
+@Suite(.serialized) struct PromiseThenTest {
+    @Test
+    func test__then_return_void() async {
+        let end = AsyncLatch()
         
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then { value in
-            XCTAssertEqual(value, 10)
+            #expect(value == 10)
             end.signal()
         }
         
-        PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: promise, state: .resolved({ $0 == () }), timeout: .seconds(1))
+        #expect(await end.wait(timeout: .seconds(1)))
+        await PromiseTest.expect(promise: promise, state: .resolved({ $0 == () }), timeout: .seconds(1))
     }
     
-    func test__then_return_void_throw_error() {
-        let end = DispatchSemaphore(value: 0)
+    @Test
+    func test__then_return_void_throw_error() async {
+        let end = AsyncLatch()
         
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then { value in
-            XCTAssertEqual(value, 10)
+            #expect(value == 10)
             end.signal()
             
             throw PromiseTest.SampleError.one
         }
         
-        PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+        #expect(await end.wait(timeout: .seconds(1)))
+        await PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
-    func test__then_return_void_from_reject() {
+    @Test
+    func test__then_return_void_from_reject() async {
         let promise =
-        Promise.async { () -> Int in
+        PromiseTest.make { () -> Int in
             throw PromiseTest.SampleError.one
         }.then { value in
-            XCTFail()
+            Issue.record()
         }
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
-    func test__then_return_value() {
-        let end = DispatchSemaphore(value: 0)
+    @Test
+    func test__then_return_value() async {
+        let end = AsyncLatch()
         
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then { value -> Int in
-            XCTAssertEqual(value, 10)
+            #expect(value == 10)
             end.signal()
             
             return 20
         }
         
-        PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: promise, state: .resolved(20), timeout: .seconds(1))
+        #expect(await end.wait(timeout: .seconds(1)))
+        await PromiseTest.expect(promise: promise, state: .resolved(20), timeout: .seconds(1))
     }
     
-    func test__then_return_value_throw_error() {
-        let end = DispatchSemaphore(value: 0)
+    @Test
+    func test__then_return_value_throw_error() async {
+        let end = AsyncLatch()
         
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then { value -> Int in
-            XCTAssertEqual(value, 10)
+            #expect(value == 10)
             end.signal()
             
             throw PromiseTest.SampleError.one
         }
         
-        PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+        #expect(await end.wait(timeout: .seconds(1)))
+        await PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
-    func test__then_return_value_from_reject() {
+    @Test
+    func test__then_return_value_from_reject() async {
         let promise =
-        Promise.async { () -> Int in
+        PromiseTest.make { () -> Int in
             throw PromiseTest.SampleError.one
         }.then { value -> Int in
-            XCTFail()
+            Issue.record()
             
             return 20
         }
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
-    func test__then_return_promise() {
-        let end = DispatchSemaphore(value: 0)
+    @Test
+    func test__then_return_promise() async {
+        let end = AsyncLatch()
         
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then { value -> Promise<Int, Error> in
-            XCTAssertEqual(value, 10)
+            #expect(value == 10)
             end.signal()
             
-            return Promise.async {
+            return PromiseTest.make {
                 20
             }
         }
         
-        PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: promise, state: .resolved(20), timeout: .seconds(1))
+        #expect(await end.wait(timeout: .seconds(1)))
+        await PromiseTest.expect(promise: promise, state: .resolved(20), timeout: .seconds(1))
     }
     
-    func test__then_return_promise_throw_error() {
-        let end = DispatchSemaphore(value: 0)
+    @Test
+    func test__then_return_promise_throw_error() async {
+        let end = AsyncLatch()
         
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then { value -> Promise<Int, Error> in
-            XCTAssertEqual(value, 10)
+            #expect(value == 10)
             end.signal()
             
             throw PromiseTest.SampleError.one
         }
         
-        PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+        #expect(await end.wait(timeout: .seconds(1)))
+        await PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
-    func test__then_return_rejected_promise() {
-        let end = DispatchSemaphore(value: 0)
+    @Test
+    func test__then_return_rejected_promise() async {
+        let end = AsyncLatch()
         
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then { value -> Promise<Int, Error> in
-            XCTAssertEqual(value, 10)
+            #expect(value == 10)
             end.signal()
             
             return Promise<Int, Error>.rejected(
@@ -150,121 +160,127 @@ final class PromiseThenTest: XCTestCase {
             )
         }
         
-        PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+        #expect(await end.wait(timeout: .seconds(1)))
+        await PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
-    func test__then_return_promise_cancel() {
-        let end = DispatchSemaphore(value: 0)
-        var promiseCancel: (() -> Void)?
+    @Test
+    func test__then_return_promise_cancel() async {
+        let end = AsyncLatch()
+        let pending = Promise<Int, Error>.pending()
         let thenPromise = Promise<Void, Error>.pending().promise
-        
-        let promise0 = Promise<Int, Error> { resolve, reject, cancel, _ in
-            promiseCancel = cancel
-            resolve(10)
-        }
+
+        let promise0 = pending.promise
         let promise1 = promise0.then { _ in
-            promiseCancel?()
+            pending.cancel()
             end.signal()
             return thenPromise
         }
+
+        pending.resolve(10)
         
-        PromiseTest.expect(semaphore: end, timeout: .seconds(1))
-        PromiseTest.expect(promise: promise1, state: .pending, timeout: .seconds(1))
-        PromiseTest.expect(promise: thenPromise, state: .pending, timeout: .seconds(1))
+        #expect(await end.wait(timeout: .seconds(1)))
+        await PromiseTest.expect(promise: promise1, state: .pending, timeout: .seconds(1))
+        await PromiseTest.expect(promise: thenPromise, state: .pending, timeout: .seconds(1))
     }
     
-    func test__then_return_promise_from_reject() {
+    @Test
+    func test__then_return_promise_from_reject() async {
         let promise =
-        Promise.async { () -> Int in
+        PromiseTest.make { () -> Int in
             throw PromiseTest.SampleError.one
         }.then { value -> Promise<Int, Error> in
-            XCTFail()
+            Issue.record()
             
-            return Promise.async {
+            return PromiseTest.make {
                 20
             }
         }
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
-    func test__never_then_return_value() {
+    @Test
+    func test__never_then_return_value() async {
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then {
             $0 + 10
         }
         
-        PromiseTest.expect(promise: promise, state: .resolved(20), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .resolved(20), timeout: .seconds(1))
     }
     
-    func test__never_then_throw_error() {
+    @Test
+    func test__never_then_throw_error() async {
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then { value -> Promise<Int, Error> in
             throw PromiseTest.SampleError.one
         }
         
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
-    func test__never_then_return_resolved_promise() {
+    @Test
+    func test__never_then_return_resolved_promise() async {
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then {
             Promise<Int, Error>.resolved($0 + 10)
         }
         
-        PromiseTest.expect(promise: promise, state: .resolved(20), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .resolved(20), timeout: .seconds(1))
     }
     
-    func test__never_then_return_rejected_promise() {
+    @Test
+    func test__never_then_return_rejected_promise() async {
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then { _ in
             Promise<Int, Error>.rejected(PromiseTest.SampleError.one)
         }
         
-        XCTAssertTrue(promise is Promise)
-        PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .rejected(PromiseTest.SampleError.one), timeout: .seconds(1))
     }
     
-    func test__never_then_return_canceled_promise() {
+    @Test
+    func test__never_then_return_canceled_promise() async {
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then { _ in
-            Promise<Int, Never>.canceled()
+            PromiseTest.canceled() as Promise<Int, Never>
         }
         
-        XCTAssertTrue(promise is Promise)
-        PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
     }
     
-    func test__never_then_return_resolved_never_promise() {
+    @Test
+    func test__never_then_return_resolved_never_promise() async {
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then {
             Promise<Int, Never>.resolved($0 + 10)
         }
         
-        PromiseTest.expect(promise: promise, state: .resolved(20), timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .resolved(20), timeout: .seconds(1))
     }
     
-    func test__never_then_return_canceled_never_promise() {
+    @Test
+    func test__never_then_return_canceled_never_promise() async {
         let promise =
-        Promise.async {
+        PromiseTest.make {
             10
         }.then { _ in
-            Promise<Int, Never>.canceled()
+            PromiseTest.canceled() as Promise<Int, Never>
         }
         
-        PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
+        await PromiseTest.expect(promise: promise, state: .canceled, timeout: .seconds(1))
     }
 }

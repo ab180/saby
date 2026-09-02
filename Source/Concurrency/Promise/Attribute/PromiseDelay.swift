@@ -30,7 +30,7 @@ extension Promise {
         let promiseReturn = Promise<Value, Failure>(queue: self.queue)
         
         subscribe(
-            queue: queue,
+            on: queue,
             onResolved: { value in
                 queue.asyncAfter(deadline: .now() + interval) {
                     promiseReturn.resolve(value)
