@@ -14,7 +14,7 @@ public protocol Preference {
     init(
         directoryURL: URL,
         storageName: String,
-        migration: @escaping @Sendable () throws -> Void
+        migration: @escaping @Sendable () async throws -> Void
     )
 }
 

@@ -15,40 +15,35 @@ public actor FileValuePreference<Value: Codable & Sendable>: ValuePreference {
 
     private let directoryURL: URL
     private let storageName: String
-    private let migration: @Sendable () throws -> Void
+    private let migration: @Sendable () async throws -> Void
     private var context: Context<Value>?
 
     public init(
         directoryURL: URL,
         storageName: String,
-        migration: @escaping @Sendable () throws -> Void
+        migration: @escaping @Sendable () async throws -> Void
     ) {
         self.directoryURL = directoryURL
         self.storageName = storageName
         self.migration = migration
-        self.context = try? Context.load(
-            directoryURL: directoryURL,
-            storageName: storageName,
-            migration: migration
-        )
     }
 }
 
 extension FileValuePreference {
     public func set(_ value: Value) async throws -> Void {
-        try execute { $0.value = value }
+        try await execute { $0.value = value }
     }
     
     public func clear() async throws -> Void {
-        try execute { $0.value = nil }
+        try await execute { $0.value = nil }
     }
 
     public func get() async throws -> Value? {
-        try execute { $0.value }
+        try await execute { $0.value }
     }
 
     public func save() async throws -> Void {
-        try execute { context in
+        try await execute { context in
             let data = try JSONEncoder.acceptingNonConfirmingFloat().encode(context.value)
             try data.write(to: context.url)
         }
@@ -58,12 +53,12 @@ extension FileValuePreference {
 extension FileValuePreference {
     fileprivate func execute<Result>(
         block: (inout Context<Value>) throws -> Result
-    ) throws -> Result {
+    ) async throws -> Result {
         var context: Context<Value>
         if let current = self.context {
             context = current
         } else {
-            context = try Context.load(
+            context = try await Context.load(
                 directoryURL: directoryURL,
                 storageName: storageName,
                 migration: migration
@@ -88,9 +83,9 @@ struct FileValuePreferenceContext<Value: Codable & Sendable>: Sendable {
     static func load(
         directoryURL: URL,
         storageName: String,
-        migration: @Sendable () throws -> Void
-    ) throws -> FileValuePreferenceContext {
-        try migration()
+        migration: @Sendable () async throws -> Void
+    ) async throws -> FileValuePreferenceContext {
+        try await migration()
         
         let decoder = JSONDecoder.acceptingNonConfirmingFloat()
         let fileManager = FileManager.default
