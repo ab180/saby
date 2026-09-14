@@ -8,6 +8,70 @@
 import Foundation
 
 extension Contract {
+    @available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.0, *)
+    @discardableResult
+    public func then<Result>(
+        on queue: DispatchQueue? = nil,
+        _ block: @escaping (Value) async throws -> Result
+    ) -> Contract<Result, Error> {
+        then(on: queue, schedule: .async, block)
+    }
+
+    @available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.0, *)
+    @discardableResult
+    public func then<Result>(
+        on queue: DispatchQueue? = nil,
+        schedule: ContractSchedule = .async,
+        _ block: @escaping (Value) async throws -> Result
+    ) -> Contract<Result, Error> {
+        let queue = queue ?? self.queue
+
+        let contract = Contract<Result, Error>(queue: self.queue)
+        let taskBag = ConcurrencyTaskBag()
+
+        contract.subscribe(queue: queue) {
+            taskBag.cancelAll()
+        }
+
+        subscribe(
+            queue: queue,
+            onResolved: schedule { value, finish in
+                guard contract.isExecuting else {
+                    finish()
+                    return
+                }
+
+                let taskID = UUID()
+                let task = Task {
+                    defer { finish() }
+                    defer { taskBag.remove(taskID) }
+
+                    do {
+                        let result = try await block(value)
+                        try Task.checkCancellation()
+                        contract.resolve(result)
+                    }
+                    catch let error as CancellationError {
+                        if Task.isCancelled {
+                            contract.cancel()
+                        }
+                        else {
+                            contract.reject(error)
+                        }
+                    }
+                    catch let error {
+                        contract.reject(error)
+                    }
+                }
+                taskBag.insert(taskID, task: task)
+            },
+            onRejected: { error in contract.reject(error) },
+            onCanceled: { [weak contract] in contract?.cancel() }
+        )
+
+        return contract
+    }
+
     @discardableResult
     public func then<Result>(
         on queue: DispatchQueue? = nil,
@@ -88,6 +152,60 @@ extension Contract {
 }
 
 extension Contract where Failure == Never {
+    @available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.0, *)
+    @discardableResult
+    public func then<Result>(
+        on queue: DispatchQueue? = nil,
+        _ block: @escaping (Value) async -> Result
+    ) -> Contract<Result, Never> {
+        then(on: queue, schedule: .async, block)
+    }
+
+    @available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.0, *)
+    @discardableResult
+    public func then<Result>(
+        on queue: DispatchQueue? = nil,
+        schedule: ContractSchedule = .async,
+        _ block: @escaping (Value) async -> Result
+    ) -> Contract<Result, Never> {
+        let queue = queue ?? self.queue
+
+        let contract = Contract<Result, Never>(queue: self.queue)
+        let taskBag = ConcurrencyTaskBag()
+
+        contract.subscribe(queue: queue) {
+            taskBag.cancelAll()
+        }
+
+        subscribe(
+            queue: queue,
+            onResolved: schedule { value, finish in
+                guard contract.isExecuting else {
+                    finish()
+                    return
+                }
+
+                let taskID = UUID()
+                let task = Task {
+                    defer { finish() }
+                    defer { taskBag.remove(taskID) }
+
+                    let result = await block(value)
+                    guard !Task.isCancelled else {
+                        contract.cancel()
+                        return
+                    }
+                    contract.resolve(result)
+                }
+                taskBag.insert(taskID, task: task)
+            },
+            onRejected: { _ in },
+            onCanceled: { [weak contract] in contract?.cancel() }
+        )
+
+        return contract
+    }
+
     @discardableResult
     public func then<Result>(
         on queue: DispatchQueue? = nil,
